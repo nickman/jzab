@@ -11,13 +11,41 @@
   <artifactId>agent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>agent</name>
-  <url>http://maven.apache.org</url>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  <url>https://github.com/nickman/jzab</url>
+    <dependencies>
+      <!--
+	  TEST DEPENDENCIES
+	-->
+      <dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+      </dependency>
+
+      <!--
+	  CORE DEPENDENCIES
+	-->
+      
+      <dependency>
+	<groupId>io.netty</groupId>
+	<artifactId>netty</artifactId>
+      </dependency>
+      
+      <dependency>
+	      <groupId>org.json</groupId>
+	      <artifactId>json</artifactId>
+      </dependency>
+      
+      <dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-log4j12</artifactId>
+      </dependency>
+
+      <dependency>
+	<groupId>ch.qos.logback</groupId>
+	<artifactId>logback-classic</artifactId>
+      </dependency>
+
+
+    </dependencies>
+
 </project>

@@ -6,17 +6,61 @@
   <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>jzab</name>
-  <url>http://maven.apache.org</url>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  <url>https://github.com/nickman/jzab</url>
   <modules>
     <module>agent</module>
     <module>zabbix-api</module>
   </modules>
+  
+  <properties>
+    <junit.version>4.8.2</junit.version>
+    <netty.version>3.5.2.Final</netty.version>
+    <json.version>20090211</json.version>
+    <slf4j.version>1.6.1</slf4j.version>
+    <logback.version>1.0.6</logback.version>
+  </properties>
+  
+  <dependencyManagement>
+    <dependencies>
+      <!--
+	  TEST DEPENDENCIES
+	-->
+      <dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+	<version>junit.version</version>
+	<scope>test</scope>
+      </dependency>
+
+      <!--
+	  CORE DEPENDENCIES
+	-->
+      
+      <dependency>
+	<groupId>io.netty</groupId>
+	<artifactId>netty</artifactId>
+	<version>${netty.version}</version>
+      </dependency>
+      
+      <dependency>
+	      <groupId>org.json</groupId>
+	      <artifactId>json</artifactId>
+	      <version>${json.version}</version>
+      </dependency>
+      
+      <dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-log4j12</artifactId>
+	<version>${slf4j.version}</version>
+      </dependency>
+
+      <dependency>
+	<groupId>ch.qos.logback</groupId>
+	<artifactId>logback-classic</artifactId>
+	<version>${logback.version}</version>
+      </dependency>
+
+
+    </dependencies>
+  </dependencyManagement>
 </project>
