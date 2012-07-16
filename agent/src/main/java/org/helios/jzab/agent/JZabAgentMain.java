@@ -25,7 +25,9 @@
 package org.helios.jzab.agent;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,6 +127,30 @@ public class JZabAgentMain {
 		} catch (Exception e) {
 			log.error("Failed to start agent listeners", e);
 			throw new Exception("Failed to start agent listeners", e);
+		}
+		loadNativeAgent();
+	}
+	
+	public void loadNativeAgent() {
+		try {
+			log.info("Loading native agent");
+			URL url = getClass().getClassLoader().getResource("plugins/native/helios-native-jmx.jar");
+			log.info("Native Agent URL [" + url + "]");
+			URLClassLoader ucl = new URLClassLoader(new URL[]{url}, ClassLoader.getSystemClassLoader());
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			try {
+				Thread.currentThread().setContextClassLoader(ucl);
+				Class<?> clazz = Class.forName("org.helios.nativex.jmx.ServiceBootStrap", true, ucl);
+				for(Method m : clazz.getDeclaredMethods()) {
+					if(m.getName().equals("boot")) {
+						m.invoke(null, true, null);
+					}
+				}
+			} finally {
+				Thread.currentThread().setContextClassLoader(cl);
+			}
+		} catch (Exception e) {
+			log.error("Failed to load native agent", e);
 		}
 	}
 	

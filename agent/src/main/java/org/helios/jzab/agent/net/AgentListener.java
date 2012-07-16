@@ -111,7 +111,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	protected final LoggingHandler loggingHandler; 
 	protected final SimpleChannelUpstreamHandler commandHandler = new SimpleChannelUpstreamHandler() {
 		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-			log.info("REQUEST:[{}]", e.getMessage());					
+			log.debug("REQUEST:[{}]", e.getMessage());					
 			ctx.getPipeline().sendDownstream(new DownstreamMessageEvent(e.getChannel(), Channels.future(e.getChannel()), "1", e.getChannel().getRemoteAddress()));
 								
 		}
