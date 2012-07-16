@@ -76,7 +76,7 @@ public class SimpleJMXLoggerLevelManager implements ILoggerLevelManager {
 		if(level==null) throw new IllegalArgumentException("The passed logger level was null", new Throwable());
 		level = level.trim().toUpperCase();
 		if(!validLevels.contains(level)) {
-			throw new IllegalArgumentException("Invalid level name for Logging [" + level + "] against [" + objectName + "]", new Throwable());
+			throw new IllegalArgumentException("Invalid level name for Logging [" + level + "] against [" + objectName + "]. Valid levels are " + validLevels, new Throwable());
 		}		
 		JMXHelper.invoke(objectName, JMXHelper.getHeliosMBeanServer(), setActionName, new Object[]{name, level}, new String[]{String.class.getName(), String.class.getName()});
 	}
@@ -89,6 +89,14 @@ public class SimpleJMXLoggerLevelManager implements ILoggerLevelManager {
 	public String getLoggerLevel(String name) {
 		if(name==null) throw new IllegalArgumentException("The passed logger name was null", new Throwable());
 		return (String)JMXHelper.invoke(objectName, JMXHelper.getHeliosMBeanServer(), getActionName, new Object[]{name}, new String[]{String.class.getName()});		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.logging.ILoggerLevelManager#getLevelNames()
+	 */
+	public String[] getLevelNames() {
+		return validLevels.toArray(new String[validLevels.size()]);
 	}
 
 }

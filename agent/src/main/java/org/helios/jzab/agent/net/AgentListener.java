@@ -38,6 +38,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -315,6 +316,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	 * Returns a map of the socket options with string values
 	 * @return a map of the socket options with string values
 	 */
+	@Override
 	public Map<String, String> getSockOptions() {
 		Map<String, String> map = new HashMap<String, String>(socketOptions.size());
 		for(Map.Entry<String, Object> e: socketOptions.entrySet()) {
@@ -323,13 +325,32 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		return map;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getLevel()
+	 */
+	@Override
+	public String getLevel() {
+		return LoggerManager.getInstance().getLoggerLevelManager().getLoggerLevel(getClass().getName());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#setLevel(java.lang.String)
+	 */
+	@Override
+	public void setLevel(String level) {
+		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+
 
 	/**
 	 * Indicates if the listener is started
 	 * @return the started
 	 */
-	public AtomicBoolean getStarted() {
-		return started;
+	@Override
+	public boolean isStarted() {
+		return started.get();
 	}
 
 	/**

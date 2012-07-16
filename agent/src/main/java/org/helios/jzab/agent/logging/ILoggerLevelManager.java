@@ -46,4 +46,10 @@ public interface ILoggerLevelManager {
 	 * @return the effective level of the logger
 	 */
 	public String getLoggerLevel(String name);
+	
+	/**
+	 * Returns the supported logger level names
+	 * @return the supported logger level names
+	 */
+	public String[] getLevelNames();
 }

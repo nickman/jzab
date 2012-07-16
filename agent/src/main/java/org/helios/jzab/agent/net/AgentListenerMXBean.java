@@ -68,7 +68,21 @@ public interface AgentListenerMXBean {
 	 */
 	public Map<String, String> getSockOptions();	
 	
-//	public String getLevel();
-//	
-//	public String setLevel(Level level);
+	/**
+	 * Indicates if the listener is started
+	 * @return the started
+	 */
+	public boolean isStarted();	
+	
+	/**
+	 * Returns the logging level for this agent listener
+	 * @return the logging level for this agent listener
+	 */
+	public String getLevel();
+	
+	/**
+	 * Sets the logger level for this agent listener
+	 * @param level The level to set this logger to
+	 */
+	public void setLevel(String level);
 }
