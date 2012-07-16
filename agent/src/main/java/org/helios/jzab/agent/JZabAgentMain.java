@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.AgentListener;
 import org.helios.jzab.util.XMLHelper;
@@ -42,14 +43,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 /**
- * <p>Title: Main</p>
+ * <p>Title: JZabAgentMain</p>
  * <p>Description: The jzab agent command line entry point.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.Main</code></p>
+ * <p><code>org.helios.jzab.agent.JZabAgentMain</code></p>
  */
 
-public class Main {
+public class JZabAgentMain {
 	/** The actual located configuration file */
 	protected String locatedConfigFile = null;
 	/** The parsed configuration node */
@@ -61,7 +62,7 @@ public class Main {
 	
 	
 	/** Static class logger */
-	private static final Logger log = LoggerFactory.getLogger(Main.class);
+	private static final Logger log = LoggerFactory.getLogger(JZabAgentMain.class);
 	
 	/** The jZab directory name */
 	public static final String JZAB_DIR_NAME = ".jzab";
@@ -80,10 +81,10 @@ public class Main {
 	
 	
 	/**
-	 * Creates a new Main
-	 * @param args Same as {@link Main#main(String[])}
+	 * Creates a new JZabAgentMain
+	 * @param args Same as {@link JZabAgentMain#main(String[])}
 	 */
-	private Main(String...args) {
+	private JZabAgentMain(String...args) {
 		processCommandLineArgs(args);
 		if(locatedConfigFile==null) {			
 			if(testConfFile(DEFAULT_CONF_FILE)) {
@@ -98,12 +99,6 @@ public class Main {
 		}
 	}
 	
-	/**
-	 * Starts the agent listener
-	 */
-	public void startListener() {
-		//listener = new AgentListener();
-	}
 	
 	/**
 	 * Boots up the configured components
@@ -118,6 +113,13 @@ public class Main {
 			log.error("Failed to start agent thread pools", e);
 			throw new Exception("Failed to start agent thread pools", e);
 		}
+		// Find all the schedulers and start them
+		try {
+			log.info("Booted [{}] Schedulers", bootSchedulers());
+		} catch (Exception e) {
+			log.error("Failed to start agent schedulers", e);
+			throw new Exception("Failed to start agent schedulers", e);
+		}				
 		try {
 			log.info("Booted [{}] AgentListeners", bootAgentListeners());			
 		} catch (Exception e) {
@@ -152,6 +154,25 @@ public class Main {
 	}
 	
 	/**
+	 * Starts all the configured schedulers
+	 * @return The number of booted schedulers
+	 */
+	protected int bootSchedulers() {
+		log.debug("Booting Schedulers");
+		int cnt = 0;
+		Node tpNodeRoot = XMLHelper.getChildNodeByName(parsedConfigNode, "thread-pools", false);
+		if(tpNodeRoot!=null) {
+			for(Node tpNode : XMLHelper.getChildNodesByName(tpNodeRoot, "scheduler", false)) {
+				String sName = ScheduledThreadPoolFactory.newScheduler(tpNode).getName();
+				log.info("Started Scheduler [{}]", sName);
+				cnt++;
+			}
+		}		
+		return cnt;
+	}
+	
+	
+	/**
 	 * Starts all the configured agent listeners
 	 * @return the number of booted listeners
 	 * @throws Exception thrown if any error occurs when setting up the listeners
@@ -184,7 +205,7 @@ public class Main {
 	public static void main(String[] args) {
 		InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
 		log.info("jZab Agent");
-		Main main = new Main(args);
+		JZabAgentMain main = new JZabAgentMain(args);
 		try {
 			main.boot();
 		} catch (Exception e) {

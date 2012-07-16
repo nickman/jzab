@@ -158,6 +158,34 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 	
 	
 	/**
+	 * Returns the assigned JMX ObjectName
+	 * @return the objectName
+	 */
+	public ObjectName getObjectName() {
+		return objectName;
+	}
+
+	/**
+	 * Returns the thread pool name
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ThreadPoolFactory [objectName=").append(objectName)
+				.append("]");
+		return builder.toString();
+	}
+
+	/**
 	 * <p>Title: ThreadPoolConfig</p>
 	 * <p>Description: Value container and parser for a thread pool config</p> 
 	 * <p>Company: Helios Development Group LLC</p>
@@ -373,35 +401,5 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 			return builder.toString();
 		}
 	}
-
-
-	/**
-	 * Returns 
-	 * @return the objectName
-	 */
-	public ObjectName getObjectName() {
-		return objectName;
-	}
-
-	/**
-	 * Returns 
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ThreadPoolFactory [objectName=").append(objectName)
-				.append("]");
-		return builder.toString();
-	}
-
 
 }

@@ -25,25 +25,21 @@
 package org.helios.jzab.agent.net;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.passive.PassiveResponseEncoder;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -51,8 +47,8 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -60,6 +56,10 @@ import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
+import org.jboss.netty.handler.codec.frame.Delimiters;
+import org.jboss.netty.handler.codec.string.StringDecoder;
+import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
 import org.slf4j.Logger;
@@ -105,6 +105,18 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	/** A channel group containing all open channels created by the listener */
 	protected final ChannelGroup channelGroup;
 	
+	protected final StringDecoder stringDecoder = new StringDecoder();
+	protected final StringEncoder stringEncoder = new StringEncoder();
+	protected final PassiveResponseEncoder responseEncoder = new PassiveResponseEncoder((byte)1);
+	protected final LoggingHandler loggingHandler; 
+	protected final SimpleChannelUpstreamHandler commandHandler = new SimpleChannelUpstreamHandler() {
+		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+			log.info("REQUEST:[{}]", e.getMessage());					
+			ctx.getPipeline().sendDownstream(new DownstreamMessageEvent(e.getChannel(), Channels.future(e.getChannel()), "1", e.getChannel().getRemoteAddress()));
+								
+		}
+	};
+
 	
 	
 	/** The configuration node name */
@@ -134,6 +146,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		bindingPort = XMLHelper.getAttributeByName(configNode, "port", DEFAULT_PORT);
 		bindingInterface = XMLHelper.getAttributeByName(configNode, "interface", DEFAULT_INTERFACE);		
 		listenerName = XMLHelper.getAttributeByName(configNode, "name", "AgentListener@" + System.identityHashCode(this));
+		loggingHandler = new LoggingHandler(listenerName, InternalLogLevel.DEBUG, true);
 		objectName = JMXHelper.objectName("org.helios.jzab.agent.net", "service", "AgentListener", "name", listenerName);
 		bossPool = ThreadPoolFactory.getInstance(XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, BOSS_POOL_TYPE, false), "name", null));
 		workerPool = ThreadPoolFactory.getInstance(XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, WORKER_POOL_TYPE, false), "name", null));
@@ -219,66 +232,13 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	 */
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
-		ChannelPipeline pipeline = Channels.pipeline(
-			new SimpleChannelUpstreamHandler() {
-				/**
-				 * Invoked when a child Channel was open.
-				 * @param ctx The channel handler context
-				 * @param e The child channel state event
-				 */
-				@Override
-				public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) {
-					Channel channel = e.getChannel();
-					channelGroup.add(channel);
-					sendNotification(new Notification("child.channel.open", objectName, notificationSequence.incrementAndGet(), new StringBuilder("Channel Opened [")
-						.append(" ChannelID:").append(channel.getId())
-						.append(" Remote:").append(channel.getRemoteAddress())
-						.append("]")
-						.toString()
-					));
-					log.debug("Child channel created on [{}] from [{}]", channel.getLocalAddress(), channel.getRemoteAddress());
-				}
-				
-				/**
-				 * Invoked when a child Channel was closed.
-				 * @param ctx The channel handler context
-				 * @param e The child channel state event
-				 */
-				@Override
-				public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-					Channel channel = e.getChannel();
-					channelGroup.add(channel);
-					sendNotification(new Notification("child.channel.closed", objectName, notificationSequence.incrementAndGet(), new StringBuilder("Channel Closed [")
-						.append(" ChannelID:").append(channel.getId())
-						.append(" Remote:").append(channel.getRemoteAddress())
-						.append("]")
-						.toString()
-					));
-					log.info("Child channel closed on [{}] from [{}]", channel.getLocalAddress(), channel.getRemoteAddress());
-				}
-				
-				
-			},
-			new LoggingHandler(listenerName, InternalLogLevel.INFO, true),
-			new SimpleChannelUpstreamHandler() {				
-				@Override
-				public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-					Object message = e.getMessage();
-					if(message instanceof ChannelBuffer) {
-						log.info("REQUEST: [{}]", new String(((ChannelBuffer)message).array()));
-						ChannelBuffer cb = ChannelBuffers.dynamicBuffer(20);
-						cb.writeBytes("ZBXD".getBytes());
-						cb.writeByte((byte) 0x01);
-						cb.writeBytes(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong("2".getBytes().length).array());
-						cb.writeBytes("2".getBytes());
-						e.getChannel().write(cb);
-					} else {
-						e.getChannel().write(e.getMessage()).addListener(ChannelFutureListener.CLOSE);
-					}					
-				};
-			}
-		);
-		log.info("Connected Channel [{}]", pipeline.getChannel());
+		ChannelPipeline pipeline = Channels.pipeline();
+		//pipeline.addLast("logger", loggingHandler);
+		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
+		pipeline.addLast("stringDecoder", stringDecoder);
+		pipeline.addLast("commandHandler", commandHandler);		
+		pipeline.addLast("stringEncoder", stringEncoder);
+		pipeline.addLast("responseEncoder", responseEncoder);
 		return pipeline;
 	}
 	

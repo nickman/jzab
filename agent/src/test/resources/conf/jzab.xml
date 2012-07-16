@@ -18,7 +18,7 @@ config version
  -->
  
  <logging-factory type="" />
- <agent-listener interface="0.0.0.0" port="10050" name="RequestListener" >
+ <agent-listener interface="0.0.0.0" port="10055" name="RequestListener" >
  	<boss-pool name="NettyBoss" />
  	<worker-pool  name="NettyWorker" />
  	<socket-options>
@@ -55,4 +55,7 @@ config version
  		<termination immediate="true" /> 		
  	</scheduler>
  </thread-pools>
+ <props>
+ 	<prop name="passive-protocol" value="1" />
+ </props>
 </jzab>
