@@ -382,14 +382,26 @@ public class JMXHelper {
 	 * @param signature The argument signature
 	 * @return the return value of the invocation
 	 */
-	public static Object invoke(CharSequence on, MBeanServerConnection server, String action, Object[] args, String[] signature) {
+	public static Object invoke(ObjectName on, MBeanServerConnection server, String action, Object[] args, String[] signature) {
 		try {
-			return server.invoke(objectName(on), action, args, signature);
+			return server.invoke(on, action, args, signature);
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to invoke operation", e);
 		}
 	}
-	
+
+	/**
+	 * Invokes an operation on the mbean.
+	 * @param on the object name
+	 * @param server the mbean server
+	 * @param action The name of the operation to invoke
+	 * @param args The argument values to pass to the invocation
+	 * @param signature The argument signature
+	 * @return the return value of the invocation
+	 */	
+	public static Object invoke(CharSequence on, MBeanServerConnection server, String action, Object[] args, String[] signature) {
+		return invoke(objectName(on), server, action, args, signature);
+	}
 	
 	
 	/**
