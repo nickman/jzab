@@ -25,6 +25,7 @@
 package org.helios.jzab.agent;
 
 import java.io.File;
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.helios.jzab.agent.commands.CommandProcessorLoader;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.AgentListener;
@@ -256,6 +258,41 @@ public class JZabAgentMain {
 			System.exit(-1);
 		}
 	}
+	
+	/**
+	 * The pre-main entry point
+	 * @param agentArgs The agent bootstrap arguments
+	 * @param inst The Instrumentation instance
+	 */
+	public static void premain(String agentArgs, Instrumentation inst) {
+		main(new String[]{agentArgs});
+	}
+	
+	/**
+	 * The pre-main entry point for JVMs not supporting a <b><code>java.lang.instrument.Instrumentation</code></b> implementation.
+	 * @param agentArgs The agent bootstrap arguments
+	 */	
+	public static void premain(String agentArgs) {
+		main(new String[]{agentArgs});
+	}
+	
+	/**
+	 * The agent attach entry point
+	 * @param agentArgs The agent bootstrap arguments
+	 * @param inst The Instrumentation instance
+	 */
+	public static void agentmain(String agentArgs, Instrumentation inst) {
+		main(new String[]{agentArgs});
+	}
+	
+	/**
+	 * The agent attach entry point for JVMs not supporting a <b><code>java.lang.instrument.Instrumentation</code></b> implementation.
+	 * @param agentArgs The agent bootstrap arguments
+	 */
+	public static void agentmain(String agentArgs) {
+		main(new String[]{agentArgs});
+	}
+		
 	
 	/**
 	 * Parses the command line arguments

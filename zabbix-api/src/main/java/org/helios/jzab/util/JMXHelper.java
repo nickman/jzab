@@ -679,17 +679,53 @@ while(m.find()) {
 	 * @return the attribute value or null.
 	 */
 	public static Object getAttribute(MBeanServerConnection conn, String objectName, String...attrs) {
+		return getAttribute(conn, objectName(objectName), attrs);
+	}
+	
+	/**
+	 * Retrieves an attribute from an MBeanServer connection with a default compound delimiter of <code>/</code> 
+	 * @param conn The MBeanServer connection
+	 * @param objectName The ObjectName
+	 * @param attrs the compound attribute name in the format <b><code>&lt;Fragment<i>1</i>&gt;/&lt;Fragment<i>2</i>&gt;/&lt;Fragment<i>n</i>&gt;</code></b>.
+	 * @return the attribute value or null.
+	 */
+	public static Object getAttribute(MBeanServerConnection conn, ObjectName objectName, String...attrs) {
+		return getAttribute(conn, "/", objectName, attrs);
+	}
+	
+	/**
+	 * Retrieves an attribute from an MBeanServer connection. 
+	 * @param conn The MBeanServer connection
+	 * @param delimiter The compund opentype delimiter
+	 * @param objectName The ObjectName
+	 * @param attrs the compound attribute name in the format <b><code>&lt;Fragment<i>1</i>&gt;<b>DELIMITER</b>&lt;Fragment<i>2</i>&gt;<b>DELIMITER</b>&lt;Fragment<i>n</i>&gt;</code></b>.
+	 * @return the attribute value or null.
+	 */
+	public static Object getAttribute(MBeanServerConnection conn, String delimiter, ObjectName objectName, String...attrs) {
 		try {
 			if(objectName!=null && attrs!=null && attrs.length > 0) {
-				ObjectName on = objectName(objectName);
-				String key = StringHelper.fastConcatAndDelim("/", attrs);
-				Map<ObjectName, Map<String, Object>> map = getMBeanAttributeMap(conn, on, "/", key);
+				ObjectName on = objectName;
+				String key = StringHelper.fastConcatAndDelim(delimiter, attrs);
+				Map<ObjectName, Map<String, Object>> map = getMBeanAttributeMap(conn, on, delimiter, key);
 				return map.get(on).get(key);
 			}
 		} catch (Exception e) {
 		}
 		return null;
 	}
+	
+	/**
+	 * Retrieves an attribute from an MBeanServer connection. 
+	 * @param conn The MBeanServer connection
+	 * @param delimiter The compund opentype delimiter
+	 * @param objectName The ObjectName
+	 * @param attrs the compound attribute name in the format <b><code>&lt;Fragment<i>1</i>&gt;<b>DELIMITER</b>&lt;Fragment<i>2</i>&gt;<b>DELIMITER</b>&lt;Fragment<i>n</i>&gt;</code></b>.
+	 * @return the attribute value or null.
+	 */
+	public static Object getAttribute(MBeanServerConnection conn, String delimiter, String objectName, String...attrs) {
+		return getAttribute(conn, delimiter, objectName, attrs);
+	}
+	
 	
 	
 	

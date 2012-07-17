@@ -55,12 +55,11 @@ config version
  		<termination immediate="true" /> 		
  	</scheduler>
  </thread-pools>
- <command-processor passive-enabled="true"  active-enabled="true" command-timeout="1">
- 	
- </command-processor>
  
  <command-processors>
- 	<command-processor class="org.helios.jzab.agent.commands.impl.CoreJMXAttributesCommandProcessor" />
+ 	<command-processor key="jmx" class="org.helios.jzab.agent.commands.impl.jmx.JMXAttributeCommandProcessor" >
+ 		<property name="compound-delimiter" value="." />
+ 	</command-processor>
  </command-processors>
  <props>
  	<prop name="passive-protocol" value="1" />

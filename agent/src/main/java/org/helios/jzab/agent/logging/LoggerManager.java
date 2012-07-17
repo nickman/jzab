@@ -43,7 +43,7 @@ import org.helios.jzab.util.JMXHelper;
 
 public class LoggerManager {
 	/** The JMX ObjectName of the logback JMXManager */
-	public static final ObjectName LOGBACK_OBJECT_NAME = JMXHelper.objectName("ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator");
+	public static final ObjectName LOGBACK_OBJECT_NAME = JMXHelper.objectName("ch.qos.logback.classic:Name=jzab,Type=ch.qos.logback.classic.jmx.JMXConfigurator");
 	/** The class name of the logback Logger implementation */
 	public static final String LOGBACK_CLASS = "ch.qos.logback.classic.Logger";
 	/** Logback Recognized logger level names */

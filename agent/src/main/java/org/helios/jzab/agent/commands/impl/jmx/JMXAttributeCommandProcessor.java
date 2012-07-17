@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.commands.impl;
+package org.helios.jzab.agent.commands.impl.jmx;
 
 import javax.management.ObjectName;
 import javax.management.remote.JMXServiceURL;
@@ -32,18 +32,36 @@ import org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction;
 import org.helios.jzab.util.JMXHelper;
 
 /**
- * <p>Title: CoreJMXAttributesCommandProcessor</p>
+ * <p>Title: JMXAttributeCommandProcessor</p>
  * <p>Description: The core JMX command processor for standard attribute getters.</p> 
+ * <p>Simple test examples (adjust host and port if necessary):<ul>
+ * 	<li><code>echo "jmxattr[\"java.lang:type=Compilation\",TotalCompilationTime]" | nc localhost 10050</code></li>
+ * 	<li><code>echo "jmxattr[\"java.lang:type=Memory\",HeapMemoryUsage/used]" | nc localhost 10050</code></li>
+ * </ul>
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.commands.impl.CoreJMXAttributesCommandProcessor</code></p>
+ * <p><code>org.helios.jzab.agent.commands.impl.jmx.JMXAttributeCommandProcessor</code></p>
  */
 
-public class CoreJMXAttributesCommandProcessor extends AbstractCommandProcessor {
+public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
 	/** This processors command keys */
 	protected static final String COMMAND_KEY  = "jmxattr"; 
 	
-
+	/** The property name for the {@link #compoundDelimiter}  */
+	protected static final String DELIMITER_KEY  = "compound-delimiter";
+	
+	/** The delimiter between an MBean's attribute name and the subkeys of opentypes. Set by processor properties. */
+	protected String compoundDelimiter = null;
+	
+	/**
+	 * Initializes the {@link #compoundDelimiter}
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#init()
+	 */
+	public void init() {
+		compoundDelimiter = processorProperties.getProperty(DELIMITER_KEY, "/");
+		super.init();
+	}
 	
 	/**
 	 * {@inheritDoc}
@@ -77,7 +95,7 @@ public class CoreJMXAttributesCommandProcessor extends AbstractCommandProcessor 
 		if(args.length>3) {
 			domain = args[3];
 		}
-		return JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), on, attrName, null);
+		return JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), compoundDelimiter, on, attrName);
 	}
 
 }

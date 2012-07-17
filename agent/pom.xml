@@ -14,6 +14,7 @@
   <url>https://github.com/nickman/jzab</url>
   
 	<build>
+		<finalName>helios-jzab-agent</finalName>
 		<plugins>
 			<plugin>
 	            <artifactId>maven-assembly-plugin</artifactId>
@@ -23,8 +24,16 @@
 	                      <addClasspath>true</addClasspath>
 				          <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 				          <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>	                      
-	                      <mainClass>org.helios.jzab.agent.Main</mainClass>
+	                      <mainClass>org.helios.jzab.agent.JZabAgentMain</mainClass>
 	                    </manifest>
+						<manifestEntries>
+			 				<Premain-Class>org.helios.jzab.agent.JZabAgentMain</Premain-Class>
+			            	<Agent-Class>org.helios.jzab.agent.JZabAgentMain</Agent-Class>
+			            	<Can-Redefine-Classes>true</Can-Redefine-Classes>
+			            	<Can-Retransform-Classes>true</Can-Retransform-Classes>
+			            	<Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>
+						</manifestEntries>
+	                    
 	                </archive>
 	                <descriptorRefs>
 	                    <descriptorRef>jar-with-dependencies</descriptorRef>

@@ -25,7 +25,9 @@
 package org.helios.jzab.agent.commands;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.ObjectName;
@@ -86,19 +88,31 @@ public class CommandManager implements CommandManagerMXBean {
 	/**
 	 * Registers a new Command Processor
 	 * @param commandProcessor the processor to register
+	 * @param aliases An optional array of aliases for this command processor
 	 */
-	public void registerCommandProcessor(ICommandProcessor commandProcessor) {
+	public void registerCommandProcessor(ICommandProcessor commandProcessor, String...aliases) {
+		
 		if(commandProcessor==null) throw new IllegalArgumentException("The passed command processor was null", new Throwable());
-		String key = commandProcessor.getLocatorKey().trim().toLowerCase();
-		if(!commandProcessors.containsKey(key)) {
-			synchronized(commandProcessors) {
-				if(!commandProcessors.containsKey(key)) {
-					commandProcessors.put(key, commandProcessor);
-					return;
+		Set<String> keys = new HashSet<String>();
+		keys.add(commandProcessor.getLocatorKey());
+		if(aliases!=null) {
+			for(String s: aliases) {
+				if(s!=null && !s.trim().isEmpty()) {
+					keys.add(s.trim().toLowerCase());
 				}
 			}
 		}
-		throw new RuntimeException("The command processor [" + key + "] was already registered");
+		for(String key: keys) {			
+			if(!commandProcessors.containsKey(key)) {
+				synchronized(commandProcessors) {
+					if(!commandProcessors.containsKey(key)) {
+						commandProcessors.put(key, commandProcessor);
+						continue;
+					}
+				}
+			}
+			throw new RuntimeException("The command processor [" + key + "] was already registered");
+		}
 	}
 	
 	/**
@@ -128,7 +142,7 @@ public class CommandManager implements CommandManagerMXBean {
 		}
 		ICommandProcessor cp = commandProcessors.get(commandName);
 		if(cp==null) {
-			log.warn("No command registered called [{}]", commandName);
+			log.debug("No command registered called [{}]", commandName);
 			return ICommandProcessor.COMMAND_NOT_SUPPORTED;
 		}
 		try {
@@ -149,22 +163,6 @@ public class CommandManager implements CommandManagerMXBean {
 	
 }
 
-/*
- 		int i = TEST_STRING.indexOf('[');
-		if(i>-1 && TEST_STRING.charAt(TEST_STRING.length()-1)==']') {
-			log("Processing");
-			String command = TEST_STRING.substring(0, i);
-			log("Command:[" + command.trim().toLowerCase() + "]");
-			String argString = TEST_STRING.substring(i+1, TEST_STRING.length()-1).trim();
-			CSVParser parser = new CSVParser(',', '"');
-			try {
-				String[] commandArgs = parser.parseLine(argString);
-				log("Arguments:\n" + Arrays.toString(commandArgs));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
- */
 
 
 

@@ -22,10 +22,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent;
+package org.helios.jzab.agent.commands;
 
-import org.helios.jzab.agent.commands.CommandManager;
-import org.helios.jzab.agent.commands.ICommandProcessor;
+import java.util.Properties;
+
 import org.helios.jzab.util.XMLHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,12 +59,24 @@ public class CommandProcessorLoader {
 		if(cpNode!=null) {
 			for(Node n: XMLHelper.getChildNodesByName(cpNode, "command-processor", false)) {
 				String className = "none-defined";
+				String key = null;
 				try {
 					className = XMLHelper.getAttributeByName(n, "class", "none-defined").trim();
+					key = XMLHelper.getAttributeByName(n, "key", (String)null);
 					Class<ICommandProcessor> clazz = (Class<ICommandProcessor>) Class.forName(className);
 					ICommandProcessor processor = clazz.newInstance();
-					cm.registerCommandProcessor(processor);
-					log.debug("Loaded CommandProcessor [{}]", processor.getLocatorKey());
+					Properties p = new Properties();
+					for(Node pNode: XMLHelper.getChildNodesByName(n, "property", false)) {						
+						String pKey = XMLHelper.getAttributeByName(pNode, "name", null);
+						String pValue = XMLHelper.getAttributeByName(pNode, "value", null);
+						if(pKey!=null && !pKey.trim().isEmpty()  && pValue!=null && !pValue.trim().isEmpty()) {
+							p.setProperty(pKey.trim(), pValue.trim());
+						}						
+					}
+					processor.setProperties(p);
+					processor.init();
+					cm.registerCommandProcessor(processor, key);
+					log.debug("Loaded CommandProcessor [{}]", processor.getLocatorKey() + (key==null ? "" : "," + key));
 				} catch (Exception e) {
 					log.warn("Failed to load command processor [{}]", className);
 				}

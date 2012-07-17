@@ -25,6 +25,7 @@
 package org.helios.jzab.agent.commands;
 
 import java.util.Arrays;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,9 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractCommandProcessor implements ICommandProcessor {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	
+	/** The command processors config */
+	protected final Properties processorProperties = new Properties();
 
 	/*
 		jmxattr["java.lang:type=Compilation",TotalCompilationTime]
@@ -66,6 +70,27 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 			return ICommandProcessor.COMMAND_ERROR;
 		}		
 	}
+	
+    /**
+     * {@inheritDoc}
+     * @see org.helios.jzab.agent.commands.ICommandProcessor#init()
+     */
+	@Override
+    public void init() {
+    	
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @see org.helios.jzab.agent.commands.ICommandProcessor#setProperties(java.util.Properties)
+     */
+    @Override
+    public void setProperties(Properties props) {
+    	if(props!=null) {
+    		processorProperties.putAll(props);
+    	}
+    }
+	
 	
 	/**
 	 * Delegate to concrete implementations

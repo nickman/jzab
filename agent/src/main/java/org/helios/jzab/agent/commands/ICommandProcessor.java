@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.commands;
 
+import java.util.Properties;
+
 
 /**
  * <p>Title: ICommandProcessor</p>
@@ -52,4 +54,16 @@ public interface ICommandProcessor {
      * @return the command key
      */
     public String getLocatorKey();
+    
+    /**
+     * Sets the optional command processor properties
+     * @param props The properties to set on a new command processor
+     */
+    public void setProperties(Properties props);
+    
+    /**
+     * Callback to initialize the command processor after properties have been set
+     */
+    public void init();
+
 }

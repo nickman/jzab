@@ -25,6 +25,7 @@
 package org.helios.jzab.agent.net.passive;
 
 import org.helios.jzab.agent.commands.CommandManager;
+import org.helios.jzab.agent.commands.ICommandProcessor;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -57,7 +58,10 @@ public class PassiveRequestInvoker extends SimpleChannelUpstreamHandler {
 		if(msg instanceof CharSequence) {
 			log.debug("Processing Passive Request [{}]", msg);
 			String value = CommandManager.getInstance().processCommand(msg.toString());
-			log.debug("Passive Request Result for [{}] was [{}]", value);
+			if(!ICommandProcessor.COMMAND_NOT_SUPPORTED.equals(value)) {
+				log.info("Passive Request Result for [{}] was [{}]", msg, value);
+			}
+			
 			Channel channel = e.getChannel();
 			ctx.sendDownstream(new DownstreamMessageEvent(channel, Channels.future(channel), value, channel.getRemoteAddress()));
 		}
