@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.logging;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Set;
 
 import javax.management.ObjectName;
@@ -43,6 +45,9 @@ public class SimpleJMXLoggerLevelManager implements ILoggerLevelManager {
 	protected final String setActionName;
 	/** The get level action name */
 	protected final String getActionName;
+	/** The name of the configuration reload action */
+	protected final String configActionName;
+	
 	/** The JMX MBean's ObjectName */
 	protected final ObjectName objectName;
 	/** The valid level names in upper case */
@@ -55,17 +60,44 @@ public class SimpleJMXLoggerLevelManager implements ILoggerLevelManager {
 	/**
 	 * Creates a new SimpleJMXLoggerLevelManager
 	 * @param setActionName The set level action name
+	 * @param configActionName The name of the configuration reload action.
 	 * @param getActionName The get level action name
 	 * @param objectName The JMX MBean's ObjectName
 	 * @param validLevels The valid level names in upper case 
 	 */
-	public SimpleJMXLoggerLevelManager(String setActionName, String getActionName, ObjectName objectName, Set<String> validLevels) {
+	public SimpleJMXLoggerLevelManager(String setActionName, String getActionName, String configActionName, ObjectName objectName, Set<String> validLevels) {
 		this.setActionName = setActionName;
 		this.getActionName = getActionName;
 		this.objectName = objectName;
 		this.validLevels = validLevels;
+		this.configActionName = configActionName;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.logging.ILoggerLevelManager#reloadConfiguration(java.lang.String)
+	 */
+	@Override
+	public void reloadConfiguration(String location) {
+		if(location==null) throw new IllegalArgumentException("The passed location was null", new Throwable());
+		URL url = null;
+		try {
+			url = new URL(location.trim());			
+		} catch (Exception e) {
+			File f = new File(location.trim());
+			if(f.canRead() && f.isFile()) {
+				try {
+					url = f.toURI().toURL();
+				} catch (Exception e2) {}
+			}
+		}
+		if(url!=null) {
+			JMXHelper.invoke(objectName, JMXHelper.getHeliosMBeanServer(), configActionName, new Object[]{url}, new String[]{URL.class.getName()});
+			return;
+		} 
+		throw new RuntimeException("Failed to read configuration from [" + location + "]");
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.logging.ILoggerLevelManager#setLoggerLevel(java.lang.String, java.lang.String)

@@ -78,6 +78,12 @@
 	<groupId>ch.qos.logback</groupId>
 	<artifactId>logback-classic</artifactId>
       </dependency>
+      
+	<dependency>
+	  <groupId>net.sf.opencsv</groupId>
+	  <artifactId>opencsv</artifactId>
+	</dependency>
+      
 
     </dependencies>
 

@@ -24,11 +24,17 @@
  */
 package org.helios.jzab.agent.commands;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.management.ObjectName;
 
 import org.helios.jzab.util.JMXHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import au.com.bytecode.opencsv.CSVParser;
 
 /**
  * <p>Title: CommandManager</p>
@@ -41,6 +47,8 @@ import org.slf4j.LoggerFactory;
 public class CommandManager implements CommandManagerMXBean {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	/** The map of command processors keyed by command name */
+	protected final Map<String, ICommandProcessor> commandProcessors = new ConcurrentHashMap<String, ICommandProcessor>();
 
 	/** The singleton instance */
 	protected static volatile CommandManager instance = null;
@@ -49,6 +57,9 @@ public class CommandManager implements CommandManagerMXBean {
 	
 	/** The CommandManager object name */
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.command:service=CommandManager");
+	
+	/** Empty string array */
+	public static final String[] EMPTY_ARGS = {};
 	
 	/**
 	 * Acquires the command manager singleton instance
@@ -69,6 +80,93 @@ public class CommandManager implements CommandManagerMXBean {
 	 * Creates a new CommandManager and registers its management interface.
 	 */
 	protected CommandManager() {
-		
+		log.info("Created CommandManager");
 	}
+	
+	/**
+	 * Registers a new Command Processor
+	 * @param commandProcessor the processor to register
+	 */
+	public void registerCommandProcessor(ICommandProcessor commandProcessor) {
+		if(commandProcessor==null) throw new IllegalArgumentException("The passed command processor was null", new Throwable());
+		String key = commandProcessor.getLocatorKey().trim().toLowerCase();
+		if(!commandProcessors.containsKey(key)) {
+			synchronized(commandProcessors) {
+				if(!commandProcessors.containsKey(key)) {
+					commandProcessors.put(key, commandProcessor);
+					return;
+				}
+			}
+		}
+		throw new RuntimeException("The command processor [" + key + "] was already registered");
+	}
+	
+	/**
+	 * Processes a command string and returns the result
+	 * @param commandString The command string specified by the zabbix server
+	 * @return the result of the command execution
+	 */
+	public String processCommand(CharSequence commandString) {
+		if(commandString==null) return ICommandProcessor.COMMAND_ERROR;
+		String cstring = commandString.toString().trim();
+		if(cstring.isEmpty()) return ICommandProcessor.COMMAND_ERROR;
+		int length = cstring.length();
+		int paramOpener = cstring.indexOf('[');
+		String[] strArgs = null;
+		String commandName = null;
+		if(paramOpener==-1 || cstring.charAt(length-1)!=']') {
+			strArgs = EMPTY_ARGS;
+			commandName = cstring.toLowerCase();
+		} else {
+			commandName = cstring.substring(0, paramOpener).toLowerCase();
+			try {
+				strArgs = new CSVParser(',', '"').parseLine(cstring.substring(paramOpener+1, length-1).trim());
+			} catch (IOException e) {
+				log.error("Failed to parse arguments in command string [{}]", commandString, e);
+				return ICommandProcessor.COMMAND_ERROR;
+			}
+		}
+		ICommandProcessor cp = commandProcessors.get(commandName);
+		if(cp==null) {
+			log.warn("No command registered called [{}]", commandName);
+			return ICommandProcessor.COMMAND_NOT_SUPPORTED;
+		}
+		try {
+			Object result =  cp.execute(strArgs);
+			if(result==null) {
+				log.warn("Null result executing command [{}]", commandString);
+				return ICommandProcessor.COMMAND_NOT_SUPPORTED;				
+			}
+			return result.toString();
+		} catch (Exception e) {
+			log.warn("Failed to execute command [{}]", commandString, e);
+			return ICommandProcessor.COMMAND_ERROR;
+		}
+	}
+	
+	
+	
+	
 }
+
+/*
+ 		int i = TEST_STRING.indexOf('[');
+		if(i>-1 && TEST_STRING.charAt(TEST_STRING.length()-1)==']') {
+			log("Processing");
+			String command = TEST_STRING.substring(0, i);
+			log("Command:[" + command.trim().toLowerCase() + "]");
+			String argString = TEST_STRING.substring(i+1, TEST_STRING.length()-1).trim();
+			CSVParser parser = new CSVParser(',', '"');
+			try {
+				String[] commandArgs = parser.parseLine(argString);
+				log("Arguments:\n" + Arrays.toString(commandArgs));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+ */
+
+
+
+
+

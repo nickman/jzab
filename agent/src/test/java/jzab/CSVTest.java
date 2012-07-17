@@ -22,41 +22,55 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.logging;
+package jzab;
+
+import java.io.IOException;
+import java.util.Arrays;
+
+import au.com.bytecode.opencsv.CSVParser;
 
 /**
- * <p>Title: ILoggerLevelManager</p>
- * <p>Description: Defines a class that can manage the logger levels for different slf4j bridge targets</p> 
+ * <p>Title: CSVTest</p>
+ * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.logging.ILoggerLevelManager</code></p>
+ * <p><code>jzab.CSVTest</code></p>
+ * TODO: Convert this into a unit test for command parsing.
  */
 
-public interface ILoggerLevelManager {
+public class CSVTest {
+
 	/**
-	 * Sets the level of the named logger
-	 * @param name The name of the logger
-	 * @param level The name of the level
+	 * @param args
 	 */
-	public void setLoggerLevel(String name, String level);
+	public static void main(String[] args) {
+		log("CSVTest");
+		String TEST_STRING = "jmx[\"java.lang:type=Compilation\",TotalCompilationTime]";
+		int i = TEST_STRING.indexOf('[');
+		if(i>-1 && TEST_STRING.charAt(TEST_STRING.length()-1)==']') {
+			log("Processing");
+			String command = TEST_STRING.substring(0, i);
+			log("Command:[" + command.trim().toLowerCase() + "]");
+			String argString = TEST_STRING.substring(i+1, TEST_STRING.length()-1).trim();
+			CSVParser parser = new CSVParser(',', '"');
+			try {
+				String[] commandArgs = parser.parseLine(argString);
+				log("Arguments:\n" + Arrays.toString(commandArgs));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			log("Arg String:[" + argString + "]");
+		} else {
+			log("No Match");
+		}
+		
+
+	}
 	
-	/**
-	 * Returns the effective level of the named logger
-	 * @param name The name of the logger
-	 * @return the effective level of the logger
-	 */
-	public String getLoggerLevel(String name);
-	
-	/**
-	 * Returns the supported logger level names
-	 * @return the supported logger level names
-	 */
-	public String[] getLevelNames();
-	
-	/**
-	 * Reloads the logging configuration from the specified source.
-	 * @param location The location of the configuration file. 
-	 * Will attempt to interpret as a URL, then as a local file name. 
-	 */
-	public void reloadConfiguration(String location);
+	public static void log(Object msg) {
+		System.out.println(msg);
+	}
+
 }

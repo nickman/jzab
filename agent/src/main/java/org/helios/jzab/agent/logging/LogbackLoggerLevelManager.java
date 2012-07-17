@@ -39,6 +39,6 @@ public class LogbackLoggerLevelManager extends SimpleJMXLoggerLevelManager {
 	 * Creates a new LogbackLoggerLevelManager
 	 */
 	public LogbackLoggerLevelManager() {
-		super("setLoggerLevel", "getLoggerEffectiveLevel", LoggerManager.LOGBACK_OBJECT_NAME, LoggerManager.LOGBACK_LEVEL_NAMES);
+		super("setLoggerLevel", "getLoggerEffectiveLevel", "reloadByURL", LoggerManager.LOGBACK_OBJECT_NAME, LoggerManager.LOGBACK_LEVEL_NAMES);
 	}
 }

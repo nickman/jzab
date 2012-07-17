@@ -53,6 +53,8 @@ import org.w3c.dom.Node;
  */
 
 public class JZabAgentMain {
+	/** The actual jzab home directory */
+	protected String jZabHomeDir = null;
 	/** The actual located configuration file */
 	protected String locatedConfigFile = null;
 	/** The parsed configuration node */
@@ -94,7 +96,7 @@ public class JZabAgentMain {
 			}			
 		}
 		if(locatedConfigFile!=null) {
-			log.info("Bootstrap Config File [{}]", locatedConfigFile);
+			log.info("Bootstrap Config File [{}] jZab Home Directory [{}]", locatedConfigFile, jZabHomeDir);
 		} else {
 			log.error("Unable to locate jZab Configuration File. Default location is [{}]", DEFAULT_CONF_FILE);
 			System.exit(-1);
@@ -128,6 +130,7 @@ public class JZabAgentMain {
 			log.error("Failed to start agent listeners", e);
 			throw new Exception("Failed to start agent listeners", e);
 		}
+		bootCommandProcessors();
 		loadNativeAgent();
 	}
 	
@@ -150,7 +153,11 @@ public class JZabAgentMain {
 				Thread.currentThread().setContextClassLoader(cl);
 			}
 		} catch (Exception e) {
-			log.error("Failed to load native agent", e);
+			log.warn("Failed to load native agent");
+			if(log.isDebugEnabled()) {
+				log.debug("Native Agent Load Failure", e);
+			}
+			
 		}
 	}
 	
@@ -159,6 +166,15 @@ public class JZabAgentMain {
 	 */
 	public void shutdown() {
 		
+	}
+	
+	/**
+	 * Loads the agent's configured comand processors
+	 * @return the number of command processors loaded
+	 */
+	protected int bootCommandProcessors() {
+		CommandProcessorLoader cpl = new CommandProcessorLoader();
+		return cpl.loadCommandProcessors(parsedConfigNode);
 	}
 	
 	/**
@@ -234,6 +250,7 @@ public class JZabAgentMain {
 		JZabAgentMain main = new JZabAgentMain(args);
 		try {
 			main.boot();
+			log.info("\n\t=============================\n\tjZab Agent Successfully Started\n\t=============================\n");
 		} catch (Exception e) {
 			log.error("Agent Start Failed",e);
 			System.exit(-1);
@@ -292,11 +309,20 @@ public class JZabAgentMain {
 			doc = XMLHelper.parseXML(url);
 		}
 		try {			
+			// jZabHomeDir
+			
 			Node node = doc.getDocumentElement();
 			String rootNode = node.getNodeName();
 			if("jzab".equalsIgnoreCase(rootNode)) {
 				log.debug("The configuration file [{}] looks good.", fileName);		
 				parsedConfigNode = node;
+				jZabHomeDir = XMLHelper.getAttributeByName(node, "homeDir", "");
+				File f = new File(jZabHomeDir);
+				if(!f.exists() || !f.isDirectory() ) {
+					jZabHomeDir = JZAB_HOME;
+				} else {
+					jZabHomeDir = f.getAbsolutePath();
+				}
 				return true;
 			}
 			log.error("The supplied configuration file [{}] failed validation because the root node was not \"jzab\" but {}", fileName, rootNode);

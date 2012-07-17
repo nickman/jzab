@@ -22,41 +22,40 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.logging;
+package org.helios.jzab.agent.commands;
 
 /**
- * <p>Title: ILoggerLevelManager</p>
- * <p>Description: Defines a class that can manage the logger levels for different slf4j bridge targets</p> 
+ * <p>Title: AbstractCommandProcessor</p>
+ * <p>Description: Abstract base class for command processor implementations</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.logging.ILoggerLevelManager</code></p>
+ * <p><code>org.helios.jzab.agent.commands.AbstractCommandProcessor</code></p>
  */
 
-public interface ILoggerLevelManager {
-	/**
-	 * Sets the level of the named logger
-	 * @param name The name of the logger
-	 * @param level The name of the level
+public abstract class AbstractCommandProcessor implements ICommandProcessor {
+	
+	/*
+		jmx["java.lang:type=Compilation",TotalCompilationTime]
+		java.ping	 
 	 */
-	public void setLoggerLevel(String name, String level);
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String[])
+	 */
+	@Override
+	public Object execute(String... args) {
+		try {
+			return doExecute(args);
+		} catch (Exception e) {
+			return "ZBX_NOTSUPPORTED";
+		}		
+	}
 	
 	/**
-	 * Returns the effective level of the named logger
-	 * @param name The name of the logger
-	 * @return the effective level of the logger
+	 * Delegate to concrete implementations
+	 * @param args The command arguments 
+	 * @return the result of the command
 	 */
-	public String getLoggerLevel(String name);
-	
-	/**
-	 * Returns the supported logger level names
-	 * @return the supported logger level names
-	 */
-	public String[] getLevelNames();
-	
-	/**
-	 * Reloads the logging configuration from the specified source.
-	 * @param location The location of the configuration file. 
-	 * Will attempt to interpret as a URL, then as a local file name. 
-	 */
-	public void reloadConfiguration(String location);
+	protected abstract Object doExecute(String... args);
 }

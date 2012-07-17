@@ -22,41 +22,39 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.logging;
+package org.helios.jzab.agent.commands.impl;
+
+import org.helios.jzab.agent.commands.AbstractCommandProcessor;
 
 /**
- * <p>Title: ILoggerLevelManager</p>
- * <p>Description: Defines a class that can manage the logger levels for different slf4j bridge targets</p> 
+ * <p>Title: CoreJMXAttributesCommandProcessor</p>
+ * <p>Description: The core JMX command processor for standard attribute getters.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.logging.ILoggerLevelManager</code></p>
+ * <p><code>org.helios.jzab.agent.commands.impl.CoreJMXAttributesCommandProcessor</code></p>
  */
 
-public interface ILoggerLevelManager {
-	/**
-	 * Sets the level of the named logger
-	 * @param name The name of the logger
-	 * @param level The name of the level
-	 */
-	public void setLoggerLevel(String name, String level);
+public class CoreJMXAttributesCommandProcessor extends AbstractCommandProcessor {
+	/** This processors command keys */
+	protected static final String COMMAND_KEY  = "jmxattr"; 
 	
 	/**
-	 * Returns the effective level of the named logger
-	 * @param name The name of the logger
-	 * @return the effective level of the logger
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.ICommandProcessor#getLocatorKey()
 	 */
-	public String getLoggerLevel(String name);
-	
+	@Override
+	public String getLocatorKey() {
+		return COMMAND_KEY;
+	}
+
 	/**
-	 * Returns the supported logger level names
-	 * @return the supported logger level names
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
 	 */
-	public String[] getLevelNames();
-	
-	/**
-	 * Reloads the logging configuration from the specified source.
-	 * @param location The location of the configuration file. 
-	 * Will attempt to interpret as a URL, then as a local file name. 
-	 */
-	public void reloadConfiguration(String location);
+	@Override
+	protected Object doExecute(String... args) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

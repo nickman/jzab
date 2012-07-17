@@ -24,6 +24,13 @@
  */
 package org.helios.jzab.agent.logging;
 
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.logging.LogManager;
+
+import org.helios.jzab.util.JMXHelper;
+
 
 /**
  * <p>Title: JDKLoggerLevelManager</p>
@@ -39,8 +46,42 @@ public class JDKLoggerLevelManager extends SimpleJMXLoggerLevelManager {
 	 * Creates a new JDKLoggerLevelManager
 	 */
 	public JDKLoggerLevelManager() {
-		super("setLoggerLevel", "getLoggerLevel", LoggerManager.JDK_OBJECT_NAME, LoggerManager.JDK_LEVEL_NAMES);
+		super("setLoggerLevel", "getLoggerLevel", "", LoggerManager.JDK_OBJECT_NAME, LoggerManager.JDK_LEVEL_NAMES);
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.logging.ILoggerLevelManager#reloadConfiguration(java.lang.String)
+	 */
+	@Override
+	public void reloadConfiguration(String location) {
+		if(location==null) throw new IllegalArgumentException("The passed location was null", new Throwable());
+		URL url = null;
+		try {
+			url = new URL(location.trim());			
+		} catch (Exception e) {
+			File f = new File(location.trim());
+			if(f.canRead() && f.isFile()) {
+				try {
+					url = f.toURI().toURL();
+				} catch (Exception e2) {}
+			}
+		}
+		if(url!=null) {
+			InputStream is = null;
+			try {
+				is = url.openStream();
+				LogManager.getLogManager().readConfiguration(is);
+				return;				
+			} catch (Exception ei) {
+				throw new RuntimeException("Failed to read configuration from [" + location + "], ei");
+			} finally {
+				if(is!=null) {
+					try { is.close(); } catch (Exception ex) {}
+				}
+			}
+		} 
+		throw new RuntimeException("Failed to read configuration from [" + location + "]");
+	}
 
 }

@@ -33,10 +33,23 @@ package org.helios.jzab.agent.commands;
  * <p><code>org.helios.jzab.agent.commands.ICommandProcessor</code></p>
  */
 public interface ICommandProcessor {
+	
+	/** Return result for a command when the command is not supported or cannot be executed */
+	public static final String COMMAND_NOT_SUPPORTED = "ZBX_NOTSUPPORTED";
+	/** Return result for a command when the command fails execution */
+	public static final String COMMAND_ERROR = "ZBX_ERROR";
+	
     /**
      * Executes the command and returns the result
      * @param args The arguments to the command
      * @return the return value of the executed command
      */
     public Object execute(String...args);
+    
+    /**
+     * Returns the locator key that the command manager will index this processor by
+     * to route incoming requests for invocation here
+     * @return the command key
+     */
+    public String getLocatorKey();
 }
