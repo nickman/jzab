@@ -27,6 +27,8 @@ package jzab;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.junit.Ignore;
+
 import au.com.bytecode.opencsv.CSVParser;
 
 /**
@@ -37,7 +39,7 @@ import au.com.bytecode.opencsv.CSVParser;
  * <p><code>jzab.CSVTest</code></p>
  * TODO: Convert this into a unit test for command parsing.
  */
-
+@Ignore
 public class CSVTest {
 
 	/**
