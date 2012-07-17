@@ -90,6 +90,21 @@ public class JMXHelper {
 		return server;
 	}
 	
+	/**
+	 * Determines if the passed Object is or represents a JMX ObjectName
+	 * @param obj the object to test
+	 * @return true if the passed Object is or represents a JMX ObjectName, false otherwise
+	 */
+	public static boolean isObjectName(Object obj) {
+		if(obj==null) return false;
+		if(obj instanceof ObjectName) return true;
+		try {
+			new ObjectName(obj.toString());
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
 	
 	
 	/**
@@ -161,11 +176,24 @@ public class JMXHelper {
 	 */
 	public static ObjectName objectName(CharSequence on) {
 		try {
-			return new ObjectName(on.toString());
+			return new ObjectName(on.toString().trim());
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to create Object Name", e);
 		}
 	}
+	
+	/**
+	 * Creates a new JMX object name.
+	 * @param on An object representing the ObjectName
+	 * @return an ObjectName the created ObjectName
+	 */
+	public static ObjectName objectName(Object on) {
+		try {
+			return new ObjectName(on.toString().trim());
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to create Object Name", e);
+		}
+	}	
 	
 	/**
 	 * Creates a new JMX object name by appending properties on the end of an existing name

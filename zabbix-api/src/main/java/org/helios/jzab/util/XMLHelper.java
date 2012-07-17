@@ -185,29 +185,6 @@ public class XMLHelper {
 			  return defaultValue;
 		  }
 	  }
-	
-	
-
-
-	  /**
-	   * Helper Method. Searches through the child nodes of an element and returns the first node with a matching name.
-	   * @param element Element
-	   * @param name String
-	   * @param caseSensitive boolean
-	   * @return Node
-	   */
-	  public static Node getChildNodeByName(Element element, String name, boolean caseSensitive) {
-	    NodeList list = element.getChildNodes();
-	    for(int i = 0; i < list.getLength(); i++) {
-	      Node node = list.item(i);
-	      if(caseSensitive) {
-	        if(node.getNodeName().equals(name)) return node;
-	      } else {
-	        if(node.getNodeName().equalsIgnoreCase(name)) return node;
-	      }
-	    }
-	    return null;
-	  }
 
 
 	  /**
