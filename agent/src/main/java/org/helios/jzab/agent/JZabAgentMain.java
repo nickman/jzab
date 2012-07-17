@@ -360,6 +360,7 @@ public class JZabAgentMain {
 				} else {
 					jZabHomeDir = f.getAbsolutePath();
 				}
+				System.setProperty("jzab.home", jZabHomeDir);
 				return true;
 			}
 			log.error("The supplied configuration file [{}] failed validation because the root node was not \"jzab\" but {}", fileName, rootNode);
