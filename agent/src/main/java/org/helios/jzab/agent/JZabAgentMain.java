@@ -131,7 +131,7 @@ public class JZabAgentMain {
 			throw new Exception("Failed to start agent listeners", e);
 		}
 		bootCommandProcessors();
-		loadNativeAgent();
+		//loadNativeAgent();   // ONLY LOAD IF SPECIED IN JZAB.XML
 	}
 	
 	public void loadNativeAgent() {

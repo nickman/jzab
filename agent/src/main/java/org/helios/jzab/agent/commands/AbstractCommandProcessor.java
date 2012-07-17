@@ -24,6 +24,11 @@
  */
 package org.helios.jzab.agent.commands;
 
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * <p>Title: AbstractCommandProcessor</p>
  * <p>Description: Abstract base class for command processor implementations</p> 
@@ -33,9 +38,11 @@ package org.helios.jzab.agent.commands;
  */
 
 public abstract class AbstractCommandProcessor implements ICommandProcessor {
-	
+	/** Instance logger */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
 	/*
-		jmx["java.lang:type=Compilation",TotalCompilationTime]
+		jmxattr["java.lang:type=Compilation",TotalCompilationTime]
 		java.ping	 
 	 */
 
@@ -46,9 +53,17 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 	@Override
 	public Object execute(String... args) {
 		try {
-			return doExecute(args);
+			Object result = doExecute(args);
+			if(result==null) {
+				result = ICommandProcessor.COMMAND_NOT_SUPPORTED;
+			}
+			return result;
 		} catch (Exception e) {
-			return "ZBX_NOTSUPPORTED";
+			log.error("Execution failed on {}", Arrays.toString(args));
+			if(log.isDebugEnabled()) {
+				log.debug("Execution failed on {}", Arrays.toString(args), e);
+			}
+			return ICommandProcessor.COMMAND_ERROR;
 		}		
 	}
 	
@@ -56,6 +71,7 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 	 * Delegate to concrete implementations
 	 * @param args The command arguments 
 	 * @return the result of the command
+	 * @throws Exception on any error
 	 */
-	protected abstract Object doExecute(String... args);
+	protected abstract Object doExecute(String... args) throws Exception;
 }

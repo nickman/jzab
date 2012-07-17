@@ -36,7 +36,6 @@ import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
-import org.helios.jzab.agent.net.passive.PassiveResponseEncoder;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -44,13 +43,9 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.DownstreamMessageEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.ChannelGroupFutureListener;
@@ -58,8 +53,6 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
 import org.slf4j.Logger;
@@ -105,17 +98,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	/** A channel group containing all open channels created by the listener */
 	protected final ChannelGroup channelGroup;
 	
-	protected final StringDecoder stringDecoder = new StringDecoder();
-	protected final StringEncoder stringEncoder = new StringEncoder();
-	protected final PassiveResponseEncoder responseEncoder = new PassiveResponseEncoder((byte)1);
 	protected final LoggingHandler loggingHandler; 
-	protected final SimpleChannelUpstreamHandler commandHandler = new SimpleChannelUpstreamHandler() {
-		public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-			log.debug("REQUEST:[{}]", e.getMessage());					
-			ctx.getPipeline().sendDownstream(new DownstreamMessageEvent(e.getChannel(), Channels.future(e.getChannel()), "1", e.getChannel().getRemoteAddress()));
-								
-		}
-	};
 
 	
 	
@@ -226,6 +209,9 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		log.info("Release All Resources for [{}]", listenerName);
 	}
 
+	/** The sharable handlers repository */
+	protected final SharableHandlers sharableHandlers = SharableHandlers.getInstance();
+	
 	/**
 	 * {@inheritDoc}
 	 * @see org.jboss.netty.channel.ChannelPipelineFactory#getPipeline()
@@ -235,10 +221,11 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		ChannelPipeline pipeline = Channels.pipeline();
 		//pipeline.addLast("logger", loggingHandler);
 		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
-		pipeline.addLast("stringDecoder", stringDecoder);
-		pipeline.addLast("commandHandler", commandHandler);		
-		pipeline.addLast("stringEncoder", stringEncoder);
-		pipeline.addLast("responseEncoder", responseEncoder);
+		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
+		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
+		pipeline.addLast("passiveResponseEncoder", sharableHandlers.getHandler("passiveResponseEncoder"));
+		pipeline.addLast("passiveRequestInvoker", sharableHandlers.getHandler("passiveRequestInvoker"));
+		
 		return pipeline;
 	}
 	

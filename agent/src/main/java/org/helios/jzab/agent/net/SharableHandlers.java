@@ -27,11 +27,11 @@ package org.helios.jzab.agent.net;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.helios.jzab.agent.net.passive.PassiveRequestInvoker;
 import org.helios.jzab.agent.net.passive.PassiveResponseEncoder;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.handler.codec.string.StringDecoder;
 import org.jboss.netty.handler.codec.string.StringEncoder;
-import org.jboss.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,9 +72,11 @@ public class SharableHandlers {
      * Creates a new SharableHandlers
      */
     protected SharableHandlers() {
-        addChannelHandler("stringDecoder", new StringDecoder());
-        addChannelHandler("stringEncoder", new StringEncoder());
+        addChannelHandler("stringDecoder", new StringDecoder());        
         addChannelHandler("passiveResponseEncoder", new PassiveResponseEncoder((byte)1));
+        addChannelHandler("stringEncoder", new StringEncoder());
+        addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
+        
     }
    
     /**

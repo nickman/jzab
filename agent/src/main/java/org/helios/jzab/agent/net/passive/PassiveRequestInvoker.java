@@ -24,35 +24,45 @@
  */
 package org.helios.jzab.agent.net.passive;
 
+import org.helios.jzab.agent.commands.CommandManager;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.DownstreamMessageEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * <p>Title: PassiveRequestDecoder</p>
+ * <p>Title: PassiveRequestInvoker</p>
  * <p>Description: Decoder for passive agent command requests</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.passive.PassiveRequestDecoder</code></p>
+ * <p><code>org.helios.jzab.agent.net.passive.PassiveRequestInvoker</code></p>
  */
 @Sharable	
-public class PassiveRequestDecoder extends OneToOneDecoder {
+public class PassiveRequestInvoker extends SimpleChannelUpstreamHandler {
+	/** Instance logger */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.jboss.netty.handler.codec.oneone.OneToOneDecoder#decode(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.Channel, java.lang.Object)
+	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
 	 */
 	@Override
-	protected Object decode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
-		if(msg instanceof String) {
-			
-		} else {
-			
+	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) 	throws Exception {
+		Object msg = e.getMessage();
+		if(msg instanceof CharSequence) {
+			log.debug("Processing Passive Request [{}]", msg);
+			String value = CommandManager.getInstance().processCommand(msg.toString());
+			log.debug("Passive Request Result for [{}] was [{}]", value);
+			Channel channel = e.getChannel();
+			ctx.sendDownstream(new DownstreamMessageEvent(channel, Channels.future(channel), value, channel.getRemoteAddress()));
 		}
-		return null;
+		super.messageReceived(ctx, e);
 	}
-	
 	
 	
 }
