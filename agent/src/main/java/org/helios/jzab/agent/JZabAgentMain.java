@@ -38,6 +38,7 @@ import org.helios.jzab.agent.commands.CommandProcessorLoader;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.AgentListener;
+import org.helios.jzab.agent.plugin.PluginLoader;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
@@ -133,6 +134,7 @@ public class JZabAgentMain {
 			throw new Exception("Failed to start agent listeners", e);
 		}
 		bootCommandProcessors();
+		loadPlugins();
 		//loadNativeAgent();   // ONLY LOAD IF SPECIED IN JZAB.XML
 	}
 	
@@ -161,6 +163,11 @@ public class JZabAgentMain {
 			}
 			
 		}
+	}
+	
+	protected void loadPlugins() {
+		PluginLoader pl = new PluginLoader();
+		pl.loadPlugins(parsedConfigNode);
 	}
 	
 	/**
