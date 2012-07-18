@@ -49,6 +49,9 @@ import javax.management.MBeanServerFactory;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 
 
 
@@ -166,6 +169,37 @@ public class JMXHelper {
 			return null;
 		}
 		throw new RuntimeException("No MBeanServer located for domain [" + domain + "]");
+	}
+	
+	/**
+	 * Acquires a connected JMX connection
+	 * @param jmxUrl The JMXServiceURL of the service to connec to
+	 * @return a JMXConnector
+	 */
+	public static JMXConnector getJMXConnection(CharSequence jmxUrl) {
+		return getJMXConnection(jmxUrl, true, null);
+	}
+	
+	
+	/**
+	 * Acquires a JMX connection
+	 * @param jmxUrl The JMXServiceURL of the service to connec to
+	 * @param connect If true, the returned connector will be connected
+	 * @param environment a set of attributes to determine how the connection is made. Can be null.
+	 * @return a JMXConnector
+	 */
+	public static JMXConnector getJMXConnection(CharSequence jmxUrl, boolean connect, Map<String,?> environment) {
+		if(jmxUrl==null) throw new IllegalArgumentException("The passed JMXServiceURL was null", new Throwable());
+		try {
+			
+			JMXConnector connector = JMXConnectorFactory.newJMXConnector(new JMXServiceURL(jmxUrl.toString().trim()), environment);
+			if(connect) {
+				connector.connect();
+			}
+			return connector;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to acquire JMXConnection to [" + jmxUrl + "]", e);
+		}
 	}
 	
 	
@@ -723,7 +757,7 @@ while(m.find()) {
 	 * @return the attribute value or null.
 	 */
 	public static Object getAttribute(MBeanServerConnection conn, String delimiter, String objectName, String...attrs) {
-		return getAttribute(conn, delimiter, objectName, attrs);
+		return getAttribute(conn, delimiter, objectName(objectName), attrs);
 	}
 	
 	

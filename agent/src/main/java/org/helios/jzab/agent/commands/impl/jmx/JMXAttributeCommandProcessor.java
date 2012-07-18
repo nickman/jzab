@@ -24,7 +24,9 @@
  */
 package org.helios.jzab.agent.commands.impl.jmx;
 
+import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXServiceURL;
 
 import org.helios.jzab.agent.commands.AbstractCommandProcessor;
@@ -36,19 +38,27 @@ import org.helios.jzab.util.JMXHelper;
  * <p>Description: The core JMX command processor for standard attribute getters.</p> 
  * <p>Simple test examples (adjust host and port if necessary):<ul>
  * 	<li><code>echo "jmxattr[\"java.lang:type=Compilation\",TotalCompilationTime]" | nc localhost 10050</code></li>
- * 	<li><code>echo "jmxattr[\"java.lang:type=Memory\",HeapMemoryUsage/used]" | nc localhost 10050</code></li>
+ * 	<li><code>echo "jmxattr[\"java.lang:type=Memory\",HeapMemoryUsage.used]" | nc localhost 10050</code></li>
+ *  <li><code>echo "jmxattr[\"java.lang:type=Memory\",HeapMemoryUsage.used,,service:jmx:iiop://localhost:7002/jndi/rmi://localhost:8005/jmxiiop]" | nc localhost 10050</code></li>
+ *  <li><code>echo "jmxattr[\"java.lang:type=Memory\",HeapMemoryUsage.used,,service:jmx:rmi://localhost:8002/jndi/rmi://localhost:8005/jmxrmi]" | nc localhost 10050</code></li>
  * </ul>
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.commands.impl.jmx.JMXAttributeCommandProcessor</code></p>
+ * TODO: <ol>
+ * <li>Open and closing JMXConnectors each time is fairly inefficient. Should we pool connections ?</li>
+ * </ol>
  */
 
 public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
 	/** This processors command keys */
-	protected static final String COMMAND_KEY  = "jmxattr"; 
+	public static final String COMMAND_KEY  = "jmxattr"; 
 	
 	/** The property name for the {@link #compoundDelimiter}  */
-	protected static final String DELIMITER_KEY  = "compound-delimiter";
+	public static final String DELIMITER_KEY  = "compound-delimiter";
+	
+	/** The mandatory prefix for strings representing a {@link JMXServiceURL} */
+	public static final String JMX_SVC_URL_PREFIX = "service:jmx:";
 	
 	/** The delimiter between an MBean's attribute name and the subkeys of opentypes. Set by processor properties. */
 	protected String compoundDelimiter = null;
@@ -95,7 +105,31 @@ public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
 		if(args.length>3) {
 			domain = args[3];
 		}
-		return JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), compoundDelimiter, on, attrName);
+		JMXConnector connector = null;
+		MBeanServerConnection server = null;
+		try {
+			if(domain!=null && !domain.trim().isEmpty()) {
+				domain = domain.trim();
+				if(domain.indexOf(JMX_SVC_URL_PREFIX)!=-1) {
+					try {
+						connector = JMXHelper.getJMXConnection(domain, true, null);
+						server = connector.getMBeanServerConnection();
+					} catch (Exception e) {
+						log.debug("Failed to make JMX connection to [{}]", domain, e);
+						log.error("Failed to make JMX connection to [{}]", domain);
+						return COMMAND_ERROR;
+					}
+				} else {
+					server = JMXHelper.getLocalMBeanServer(domain, true);
+				}
+			} else {
+				server = JMXHelper.getHeliosMBeanServer();
+			}
+			if(server==null) return COMMAND_NOT_SUPPORTED;
+			return JMXHelper.getAttribute(server, compoundDelimiter, on, attrName);
+		} finally {
+			if(connector!=null) try { connector.close(); } catch (Exception e) {}
+		}
 	}
 
 }
