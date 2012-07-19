@@ -57,6 +57,7 @@
 	  CORE DEPENDENCIES
 	-->
 	
+	
 	<dependency>
   <groupId>org.helios.jzab</groupId>
   <artifactId>zabbix-api</artifactId>
@@ -92,7 +93,12 @@
 	  <groupId>net.sf.opencsv</groupId>
 	  <artifactId>opencsv</artifactId>
 	</dependency>
-      
+    
+    <!-- 
+    	NATIVE OS DEPENDENCIES
+     -->  
+     
+     
 
     </dependencies>
 
