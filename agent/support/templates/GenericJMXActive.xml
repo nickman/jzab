@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2012-07-20T13:24:27Z</date>
+    <date>2012-07-20T20:16:30Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -89,7 +89,7 @@
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
                     <key>jmx[&quot;java.lang:type=ClassLoading&quot;,LoadedClassCount]</key>
-                    <delay>60</delay>
+                    <delay>45</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
@@ -1843,12 +1843,12 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx[&quot;java.lang:type=Threading&quot;,TotalStartedThreadCount]</key>
+                    <key>jmxattr[&quot;java.lang:type=Threading&quot;,TotalStartedThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
-                    <value_type>3</value_type>
+                    <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
                     <units></units>
                     <delta>0</delta>
