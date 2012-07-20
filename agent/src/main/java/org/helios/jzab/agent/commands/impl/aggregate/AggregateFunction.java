@@ -30,6 +30,10 @@ package org.helios.jzab.agent.commands.impl.aggregate;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction</code></p>
+ * TODO:<ol>
+ * 	<li>GROUP (text):  Map of Key:Number of Occurences   e.g. ThreadState:Count</li>
+ *  <li>MMAC (text):  Maximum / Minimum / Average / Count  all in one shot</li>
+ * </ol>
  */
 
 public enum AggregateFunction {
@@ -38,5 +42,15 @@ public enum AggregateFunction {
 	/** Returns the number of items in the result set */
 	COUNT,
 	/** Returns the average of the returned values */
-	AVG;
+	AVG,
+	/** Returns the number of distinct items */
+	DISTINCT,
+	/** Returns the minimum value */
+	MIN,
+	/** Returns the maximum value */
+	MAX;
+	
+	
+	
+	
 }
