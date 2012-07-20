@@ -45,5 +45,13 @@ public class ActiveAgent {
  
  "response":"failed",
   "info":"host [NE-WK-NWHI-01 ActiveX] not found"}
+  
+{
+	"response":"success",
+	"info":"Processed 47 Failed 0 Total 47 Seconds spent 0.000708"}
+	
+{
+	"response":"success",
+	"info":"Processed 0 Failed 14 Total 14 Seconds spent 0.000368"}	  
 
  */ 
