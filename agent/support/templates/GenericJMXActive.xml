@@ -46,16 +46,16 @@
                 <item>
                     <name>Accumulated time spent in compilation</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Compilation",TotalCompilationTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -85,16 +85,16 @@
                 <item>
                     <name>cl Loaded Class Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=ClassLoading",LoadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -124,16 +124,16 @@
                 <item>
                     <name>cl Total Loaded Class Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=ClassLoading",TotalLoadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -163,16 +163,16 @@
                 <item>
                     <name>cl Unloaded Class Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=ClassLoading",UnloadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -202,16 +202,16 @@
                 <item>
                     <name>gc ConcurrentMarkSweep accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -241,16 +241,16 @@
                 <item>
                     <name>gc ConcurrentMarkSweep number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -280,16 +280,16 @@
                 <item>
                     <name>gc Copy accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=Copy",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -319,16 +319,16 @@
                 <item>
                     <name>gc Copy number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=Copy",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -358,16 +358,16 @@
                 <item>
                     <name>gc MarkSweepCompact accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -397,16 +397,16 @@
                 <item>
                     <name>gc MarkSweepCompact number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -436,16 +436,16 @@
                 <item>
                     <name>gc ParNew accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -475,16 +475,16 @@
                 <item>
                     <name>gc ParNew number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -514,16 +514,16 @@
                 <item>
                     <name>gc PS MarkSweep accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -553,16 +553,16 @@
                 <item>
                     <name>gc PS Scavenge accumulated time spent in collection</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -592,16 +592,16 @@
                 <item>
                     <name>gc PS Scavenge number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -631,16 +631,16 @@
                 <item>
                     <name>gs PS MarkSweep number of collections per second</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>1</delta>
                     <snmpv3_securityname/>
@@ -670,16 +670,16 @@
                 <item>
                     <name>jvm Uptime</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Runtime",Uptime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>uptime</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -709,16 +709,16 @@
                 <item>
                     <name>jvm Version</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Runtime",VmVersion]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>1</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -748,16 +748,16 @@
                 <item>
                     <name>mem Object Pending Finalization Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Memory",ObjectPendingFinalizationCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -787,16 +787,16 @@
                 <item>
                     <name>mp CMS Old Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -826,16 +826,16 @@
                 <item>
                     <name>mp CMS Old Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -865,16 +865,16 @@
                 <item>
                     <name>mp CMS Old Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -904,16 +904,16 @@
                 <item>
                     <name>mp CMS Perm Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -943,16 +943,16 @@
                 <item>
                     <name>mp CMS Perm Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -982,16 +982,16 @@
                 <item>
                     <name>mp CMS Perm Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1021,16 +1021,16 @@
                 <item>
                     <name>mp Code Cache committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1060,16 +1060,16 @@
                 <item>
                     <name>mp Code Cache max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1099,16 +1099,16 @@
                 <item>
                     <name>mp Code Cache used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1138,16 +1138,16 @@
                 <item>
                     <name>mp Perm Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1177,16 +1177,16 @@
                 <item>
                     <name>mp Perm Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1216,16 +1216,16 @@
                 <item>
                     <name>mp Perm Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1255,16 +1255,16 @@
                 <item>
                     <name>mp PS Old Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1294,16 +1294,16 @@
                 <item>
                     <name>mp PS Old Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1333,16 +1333,16 @@
                 <item>
                     <name>mp PS Old Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1372,16 +1372,16 @@
                 <item>
                     <name>mp PS Perm Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1411,16 +1411,16 @@
                 <item>
                     <name>mp PS Perm Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1450,16 +1450,16 @@
                 <item>
                     <name>mp PS Perm Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1489,16 +1489,16 @@
                 <item>
                     <name>mp Tenured Gen committed</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1528,16 +1528,16 @@
                 <item>
                     <name>mp Tenured Gen max</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1567,16 +1567,16 @@
                 <item>
                     <name>mpTenured Gen used</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1606,16 +1606,16 @@
                 <item>
                     <name>Name of the current compiler</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Compilation",Name]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>1</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1645,16 +1645,16 @@
                 <item>
                     <name>os Max File Descriptor Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=OperatingSystem",MaxFileDescriptorCount]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1684,16 +1684,16 @@
                 <item>
                     <name>os Open File Descriptor Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=OperatingSystem",OpenFileDescriptorCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1723,16 +1723,16 @@
                 <item>
                     <name>th Daemon Thread Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Threading",DaemonThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1762,16 +1762,16 @@
                 <item>
                     <name>th Peak Thread Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Threading",PeakThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1801,16 +1801,16 @@
                 <item>
                     <name>th Thread Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Threading",ThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>
@@ -1840,16 +1840,16 @@
                 <item>
                     <name>th Total Started Thread Count</name>
                     <type>7</type>
-                    <snmp_community/>
+                    <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
-                    <snmp_oid/>
+                    <snmp_oid></snmp_oid>
                     <key>jmx["java.lang:type=Threading",TotalStartedThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
-                    <allowed_hosts/>
+                    <allowed_hosts></allowed_hosts>
                     <units/>
                     <delta>0</delta>
                     <snmpv3_securityname/>

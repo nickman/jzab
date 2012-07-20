@@ -73,7 +73,7 @@ public class SharableHandlers {
      */
     protected SharableHandlers() {
         addChannelHandler("stringDecoder", new StringDecoder());        
-        addChannelHandler("passiveResponseEncoder", new PassiveResponseEncoder((byte)1));
+        addChannelHandler("responseEncoder", new PassiveResponseEncoder((byte)1));
         addChannelHandler("stringEncoder", new StringEncoder());
         addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
         

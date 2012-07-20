@@ -78,6 +78,10 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	protected final int bindingPort;
 	/** This listener's object name */
 	protected final ObjectName objectName;
+	/** JMX notification serial number factory */
+	protected final AtomicLong notificationSequence = new AtomicLong(0);
+	/** The sharable handlers repository */
+	protected final SharableHandlers sharableHandlers = SharableHandlers.getInstance();
 	
 	/** The netty server boss pool */
 	protected final Executor bossPool;
@@ -209,8 +213,6 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		log.info("Release All Resources for [{}]", listenerName);
 	}
 
-	/** The sharable handlers repository */
-	protected final SharableHandlers sharableHandlers = SharableHandlers.getInstance();
 	
 	/**
 	 * {@inheritDoc}
@@ -223,14 +225,12 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
 		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
 		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
-		pipeline.addLast("passiveResponseEncoder", sharableHandlers.getHandler("passiveResponseEncoder"));
+		pipeline.addLast("passiveResponseEncoder", sharableHandlers.getHandler("responseEncoder"));
 		pipeline.addLast("passiveRequestInvoker", sharableHandlers.getHandler("passiveRequestInvoker"));
 		
 		return pipeline;
 	}
 	
-	/** JMX notification serial number factory */
-	protected final AtomicLong notificationSequence = new AtomicLong(0);
 	
 	
 	/**

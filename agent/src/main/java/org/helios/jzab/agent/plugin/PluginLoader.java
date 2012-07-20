@@ -52,7 +52,6 @@ public class PluginLoader {
 	 * @param configNode The root configuration xml node
 	 * @return the number of plugins loaded
 	 */
-	@SuppressWarnings("unchecked")
 	public int loadPlugins(Node configNode) {
 		if(configNode==null) throw new IllegalArgumentException("Passed configuration node was null", new Throwable());
 		log.info("Loading Plugins");
