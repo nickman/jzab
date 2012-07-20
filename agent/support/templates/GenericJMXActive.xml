@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2012-07-17T13:45:50Z</date>
+    <date>2012-07-20T13:24:27Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -9,8 +9,8 @@
     </groups>
     <templates>
         <template>
-            <template>Generic JMX Active</template>
-            <name>Generic JMX Active</name>
+            <template>Template JMX Generic Active</template>
+            <name>Template JMX Generic Active</name>
             <groups>
                 <group>
                     <name>Templates</name>
@@ -49,7 +49,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Compilation",TotalCompilationTime]</key>
+                    <key>jmx[&quot;java.lang:type=Compilation&quot;,TotalCompilationTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -58,22 +58,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.0001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -88,31 +88,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=ClassLoading",LoadedClassCount]</key>
+                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,LoadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -127,31 +127,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=ClassLoading",TotalLoadedClassCount]</key>
+                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,TotalLoadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -166,31 +166,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=ClassLoading",UnloadedClassCount]</key>
+                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,UnloadedClassCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -205,7 +205,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=ConcurrentMarkSweep&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -214,22 +214,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -244,31 +244,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=ConcurrentMarkSweep&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -283,7 +283,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=Copy",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=Copy&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -292,22 +292,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -322,31 +322,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=Copy",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=Copy&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -361,7 +361,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=MarkSweepCompact&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -370,22 +370,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -400,31 +400,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=MarkSweepCompact&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -439,7 +439,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=ParNew&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -448,22 +448,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -478,31 +478,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=ParNew&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -517,7 +517,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS MarkSweep&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -526,22 +526,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -556,7 +556,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionTime]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS Scavenge&quot;,CollectionTime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -565,22 +565,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>s</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -595,31 +595,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS Scavenge&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -634,31 +634,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionCount]</key>
+                    <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS MarkSweep&quot;,CollectionCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>0</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>1</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -673,7 +673,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>1</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Runtime",Uptime]</key>
+                    <key>jmx[&quot;java.lang:type=Runtime&quot;,Uptime]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -682,22 +682,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>uptime</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>0.001</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -712,31 +712,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Runtime",VmVersion]</key>
+                    <key>jmx[&quot;java.lang:type=Runtime&quot;,VmVersion]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>1</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -751,31 +751,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Memory",ObjectPendingFinalizationCount]</key>
+                    <key>jmx[&quot;java.lang:type=Memory&quot;,ObjectPendingFinalizationCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -790,7 +790,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -799,22 +799,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -829,7 +829,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -838,22 +838,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -868,7 +868,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -877,22 +877,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -907,7 +907,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -916,22 +916,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -946,7 +946,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -955,22 +955,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -985,7 +985,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -994,22 +994,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1024,7 +1024,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1033,22 +1033,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1063,7 +1063,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1072,22 +1072,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1102,7 +1102,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1111,22 +1111,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1141,7 +1141,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1150,22 +1150,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1180,7 +1180,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1189,22 +1189,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1219,7 +1219,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1228,22 +1228,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1258,7 +1258,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1267,22 +1267,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1297,7 +1297,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1306,22 +1306,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1336,7 +1336,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1345,22 +1345,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1375,7 +1375,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1384,22 +1384,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1414,7 +1414,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1423,22 +1423,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1453,7 +1453,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1462,22 +1462,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1492,7 +1492,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.committed]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.committed]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1501,22 +1501,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1531,7 +1531,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.max]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.max]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1540,22 +1540,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1570,7 +1570,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.used]</key>
+                    <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.used]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1579,22 +1579,22 @@
                     <allowed_hosts></allowed_hosts>
                     <units>B</units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1609,31 +1609,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Compilation",Name]</key>
+                    <key>jmx[&quot;java.lang:type=Compilation&quot;,Name]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>1</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1648,31 +1648,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=OperatingSystem",MaxFileDescriptorCount]</key>
+                    <key>jmx[&quot;java.lang:type=OperatingSystem&quot;,MaxFileDescriptorCount]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1687,31 +1687,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=OperatingSystem",OpenFileDescriptorCount]</key>
+                    <key>jmx[&quot;java.lang:type=OperatingSystem&quot;,OpenFileDescriptorCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1726,31 +1726,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Threading",DaemonThreadCount]</key>
+                    <key>jmx[&quot;java.lang:type=Threading&quot;,DaemonThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1765,31 +1765,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Threading",PeakThreadCount]</key>
+                    <key>jmx[&quot;java.lang:type=Threading&quot;,PeakThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1804,31 +1804,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Threading",ThreadCount]</key>
+                    <key>jmx[&quot;java.lang:type=Threading&quot;,ThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1843,31 +1843,31 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx["java.lang:type=Threading",TotalStartedThreadCount]</key>
+                    <key>jmx[&quot;java.lang:type=Threading&quot;,TotalStartedThreadCount]</key>
                     <delay>60</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts></allowed_hosts>
-                    <units/>
+                    <units></units>
                     <delta>0</delta>
-                    <snmpv3_securityname/>
+                    <snmpv3_securityname></snmpv3_securityname>
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
                     <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
                     <data_type>0</data_type>
                     <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description></description>
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
@@ -1885,202 +1885,202 @@
     </templates>
     <triggers>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp CMS Old Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp CMS Perm Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp Code Cache used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp Perm Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp PS Old Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp PS Perm Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.used].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.max].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.used].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.max].last(0)}*0.7)</expression>
             <name>70% mp Tenured Gen used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=OperatingSystem",OpenFileDescriptorCount].last(0)}&gt;({Generic JMX Active:jmx["java.lang:type=OperatingSystem",MaxFileDescriptorCount].last(0)}*0.7)</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=OperatingSystem&quot;,OpenFileDescriptorCount].last(0)}&gt;({Template JMX Generic Active:jmx[&quot;java.lang:type=OperatingSystem&quot;,MaxFileDescriptorCount].last(0)}*0.7)</expression>
             <name>70% os Opened File Descriptor Count used on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionCount].last(0)}&lt;{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionCount].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=ParNew&quot;,CollectionCount].last(0)}&lt;{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=ConcurrentMarkSweep&quot;,CollectionCount].last(0)}</expression>
             <name>gc Concurrent Mark Sweep in fire fighting mode on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=Copy",CollectionCount].last(0)}&lt;{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionCount].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=Copy&quot;,CollectionCount].last(0)}&lt;{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=MarkSweepCompact&quot;,CollectionCount].last(0)}</expression>
             <name>gc Mark Sweep Compact in fire fighting mode on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionCount].last(0)}&lt;{Generic JMX Active:jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionCount].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=PS Scavenge&quot;,CollectionCount].last(0)}&lt;{Template JMX Generic Active:jmx[&quot;java.lang:type=GarbageCollector,name=PS MarkSweep&quot;,CollectionCount].last(0)}</expression>
             <name>gc PS Mark Sweep in fire fighting mode on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp CMS Old Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp CMS Perm Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.max].last(0)}</expression>
             <name>mp Code Cache fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp Perm Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp PS Old Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp PS Perm Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.committed].last(0)}={Generic JMX Active:jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.max].last(0)}</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.committed].last(0)}={Template JMX Generic Active:jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.max].last(0)}</expression>
             <name>mp Tenured Gen fully committed on {HOSTNAME}</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>2</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=Runtime",Uptime].nodata(60)}=1</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=Runtime&quot;,Uptime].nodata(60)}=1</expression>
             <name>{HOSTNAME} is not reachable</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>3</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Generic JMX Active:jmx["java.lang:type=Compilation",Name].str(Server)}#1</expression>
+            <expression>{Template JMX Generic Active:jmx[&quot;java.lang:type=Compilation&quot;,Name].str(Server)}#1</expression>
             <name>{HOSTNAME} uses suboptimal jit compiler</name>
-            <url/>
+            <url></url>
             <status>0</status>
             <priority>1</priority>
-            <description/>
+            <description></description>
             <type>0</type>
             <dependencies/>
         </trigger>
@@ -2112,8 +2112,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=ClassLoading",TotalLoadedClassCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=ClassLoading&quot;,TotalLoadedClassCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2124,8 +2124,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=ClassLoading",UnloadedClassCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=ClassLoading&quot;,UnloadedClassCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2136,8 +2136,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=ClassLoading",LoadedClassCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=ClassLoading&quot;,LoadedClassCount]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2168,8 +2168,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=OperatingSystem",MaxFileDescriptorCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=OperatingSystem&quot;,MaxFileDescriptorCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2180,8 +2180,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=OperatingSystem",OpenFileDescriptorCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=OperatingSystem&quot;,OpenFileDescriptorCount]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2212,8 +2212,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=PS Scavenge",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS Scavenge&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2224,8 +2224,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=ConcurrentMarkSweep&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2236,8 +2236,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=Copy",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=Copy&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2248,8 +2248,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=MarkSweepCompact",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=MarkSweepCompact&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2260,8 +2260,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=PS MarkSweep",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=PS MarkSweep&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2272,8 +2272,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=GarbageCollector,name=ParNew",CollectionCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=GarbageCollector,name=ParNew&quot;,CollectionCount]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2304,8 +2304,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2316,8 +2316,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2328,8 +2328,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Old Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Old Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2360,8 +2360,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2372,8 +2372,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2384,8 +2384,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=CMS Perm Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=CMS Perm Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2416,8 +2416,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2428,8 +2428,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2440,8 +2440,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Code Cache",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Code Cache&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2472,8 +2472,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2484,8 +2484,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2496,8 +2496,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Perm Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Perm Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2528,8 +2528,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2540,8 +2540,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2552,8 +2552,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Old Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Old Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2584,8 +2584,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2596,8 +2596,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2608,8 +2608,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=PS Perm Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=PS Perm Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2640,8 +2640,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.committed]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.committed]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2652,8 +2652,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.max]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.max]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2664,8 +2664,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=MemoryPool,name=Tenured Gen",Usage.used]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=MemoryPool,name=Tenured Gen&quot;,Usage.used]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -2696,8 +2696,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=Threading",PeakThreadCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=Threading&quot;,PeakThreadCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2708,8 +2708,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=Threading",DaemonThreadCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=Threading&quot;,DaemonThreadCount]</key>
                     </item>
                 </graph_item>
                 <graph_item>
@@ -2720,8 +2720,8 @@
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
-                        <host>Generic JMX Active</host>
-                        <key>jmx["java.lang:type=Threading",ThreadCount]</key>
+                        <host>Template JMX Generic Active</host>
+                        <key>jmx[&quot;java.lang:type=Threading&quot;,ThreadCount]</key>
                     </item>
                 </graph_item>
             </graph_items>
