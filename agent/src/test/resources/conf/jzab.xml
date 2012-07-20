@@ -17,7 +17,13 @@ check processing timeout
 config version
  -->
  
- <logging-factory type="" />
+ <logging-factory type="" /> 	
+ <active-agent>
+ 	<server address="10.230.12.145" port="10051">
+ 		<host name="NE-WK-NWHI-01 Active"/>
+ 	</server>
+ </active-agent>
+ 
  <agent-listener interface="0.0.0.0" port="10050" name="RequestListener" >
  	<boss-pool name="NettyBoss" />
  	<worker-pool  name="NettyWorker" />
@@ -25,9 +31,6 @@ config version
  		<opt name="child.keepAlive" value="true" />
  	</socket-options>
  </agent-listener>
- <servers>
- 	<server address="zabbix" port="10051" />
- </servers>
  <thread-pools>
  	<thread-pool name="NettyBoss">
  		<pool core="1" max="10" keepalive="100" allowCoreTimeout="false" prestart="1" daemon="false"  />

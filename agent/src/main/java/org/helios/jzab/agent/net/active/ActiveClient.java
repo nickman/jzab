@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net;
+package org.helios.jzab.agent.net.active;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +34,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.net.SharableHandlers;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ClientBootstrap;
