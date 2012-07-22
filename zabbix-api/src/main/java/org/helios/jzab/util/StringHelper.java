@@ -44,6 +44,15 @@ public class StringHelper {
 	}	
 	
 	/**
+	 * Escapes json characters in the passed string
+	 * @param s The string to esacape
+	 * @return the escaped string
+	 */
+	public static String jsonEscape(String s) {
+		return s.replace("\"", "\\\"").replace("[", "\\[").replace("]", "\\]").replace("{", "\\{").replace("}", "\\}");
+	}
+	
+	/**
 	 * Acquires and truncates the current thread's StringBuilder.
 	 * @param size the inited size of the stringbuilder
 	 * @return A truncated string builder for use by the current thread.
