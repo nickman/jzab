@@ -38,6 +38,8 @@ import org.helios.jzab.agent.commands.CommandProcessorLoader;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.AgentListener;
+import org.helios.jzab.agent.net.active.ActiveAgent;
+import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.plugin.PluginLoader;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -135,9 +137,15 @@ public class JZabAgentMain {
 		}
 		bootCommandProcessors();
 		loadPlugins();
+		bootActiveClient();
+		bootActiveAgent();
+		ActiveAgent.getInstance().start();
 		//loadNativeAgent();   // ONLY LOAD IF SPECIED IN JZAB.XML
 	}
 	
+	/**
+	 * Loads and initializes the native agent
+	 */
 	public void loadNativeAgent() {
 		try {
 			log.info("Loading native agent");
@@ -165,6 +173,9 @@ public class JZabAgentMain {
 		}
 	}
 	
+	/**
+	 * Loads and configures any plugins or fixtures
+	 */
 	protected void loadPlugins() {
 		PluginLoader pl = new PluginLoader();
 		pl.loadPlugins(parsedConfigNode);
@@ -222,6 +233,22 @@ public class JZabAgentMain {
 		return cnt;
 	}
 	
+	/**
+	 * Starts the active agent.
+	 */
+	public void bootActiveAgent() {
+		log.debug("Booting ActiveAgent");		
+		Node activeAgentNode = XMLHelper.getChildNodeByName(parsedConfigNode, "active-agent", false);
+		int activeServers = 0;
+		if(activeAgentNode!=null) {
+			activeServers = ActiveAgent.getInstance(activeAgentNode).getActiveServerCount();
+		}
+		log.info("ActiveAgent Loaded with [{}] active Zabbix Servers", activeServers );
+		
+	}
+	
+	
+	
 	
 	/**
 	 * Starts all the configured agent listeners
@@ -244,6 +271,23 @@ public class JZabAgentMain {
 		}
 		return cnt;
 	}
+	
+	/**
+	 * Starts the configured active client
+	 * @return true if an active client was started, false otherwise
+	 * @throws Exception thrown if any error occurs when setting up the listeners
+	 */
+	protected boolean bootActiveClient() throws Exception {		
+		log.debug("Booting ActiveClient");
+		Node activeClientNode =XMLHelper.getChildNodeByName(parsedConfigNode, "active-client", false);
+		if(activeClientNode==null) {
+			log.debug("No active client configured");
+			return false;
+		} 
+		ActiveClient.getInstance(activeClientNode);
+		return true;
+	}
+	
 	
 	/**
 	 * The jzab agent command line entry point

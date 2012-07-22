@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -35,10 +37,13 @@ import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.SharableHandlers;
+import org.helios.jzab.agent.net.codecs.ZabbixRequestEncoder;
+import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
+import org.helios.jzab.agent.net.passive.PassiveRequestInvoker;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -48,6 +53,8 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
+import org.jboss.netty.handler.codec.string.StringDecoder;
+import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
 import org.slf4j.Logger;
@@ -89,6 +96,10 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	/** The sharable handlers repository */
 	protected final SharableHandlers sharableHandlers = SharableHandlers.getInstance();
 	
+	/** The singleton ActiveClient instance */
+	private static volatile ActiveClient instance = null;
+	/** The singleton ActiveClient instance ctor lock */
+	private static final Object lock = new Object();
 	
 	/** The netty logging handler for debugging the netty stack */
 	protected final LoggingHandler loggingHandler;
@@ -101,12 +112,39 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	/** The config type name for the worker pool type */
 	public static final String WORKER_POOL_TYPE = "worker-pool";
 	
+	/**
+	 * Returns the ActiveClient singleton instance
+	 * @return the ActiveClient singleton instance
+	 */
+	public static ActiveClient getInstance() {
+		if(instance==null) {
+				throw new IllegalStateException("The active client has not been initialized", new Throwable());
+		}
+		return instance;
+	}
+	
+	/**
+	 * Configures and returns the ActiveClient singleton instance
+	 * @param configNode The configuration node
+	 * @return the ActiveClient singleton instance
+	 */
+	public static ActiveClient getInstance(Node configNode) {
+		if(instance==null) {
+				synchronized(lock) {
+					if(instance==null) {
+						instance = new ActiveClient(configNode);
+					}
+				}
+		}
+		return instance;
+	}
+	
 	
 	/**
 	 * Creates a new ActiveClient
 	 * @param configNode The configuration node
 	 */
-	public ActiveClient(Node configNode) {
+	private ActiveClient(Node configNode) {
 		super(ThreadPoolFactory.getInstance("NotificationProcessor"));
 		if(configNode==null) throw new IllegalArgumentException("The passed configuration node was null", new Throwable());
 		String nodeName = configNode.getNodeName(); 
@@ -150,14 +188,39 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
 		//pipeline.addLast("logger", loggingHandler);
-		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
-		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
-		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
-		pipeline.addLast("passiveResponseEncoder", sharableHandlers.getHandler("responseEncoder"));
-		
-		
+		//pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
+		pipeline.addLast("responseEncoder", sharableHandlers.getHandler("responseEncoder"));
+//		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
+//		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
+		pipeline.addLast("responseDecoder", new ZabbixResponseDecoder());
 		return pipeline;
 	}
+	
+	/*
+        addChannelHandler("stringDecoder", new StringDecoder());        
+        addChannelHandler("responseEncoder", new ZabbixRequestEncoder((byte)1));
+        addChannelHandler("stringEncoder", new StringEncoder());
+        addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
+        addChannelHandler("responseDecoder", new ZabbixResponseDecoder());
+
+	 */
+	
+	
+	/**
+	 * Acquires a new channel to the passed socket
+	 * @param host The host name or ip address to connect to
+	 * @param port The listening port
+	 * @return A connected channel
+	 */
+	public Channel newChannel(String host, int port) {
+		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
+		SocketAddress sa = new InetSocketAddress(host, port);
+		Channel channel = bstrap.connect(sa).awaitUninterruptibly().getChannel();
+		channelGroup.add(channel);
+		return channel;
+	}
+	
+	
 	
 
 	

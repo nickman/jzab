@@ -25,7 +25,10 @@
 package org.helios.jzab.agent.commands;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,6 +116,42 @@ public class CommandManager implements CommandManagerMXBean {
 			}
 			throw new RuntimeException("The command processor [" + key + "] was already registered");
 		}
+	}
+	
+	/**
+	 * Returns the named command processor
+	 * @param processorName The name of the command processor to retrieve
+	 * @return the named command processor or null if one was not found
+	 */
+	public ICommandProcessor getCommandProcessor(String processorName) {
+		if(processorName==null || processorName.trim().isEmpty()) throw new IllegalArgumentException("The passed processor name was null or empty", new Throwable());
+		return commandProcessors.get(processorName);
+	}
+	
+	/**
+	 * Parses a command string
+	 * @param commandString The command string to parse
+	 * @return A string of commands where the first item is the command processor name and the remainder are the arguments.
+	 */
+	public String[] parseCommandString(CharSequence commandString) {
+			if(commandString==null) return null;
+			String cstring = commandString.toString().trim();
+			if(cstring.isEmpty()) return null;
+			int length = cstring.length();
+			int paramOpener = cstring.indexOf('[');
+			
+			if(paramOpener==-1 || cstring.charAt(length-1)!=']') {
+				return new String[]{cstring.toLowerCase()};
+			}
+			List<String> ops = new ArrayList<String>();
+			ops.add(cstring.substring(0, paramOpener).toLowerCase());
+			try {
+				Collections.addAll(ops, new CSVParser(',', '"').parseLine(cstring.substring(paramOpener+1, length-1).trim()));
+			} catch (IOException e) {
+				log.error("Failed to parse arguments in command string [{}]", commandString, e);
+				return null;
+			}
+			return ops.toArray(new String[ops.size()]);
 	}
 	
 	/**

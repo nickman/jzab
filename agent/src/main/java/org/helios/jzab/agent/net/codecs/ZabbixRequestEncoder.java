@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net.passive;
+package org.helios.jzab.agent.net.codecs;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -35,28 +35,24 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
 /**
- * <p>Title: PassiveResponseEncoder</p>
+ * <p>Title: ZabbixRequestEncoder</p>
  * <p>Description: Encodes the response to a passive check request</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.passive.PassiveResponseEncoder</code></p>
  */
 @Sharable
-public class PassiveResponseEncoder extends OneToOneEncoder {
+public class ZabbixRequestEncoder extends OneToOneEncoder {
 	/** The protocol version of the zabbix passive response processor */
 	protected final byte protocolVersion;
 
-	/** The zabbix response header in bytes */
-	private static final byte[] ZABBIX_HEADER =  "ZBXD".getBytes();
-	/** The zabbix response baseline size for creating the downstream channel buffer */
-	public static final int BASELINE_SIZE = ZABBIX_HEADER.length + 9;  // one byte for protocol, 8 bytes for length
 	
 	
 	/**
-	 * Creates a new PassiveResponseEncoder
+	 * Creates a new ZabbixRequestEncoder
 	 * @param protocolVersion The zabbix protocol version for passive check responses.
 	 */
-	public PassiveResponseEncoder(byte protocolVersion) {
+	public ZabbixRequestEncoder(byte protocolVersion) {
 		this.protocolVersion = protocolVersion;
 	}
 
@@ -68,22 +64,14 @@ public class PassiveResponseEncoder extends OneToOneEncoder {
 	protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
 		if(msg==null) return null;
 		byte[] payload = msg.toString().getBytes();
-		ChannelBuffer buffer = ChannelBuffers.buffer(BASELINE_SIZE + payload.length);
-		buffer.writeBytes(ZABBIX_HEADER);
+		ChannelBuffer buffer = ChannelBuffers.buffer(ZabbixConstants.BASELINE_SIZE + payload.length);
+		buffer.writeBytes(ZabbixConstants.ZABBIX_HEADER);
 		buffer.writeByte(protocolVersion);
-		buffer.writeBytes(encodeLittleEndianLongBytes(payload.length));
+		buffer.writeBytes(ZabbixConstants.encodeLittleEndianLongBytes(payload.length));
 		buffer.writeBytes(payload);		
 		return buffer;
 	}
 	
-	/**
-	 * Returns the passed long in the form of a little endian formatted byte array 
-	 * @param payloadLength The long value to encode
-	 * @return an byte array
-	 */
-	protected byte[] encodeLittleEndianLongBytes(long payloadLength) {
-		return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(payloadLength).array();
-	}
 	
 	
 }

@@ -24,6 +24,24 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.management.ObjectName;
+
+import org.helios.jzab.agent.SystemClock;
+import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
+import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.util.JMXHelper;
+import org.helios.jzab.util.XMLHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
+
 /**
  * <p>Title: ActiveAgent</p>
  * <p>Description: Service that coordinates the configuration and execution of active host checks</p> 
@@ -31,16 +49,187 @@ package org.helios.jzab.agent.net.active;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveAgent</code></p>
  */
-public class ActiveAgent {
+public class ActiveAgent implements ActiveAgentMXBean {
+	/** Instance logger */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/** The task scheduler */
+	protected final ScheduledThreadPoolExecutor scheduler;
+	/** The asynch task executor */
+	protected final ThreadPoolExecutor executor;
+	
+	/** The agent level refresh period in seconds */
+	protected long agentRefreshPeriod;
+	
+	/** A map of the configured active servers keyed by <code>address:port</code> */
+	protected final Map<String, ActiveServer> activeServers = new ConcurrentHashMap<String, ActiveServer>();
+	
+	/** The active agent singleton instance */
+	private static volatile ActiveAgent instance = null;
+	/** The active agent singleton instance ctor lock */
+	private static final Object lock = new Object();
+	
+	/** Indicates if the active agent has been started */
+	protected final AtomicBoolean started = new AtomicBoolean(false);
+	
+	
+	/** The ActiveAgent JMX ObjectName */
+	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.active:service=ActiveAgent");
+	/** The configuration node name */
+	public static final String NODE = "active-agent";
+	/** The default agent refresh period on which the agent attempts to refresh marching orders for all monitored servers, which is 3600 or 1 hour */
+	public static final long DEFAULT_AGENT_REFRESH = 60 *60;
+	
+	
+	/**
+	 * Initializes the ActiveAgent singleton instance
+	 * @param configNode The configuration node
+	 * @return the ActiveAgent singleton instance
+	 */
+	public static ActiveAgent getInstance(Node configNode) {
+		if(instance==null) {
+			synchronized(lock) {
+				if(instance==null) {
+					instance = new ActiveAgent(configNode);
+				}
+			}
+		}
+		return instance;
+	}
+	
+	/**
+	 * Acquires the ActiveAgent singleton instance
+	 * @return the ActiveAgent singleton instance
+	 */
+	public static ActiveAgent getInstance() {
+		if(instance==null) {
+			throw new IllegalStateException("The ActiveAgent has not been initialized", new Throwable());
+		}
+		return instance;
+	}
+	
+	/**
+	 * Returns the number of active zabbix servers configured
+	 * @return the number of active zabbix servers configured
+	 */
+	public int getActiveServerCount() {
+		return activeServers.size();
+	}
+	
+	
+	/**
+	 * Creates a new ActiveAgent
+	 * @param configNode The configuration node
+	 */
+	private ActiveAgent(Node configNode) {
+		if(configNode==null) throw new IllegalArgumentException("The passed configuration node was null", new Throwable());
+		log.info("Configuring ActiveAgent");
+		String nodeName = configNode.getNodeName(); 
+		if(!NODE.equals(nodeName)) {
+			throw new RuntimeException("Configuration Node expected to have node name [" + NODE + "] but was [" + nodeName + "]", new Throwable());
+		}
+		agentRefreshPeriod = XMLHelper.getAttributeByName(configNode, "refresh", DEFAULT_AGENT_REFRESH);		
+		String schedulerName = null, executorName = null;
+		try {
+			schedulerName = XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, "scheduler-pool", false), "name", "Scheduler");
+			scheduler = ScheduledThreadPoolFactory.getInstance(schedulerName);
+		} catch (Exception e) {
+			throw new RuntimeException("ActiveAgent failed to get scheduler named [" + schedulerName + "]", e);
+		}
+		try {
+			executorName = XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, "task-pool", false), "name", "TaskExecutor");
+			executor = ThreadPoolFactory.getInstance(executorName);
+		} catch (Exception e) {
+			throw new RuntimeException("ActiveAgent failed to get task executor named [" + executorName + "]", e);
+		}
+		
+		Node servers = XMLHelper.getChildNodeByName(configNode, "servers", false);
+		if(servers==null) {
+			log.warn("ActiveAgent had no configured servers to be active for....");
+			return;
+		}
+		int serverCount = 0;
+		for(Node serverNode: XMLHelper.getChildNodesByName(servers, "server", false)) {
+			String address = XMLHelper.getAttributeByName(serverNode, "address", null);
+			if(address==null || address.trim().isEmpty()) {
+				log.warn("Empty active agent server name. Node was [{}]", XMLHelper.getStringFromNode(serverNode));
+				continue;
+			}			
+			int port = XMLHelper.getAttributeByName(serverNode, "port", 10051);
+			long refresh = XMLHelper.getAttributeByName(serverNode, "refresh", agentRefreshPeriod);
+			String key = address + ":" + port;
+			if(activeServers.containsKey(key)) {
+				log.warn("Duplicate active server definition [{}]", key);
+				continue;
+			}
+			activeServers.put(key, new ActiveServer(address, port, refresh, XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
+			serverCount++;
+		}
+		if(serverCount==0) {
+			log.warn("ActiveAgent had no configured servers to be active for....");
+		}
+	}
+	
+	/**
+	 *  Asynchronously starts the active agent
+	 */
+	public void start() {
+		if(started.get()) {
+			log.warn("ActiveAgent already started");
+			return;
+		}
+		executor.execute(new Runnable() {
+			public void run() {
+				initializeServers();
+				started.set(true);
+			}
+		});		
+		
+	}
+	
+	protected void initializeServers() {
+		log.debug("Initializing Servers");
+		for(ActiveServer server: activeServers.values()) {
+			long currentTime = SystemClock.currentTimeMillis();
+			if(server.requiresRefresh(currentTime)) {
+				server.refreshActiveChecks();
+				
+			}
+		}
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.ActiveAgentMXBean#getLevel()
+	 */
+	@Override
+	public String getLevel() {
+		return LoggerManager.getInstance().getLoggerLevelManager().getLoggerLevel(getClass().getName());
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.ActiveAgentMXBean#setLevel(java.lang.String)
+	 */
+	@Override
+	public void setLevel(String level) {
+		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+	
 }
 
 
 /*
- <active-agent>
- 	<server address="10.230.12.145" port="10051">
- 		<host name="NE-WK-NWHI-01 Active"/>
- 	</server>
+ <active-agent refresh="10">
+ 	<scheduler-pool name="Scheduler" />
+ 	<servers>   
+	 	<server address="10.230.12.145" port="10051" refresh="20">
+	 		<hosts>
+	 			<host name="NE-WK-NWHI-01 Active" refresh="120" />
+	 		</hosts>
+	 	</server>
+ 	</servers>
  </active-agent>
  
  "response":"failed",
