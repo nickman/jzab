@@ -44,13 +44,23 @@ public class StringHelper {
 	}	
 	
 	/**
+	 * Escapes quote characters in the passed string
+	 * @param s The string to esacape
+	 * @return the escaped string
+	 */
+	public static String escapeQuotes(CharSequence s) {
+		return s.toString().replace("\"", "\\\"");
+	}
+	
+	/**
 	 * Escapes json characters in the passed string
 	 * @param s The string to esacape
 	 * @return the escaped string
 	 */
-	public static String jsonEscape(String s) {
-		return s.replace("\"", "\\\"").replace("[", "\\[").replace("]", "\\]").replace("{", "\\{").replace("}", "\\}");
+	public static String jsonEscape(CharSequence s) {
+		return s.toString().replace("\"", "\\\"").replace("[", "\\[").replace("]", "\\]").replace("{", "\\{").replace("}", "\\}");
 	}
+	
 	
 	/**
 	 * Acquires and truncates the current thread's StringBuilder.
