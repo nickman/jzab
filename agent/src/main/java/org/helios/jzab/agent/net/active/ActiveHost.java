@@ -26,6 +26,7 @@ package org.helios.jzab.agent.net.active;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +39,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.agent.commands.ICommandProcessor;
+import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.active.schedule.IScheduleBucket;
+import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
 import org.helios.jzab.agent.net.codecs.ZabbixConstants;
+import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.StringHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -54,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveHost</code></p>
  */
-public class ActiveHost implements Runnable {
+public class ActiveHost implements Runnable, ActiveHostMXBean {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The host name we're monitoring for */
@@ -71,7 +76,7 @@ public class ActiveHost implements Runnable {
 	/** The configured active host checked keyed by item name */
 	protected final Map<String, ActiveHostCheck> hostChecks = new ConcurrentHashMap<String, ActiveHostCheck>();
 	/** The schedule bucket map for this active host */
-	protected final Map<Long, Set<ActiveHostCheck>> scheduleBucket = new ConcurrentHashMap<Long, Set<ActiveHostCheck>>();
+	protected final PassiveScheduleBucket<ActiveHostCheck, ActiveHost> scheduleBucket; 
 	
 	
 	/** The JSON key for the active check mtime */
@@ -87,13 +92,18 @@ public class ActiveHost implements Runnable {
 	/**
 	 * Creates a new ActiveHost
 	 * @param hostName The host name we're monitoring for
-	 * @param refreshPeriod The frequency in seconds that this host's marching orders should be refreshed 
+	 * @param refreshPeriod The frequency in seconds that this host's marching orders should be refreshed
+	 * @param parentScheduler The parent scheduler 
+	 * @param the parent server's hostname or ip address
+	 * @param the parent server's listening port
 	 */
-	public ActiveHost(String hostName, long refreshPeriod) {
+	public ActiveHost(String hostName, long refreshPeriod, IScheduleBucket<ActiveHost> parentScheduler, String server, int port) {
 		if(hostName==null || hostName.trim().isEmpty()) throw new IllegalArgumentException("The passed host name was null or blank", new Throwable());		
 		this.hostName = hostName;
 		this.refreshPeriod = refreshPeriod;
+		scheduleBucket = new PassiveScheduleBucket<ActiveHostCheck, ActiveHost>(parentScheduler, this);
 		log.debug("Created ActiveHost [{}]", hostName);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server).append(",port=").append(port).append(",host=").append(hostName)), this);
 	}
 	
 	/**
@@ -104,6 +114,14 @@ public class ActiveHost implements Runnable {
 	public boolean requiresRefresh(long currentTime) {
 		if(state.get().requiresUpdate()) return true;
 		return TimeUnit.SECONDS.convert(currentTime - stateTimestamp, TimeUnit.MILLISECONDS) > refreshPeriod; 
+	}
+	
+	/**
+	 * Returns the state of this host
+	 * @return the state of this host
+	 */
+	public String getState() {
+		return state.get().name();
 	}
 	
 	/**
@@ -125,8 +143,7 @@ public class ActiveHost implements Runnable {
 	}
 	
 	protected void submit(ByteBuffer bb) {
-		ChannelBuffer cb = ChannelBuffers.directBuffer(ZabbixConstants.BASELINE_SIZE + bb.position());
-		
+		ChannelBuffer cb = ChannelBuffers.directBuffer(ZabbixConstants.BASELINE_SIZE + bb.position());		
 		long payloadSize = 0;
 		cb.writeBytes(ZabbixConstants.ZABBIX_HEADER);
 		cb.writeByte(ZabbixConstants.ZABBIX_PROTOCOL);
@@ -179,6 +196,37 @@ public class ActiveHost implements Runnable {
 		}
 		return results.toArray(new String[results.size()]);
 	}
+	
+	/**
+	 * Returns the logging level for this active agent listener
+	 * @return the logging level for this active agent
+	 */
+	@Override
+	public String getLevel() {
+		return LoggerManager.getInstance().getLoggerLevelManager().getLoggerLevel(getClass().getName());
+	}
+	
+	/**
+	 * Sets the logger level for this active agent
+	 * @param level The level to set this logger to
+	 */
+	@Override
+	public void setLevel(String level) {
+		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+	
+	/**
+	 * Returns a map of the number of hosts registered for checks for each delay
+	 * @return a map of the number of hosts registered for checks for each delay
+	 */
+	public Map<Long, Integer> getScheduleCounts() {
+		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
+		for(Map.Entry<Long, Set<ActiveHostCheck>> entry: scheduleBucket.entrySet()) {
+			map.put(entry.getKey(), entry.getValue().size());
+		}
+		return map;		
+	}
+	
 	
 	
 	/**
@@ -272,40 +320,11 @@ public class ActiveHost implements Runnable {
 		}
 		for(ActiveHostCheck ac: checksToRemove) {
 			hostChecks.remove(ac.itemKey);
-			removeCheckFromScheduleBucket(ac);			
+			scheduleBucket.removeItem(ac.delay, ac);			
 		}
 		return checksToRemove.size();
 	}
 	
-	/**
-	 * Updates the schedule bucket for the passed active host check
-	 * @param check The check to update for
-	 */
-	protected void updateScheduleBucket(ActiveHostCheck check) {
-		Set<ActiveHostCheck> checks = scheduleBucket.get(check.delay);
-		if(checks==null) {
-			checks = new CopyOnWriteArraySet<ActiveHostCheck>();
-			scheduleBucket.put(check.delay, checks);
-		}
-		checks.add(check);
-	}
-	
-	/**
-	 * Removes an active check from the schedule bucket
-	 * @param check The check to remove
-	 * @return true if the removal of this check also resulted in the removal of the delay bucket, false otherwise
-	 */
-	protected boolean removeCheckFromScheduleBucket(ActiveHostCheck check) {
-		Set<ActiveHostCheck> checks = scheduleBucket.get(check.delay);
-		if(checks!=null) {
-			checks.remove(check);
-			if(checks.isEmpty()) {
-				scheduleBucket.remove(check.delay);
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	/**
 	 * Determines if this active host requires a marching orders refresh
@@ -377,7 +396,7 @@ public class ActiveHost implements Runnable {
 			} else {
 				processorArguments = CommandManager.EMPTY_ARGS;
 			}
-			updateScheduleBucket(this);
+			scheduleBucket.addItem(delay, this);			
 		}
 		
 		/** The JSON response template */
@@ -422,11 +441,11 @@ public class ActiveHost implements Runnable {
 			boolean updated = false;
 			if(this.delay!=delay) {
 				// removes this check from it's current bucket
-				removeCheckFromScheduleBucket(this);
+				scheduleBucket.removeItem(this.delay, this);
 				// update this check's delay
 				this.delay=delay;
 				// add this check back into the new bucket
-				updateScheduleBucket(this);
+				scheduleBucket.addItem(this.delay, this);
 				updated = true;
 			}
 			if(this.mtime!=mtime) {

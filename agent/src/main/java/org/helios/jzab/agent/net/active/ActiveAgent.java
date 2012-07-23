@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,8 @@ import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
+import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.slf4j.Logger;
@@ -58,6 +61,14 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	protected final ScheduledThreadPoolExecutor scheduler;
 	/** The asynch task executor */
 	protected final ThreadPoolExecutor executor;
+	
+	/** The collection threading policy */
+	protected CommandThreadPolicy commandThreadPolicy;
+	/** Indicates if in memory collation of collection results should be used */
+	protected boolean inMemoryCollation;
+	
+	/** The master schedule bucket for this agent */
+	protected final ActiveScheduleBucket<ActiveServer, ActiveAgent> scheduleBucket;
 	
 	/** The agent level refresh period in seconds */
 	protected long agentRefreshPeriod;
@@ -119,6 +130,21 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	
 	
 	/**
+	 * IMPLEMENT THIS:
+	 * 		collection-policy="THREAD_PER_HOST" collate-in-memory="true"
+	 */
+	
+	/** The default collection threading policy */
+	public static final String DEFAULT_COLLECTION_POLICY = CommandThreadPolicy.THREAD_PER_HOST.name();
+	/** The collection threading policy attribute name */
+	public static final String COLLECTION_POLICY_ATTR = "collection-policy";
+	/** The default collate in memory flag */
+	public static final boolean DEFAULT_COLLATE_IN_MEM = true;
+	/** The collate in memory  attribute name */
+	public static final String COLLATE_IN_MEM_ATTR = "collate-in-memory";
+	
+	
+	/**
 	 * Creates a new ActiveAgent
 	 * @param configNode The configuration node
 	 */
@@ -143,6 +169,12 @@ public class ActiveAgent implements ActiveAgentMXBean {
 		} catch (Exception e) {
 			throw new RuntimeException("ActiveAgent failed to get task executor named [" + executorName + "]", e);
 		}
+		commandThreadPolicy = CommandThreadPolicy.forName(XMLHelper.getAttributeByName(configNode, COLLECTION_POLICY_ATTR, DEFAULT_COLLECTION_POLICY));		
+		inMemoryCollation = XMLHelper.getAttributeByName(configNode, COLLATE_IN_MEM_ATTR, DEFAULT_COLLATE_IN_MEM);
+		
+		scheduleBucket = new ActiveScheduleBucket<ActiveServer, ActiveAgent>(
+				scheduler, commandThreadPolicy, inMemoryCollation, executor, ActiveServer.class
+		);
 		
 		Node servers = XMLHelper.getChildNodeByName(configNode, "servers", false);
 		if(servers==null) {
@@ -163,12 +195,13 @@ public class ActiveAgent implements ActiveAgentMXBean {
 				log.warn("Duplicate active server definition [{}]", key);
 				continue;
 			}
-			activeServers.put(key, new ActiveServer(address, port, refresh, XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
+			activeServers.put(key, new ActiveServer(address, port, refresh, scheduleBucket,  XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
 			serverCount++;
 		}
 		if(serverCount==0) {
 			log.warn("ActiveAgent had no configured servers to be active for....");
 		}
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName("org.helios.jzab.agent.active:service=ActiveAgent"), this);
 	}
 	
 	/**
@@ -182,6 +215,7 @@ public class ActiveAgent implements ActiveAgentMXBean {
 		executor.execute(new Runnable() {
 			public void run() {
 				initializeServers();
+				setupServerSchedules();
 				started.set(true);
 			}
 		});		
@@ -209,6 +243,19 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	}
 	
 	/**
+	 * Returns a map of the number of servers registered for checks for each delay
+	 * @return a map of the number of servers registered for checks for each delay
+	 */
+	public Map<Long, Integer> getScheduleCounts() {
+		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
+		for(Map.Entry<Long, Set<ActiveServer>> entry: scheduleBucket.entrySet()) {
+			map.put(entry.getKey(), entry.getValue().size());
+		}
+		return map;
+	}
+	
+	
+	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.ActiveAgentMXBean#getLevel()
 	 */
@@ -224,6 +271,38 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	@Override
 	public void setLevel(String level) {
 		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+
+	/**
+	 * Returns the command thread policy
+	 * @return the commandThreadPolicy
+	 */
+	public String getCommandThreadPolicy() {
+		return commandThreadPolicy.name();
+	}
+
+	/**
+	 * Sets the command thread policy
+	 * @param commandThreadPolicyName the commandThreadPolicy to set
+	 */
+	public void setCommandThreadPolicy(String commandThreadPolicyName) {
+		this.commandThreadPolicy = CommandThreadPolicy.forName(commandThreadPolicyName);
+	}
+
+	/**
+	 * Indicates if in-memory collation is being used
+	 * @return the inMemoryCollation true if using memory, false if using disk
+	 */
+	public boolean isInMemoryCollation() {
+		return inMemoryCollation;
+	}
+
+	/**
+	 * Sets the in-memory collation 
+	 * @param inMemoryCollation true to use in memory, false to use disk
+	 */
+	public void setInMemoryCollation(boolean inMemoryCollation) {
+		this.inMemoryCollation = inMemoryCollation;
 	}
 	
 }

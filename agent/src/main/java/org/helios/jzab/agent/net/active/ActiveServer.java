@@ -25,10 +25,18 @@
 package org.helios.jzab.agent.net.active;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.helios.jzab.agent.SystemClock;
+import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.active.schedule.IScheduleBucket;
+import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
+import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
@@ -38,6 +46,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.MessageEvent;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +63,7 @@ import org.w3c.dom.Node;
  * </ol>
  */
 
-public class ActiveServer implements ChannelUpstreamHandler {
+public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveServerMXBean  {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -67,11 +76,22 @@ public class ActiveServer implements ChannelUpstreamHandler {
 	/** The hosts monitored for this server keyed by host name */
 	protected final Map<String, ActiveHost> activeHosts = new ConcurrentHashMap<String, ActiveHost>();
 	
-	
-	
-	
 	/** The configuration node name */
 	public static final String NODE = "hosts";
+	/** The JSON item key for the response status */
+	public static final String RESPONSE_STATUS = "response";
+	/** The JSON item value for a successful response */
+	public static final String RESPONSE_STATUS_OK = "success";
+	
+	/** The JSON item key for the response data */
+	public static final String RESPONSE_DATA = "data";
+	/** The JSON item key for the active check submission response */
+	public static final String RESPONSE_SUBMISSION = "info";
+	
+	/** THe regex pattern used to parse an active check submission response */
+	public static final Pattern INFO_RESPONSE_REGEX = Pattern.compile("Processed (\\d+) Failed (\\d+) Total (\\d+) Seconds spent (.*)$");
+	
+	protected final PassiveScheduleBucket<ActiveHost, ActiveServer> scheduleBucket;
 
 	
 	/**
@@ -79,13 +99,18 @@ public class ActiveServer implements ChannelUpstreamHandler {
 	 * @param address The ip address or host name of the zabbix server
 	 * @param port The zabbix server's listening port
 	 * @param refreshPeriod The frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
+	 * @param parentScheduler The parent scheduler bucket
 	 * @param hosts The configuration nodes for the hosts to be monitored for this zabbix server
 	 */
-	public ActiveServer(String address, int port, long refreshPeriod, Node hosts) {
+	public ActiveServer(String address, int port, long refreshPeriod, IScheduleBucket<ActiveServer> parentScheduler, Node hosts) {
 		if(address==null || address.trim().isEmpty()) throw new IllegalArgumentException("The passed zabix address was null", new Throwable());
 		this.address = address;
 		this.port = port;
 		this.refreshPeriod = refreshPeriod;
+		// ==================  UPDATE ME  ===================		
+		scheduleBucket = new PassiveScheduleBucket<ActiveHost,ActiveServer>(parentScheduler, this);
+		// ==================================================
+		
 		if(hosts!=null) {
 			String nodeName = hosts.getNodeName();
 			if(!NODE.equalsIgnoreCase(nodeName)) {
@@ -102,6 +127,7 @@ public class ActiveServer implements ChannelUpstreamHandler {
 				cnt++;
 			}
 			log.debug("Added [{}] hosts for active server [{}]", cnt, address + ":" + port);
+			JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveServer,server=").append(address).append(",port=").append(port)), this);
 		}
 	}
 	
@@ -130,6 +156,36 @@ public class ActiveServer implements ChannelUpstreamHandler {
 
 	/** A map of host names keyed by the channel id of the channel issuing the asynch request */
 	protected final Map<Integer, String> channelHostNameDecode = new ConcurrentHashMap<Integer, String>();
+	
+	/**
+	 * Returns the logging level for this active agent listener
+	 * @return the logging level for this active agent
+	 */
+	@Override
+	public String getLevel() {
+		return LoggerManager.getInstance().getLoggerLevelManager().getLoggerLevel(getClass().getName());
+	}
+	
+	/**
+	 * Sets the logger level for this active agent
+	 * @param level The level to set this logger to
+	 */
+	@Override
+	public void setLevel(String level) {
+		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+	
+	/**
+	 * Returns a map of the number of hosts registered for checks for each delay
+	 * @return a map of the number of hosts registered for checks for each delay
+	 */
+	public Map<Long, Integer> getScheduleCounts() {
+		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
+		for(Map.Entry<Long, Set<ActiveHost>> entry: scheduleBucket.entrySet()) {
+			map.put(entry.getKey(), entry.getValue().size());
+		}
+		return map;		
+	}
 	
 	/**
 	 * Executes an active check request for each host requiring an update. 
@@ -173,13 +229,6 @@ public class ActiveServer implements ChannelUpstreamHandler {
 		ctx.sendUpstream(e);		
 	}
 	
-	/** The JSON item key for the response status */
-	public static final String RESPONSE_STATUS = "response";
-	/** The JSON item value for a successful response */
-	public static final String RESPONSE_STATUS_OK = "success";
-	
-	/** The JSON item key for the response data */
-	public static final String RESPONSE_DATA = "data";
 	
 	
 	
@@ -199,12 +248,36 @@ public class ActiveServer implements ChannelUpstreamHandler {
 			} else {
 				if(RESPONSE_DATA.equalsIgnoreCase(responseType)) {
 					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA));
+				} else if(RESPONSE_SUBMISSION.equalsIgnoreCase(responseType)) {
+					processSubmissionResponse(hostName, json);
+				} else {
+					log.warn("Unrecognized Server Response Type [{}]", responseType);
 				}
 			}
 			
 		} catch (Exception e) {
 			log.warn("Failed to handle JSON response: {}", e.getMessage());
 			log.debug("Failed to handle JSON response: {}", json, e);
+		}
+	}
+	
+	/**
+	 * Parses and processes the active check submission response
+	 * @param hostName the host name that this active check response is for
+	 * @param response The server response to the active check submission
+	 * @throws JSONException Thrown if JSON response cannot be parsed
+	 */
+	protected void processSubmissionResponse(String hostName, JSONObject response) throws JSONException {
+		Matcher matcher = INFO_RESPONSE_REGEX.matcher(response.getString(RESPONSE_SUBMISSION));
+		if(!matcher.matches()) {
+			log.warn("Failed to match expected response with value [{}]", response.toString());
+		} else {
+			long processed = Long.parseLong(matcher.group(1));
+			long failed = Long.parseLong(matcher.group(2));
+			long total = Long.parseLong(matcher.group(3));
+			float time = Float.parseFloat(matcher.group(1));
+			log.info(String.format("\nActive Check Submission Results for [%s]\n\tProcessed:%s\n\tFailed:%s\n\tTotal:\n\tProcess Time:%s\n", hostName, processed, failed, total, time));
+			// DO Something USEFUL with this data
 		}
 	}
 	
@@ -225,8 +298,10 @@ public class ActiveServer implements ChannelUpstreamHandler {
 		String[] results = ah.executeChecks();
 		long elapsed = System.currentTimeMillis()-start;
 		log.info("Executed Checks for [{}] in [{}] ms.", ah.hostName, elapsed);
-		for(String result: results) {
-			log.info(result);
+		if(log.isTraceEnabled()) {
+			for(String result: results) {
+				log.trace("Refreshed Active Check [{}]", result);
+			}
 		}
 	}
 
@@ -236,7 +311,7 @@ public class ActiveServer implements ChannelUpstreamHandler {
 	 * @param refreshPeriod The frequency in seconds that marching orders should be refreshed for this host
 	 */
 	public void addActiveHost(String hostName, long refreshPeriod) {
-		activeHosts.put(hostName, new ActiveHost(hostName, refreshPeriod));
+		activeHosts.put(hostName, new ActiveHost(hostName, refreshPeriod, scheduleBucket, address, port));
 	}
 
 	/**
@@ -340,6 +415,16 @@ public class ActiveServer implements ChannelUpstreamHandler {
 				.append(", port=").append(port).append(", refreshPeriod=")
 				.append(refreshPeriod).append("]");
 		return builder.toString();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	

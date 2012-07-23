@@ -24,19 +24,45 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Map;
+
 /**
- * <p>Title: CommandThreadPolicy</p>
- * <p>Description: Enumerates the policy that specifies how chunks of command executions are apportioned across executing threads</p> 
+ * <p>Title: ActiveHostMXBean</p>
+ * <p>Description: JMX interface for ActiveHost</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.active.CommandThreadPolicy</code></p>
+ * <p><code>org.helios.jzab.agent.net.active.ActiveHostMXBean</code></p>
  */
+public interface ActiveHostMXBean {
+	/**
+	 * Returns the logging level for this active host
+	 * @return the logging level for this active host
+	 */
+	public String getLevel();
+	
+	/**
+	 * Sets the logger level for this active host
+	 * @param level The level to set this logger to
+	 */
+	public void setLevel(String level);
+	
+	/**
+	 * Returns a map of the number of checks registered for each delay
+	 * @return a map of the number of checks registered for each delay
+	 */
+	public Map<Long, Integer> getScheduleCounts();
+	
+	/**
+	 * Returns the state of this host
+	 * @return the state of this host
+	 */
+	public String getState();	
+	
+	/**
+	 * Returns an array of the unique schedule windows for this active host's checks
+	 * @return an array of longs representing the unique delays for this active host's checks
+	 */
+	public long[] getDistinctSchedules();	
+	
 
-public enum CommandThreadPolicy {
-	/** One thread is allocated to execute checks for each configured zabbix server */
-	THREAD_PER_SERVER,
-	/** One thread is allocated to execute checks for each configured active host. The default.  */
-	THREAD_PER_HOST,
-	/** One thread is allocated to execute checks for each configured active check */
-	THREAD_PER_CHECK;
 }

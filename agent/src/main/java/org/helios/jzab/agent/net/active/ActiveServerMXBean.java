@@ -27,53 +27,28 @@ package org.helios.jzab.agent.net.active;
 import java.util.Map;
 
 /**
- * <p>Title: ActiveAgentMXBean</p>
- * <p>Description: JMX interface for {@link ActiveAgent} </p> 
+ * <p>Title: ActiveServerMXBean</p>
+ * <p>Description: JMX Interface for {@link ActiveServer}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.active.ActiveAgentMXBean</code></p>
+ * <p><code>org.helios.jzab.agent.net.active.ActiveServerMXBean</code></p>
  */
-
-public interface ActiveAgentMXBean {
+public interface ActiveServerMXBean {
 	/**
-	 * Returns the logging level for this active agent listener
-	 * @return the logging level for this active agent
+	 * Returns the logging level for this active server
+	 * @return the logging level for this active server
 	 */
 	public String getLevel();
 	
 	/**
-	 * Sets the logger level for this active agent
+	 * Sets the logger level for this active server
 	 * @param level The level to set this logger to
 	 */
 	public void setLevel(String level);
 	
 	/**
-	 * Returns the command thread policy
-	 * @return the commandThreadPolicy
-	 */
-	public String getCommandThreadPolicy();
-
-	/**
-	 * Sets the command thread policy
-	 * @param commandThreadPolicyName the commandThreadPolicy to set
-	 */
-	public void setCommandThreadPolicy(String commandThreadPolicyName);
-
-	/**
-	 * Indicates if in-memory collation is being used
-	 * @return the inMemoryCollation true if using memory, false if using disk
-	 */
-	public boolean isInMemoryCollation();
-
-	/**
-	 * Sets the in-memory collation 
-	 * @param inMemoryCollation true to use in memory, false to use disk
-	 */
-	public void setInMemoryCollation(boolean inMemoryCollation);
-	
-	/**
-	 * Returns a map of the number of servers registered for checks for each delay
-	 * @return a map of the number of servers registered for checks for each delay
+	 * Returns a map of the number of hosts registered for checks for each delay
+	 * @return a map of the number of hosts registered for checks for each delay
 	 */
 	public Map<Long, Integer> getScheduleCounts();
 	

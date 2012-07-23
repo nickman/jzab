@@ -22,41 +22,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net.active;
+package org.helios.jzab.agent.net.active.schedule;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * <p>Title: ScheduleBucket</p>
- * <p>Description: Manages a schedule bucket map where sets of instances of the target type are bucketed by the delay of the scheduled event</p> 
+ * <p>Title: AbstractScheduleBucket</p>
+ * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.active.ScheduleBucket</code></p>
- * @param <T> The expected type of the scheduled items
+ * <p><code>org.helios.jzab.agent.net.active.schedule.AbstractScheduleBucket</code></p>
+ * @param <T> The type of items managed by this bucket
+ * @param <E> The scoped instance type which is passed to the parent
  */
-
-public class ScheduleBucket<T> {
-	/** Instance logger */
-	protected final Logger log; // = LoggerFactory.getLogger(getClass());
-	
+public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> {
 	/** Sets of managed items keyed by the delay of the schedule they have items in */
-	protected final Map<Long, Set<T>> scheduleBucket = new ConcurrentHashMap<Long, Set<T>>();
+	protected final Map<Long, Set<T>> scheduleBucket = new ConcurrentHashMap<Long, Set<T>>();	
 
-	/**
-	 * Creates a new ScheduleBucket
-	 * @param managedType The type of the items managed by this instance
-	 */
-	public ScheduleBucket(Class<T> managedType) {
-		log = LoggerFactory.getLogger(getClass().getName() + "-" + managedType.getSimpleName());
-	}
 	
 	/**
 	 * Adds a new managed item
@@ -72,7 +58,7 @@ public class ScheduleBucket<T> {
 					set = new CopyOnWriteArraySet<T>();
 					set.add(item);
 					scheduleBucket.put(delay, set);
-					// fire start schedule event
+					fireStartScheduledEvent(delay);
 				}
 			}
 		} else {
@@ -98,7 +84,7 @@ public class ScheduleBucket<T> {
 		if(set.remove(item)) {
 			if(set.isEmpty()) {
 				scheduleBucket.remove(delay);
-				// fire cancel schedule event
+				fireCancelScheduledEvent(delay);
 			}
 			return true;
 		}
@@ -106,25 +92,36 @@ public class ScheduleBucket<T> {
 	}
 	
 	/**
-	 * Removes a managed item from all schedule delays that it is registered in
-	 * @param item The item to remove
-	 * @return a set of the delays that were modified as a result of this operation.
+	 * Returns the managed set of items with the passed delay
+	 * @param delay The delay key
+	 * @return a set of managed items which may be null if no items have that delay
 	 */
-	public Set<Long> removeItem(T item) {
-		Set<Long> modifiedDelays = new HashSet<Long>();
-		Iterator<Map.Entry<Long, Set<T>>> iter = scheduleBucket.entrySet().iterator();
-		while(iter.hasNext()) {
-			Map.Entry<Long, Set<T>> entry = iter.next();
-			if(entry.getValue().remove(item)) {
-				modifiedDelays.add(entry.getKey());
-				if(entry.getValue().isEmpty()) {
-					iter.remove();
-					// fire cancel schedule event
-				}
-			}
-		}
-		return modifiedDelays;
+	public Set<T> get(long delay) {
+		return scheduleBucket.get(delay);
 	}
 	
-
+	/**
+	 * Returns an entry set of all the schedule entries
+	 * @return an entry set of all the schedule entries
+	 */
+	public Set<Map.Entry<Long,Set<T>>> entrySet() {
+		return scheduleBucket.entrySet();
+	}
+	
+	/**
+	 * Returns a set of all the schedule delay keys
+	 * @return a set of all the schedule delay keys
+	 */
+	public Set<Long> keySet() {
+		return scheduleBucket.keySet();
+	}
+	
+	/**
+	 * Returns the number of entries
+	 * @return the number of entries
+	 */
+	public int size() {
+		return scheduleBucket.size();
+	}
+	
 }
