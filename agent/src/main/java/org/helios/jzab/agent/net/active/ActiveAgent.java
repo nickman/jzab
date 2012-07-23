@@ -281,6 +281,7 @@ public class ActiveAgent implements ActiveAgentMXBean {
 						os = new ByteArrayOutputStream(10240);
 					}
 					log.debug("Executing initial checks for [{}]", server);
+					os.write("{\"request\":\"agent data\", \"data\":[".getBytes());
 					long start = System.currentTimeMillis();
 					server.executeChecks(os);
 					
