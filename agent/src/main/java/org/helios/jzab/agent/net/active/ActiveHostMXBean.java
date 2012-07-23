@@ -24,7 +24,9 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Title: ActiveHostMXBean</p>
@@ -62,7 +64,20 @@ public interface ActiveHostMXBean {
 	 * Returns an array of the unique schedule windows for this active host's checks
 	 * @return an array of longs representing the unique delays for this active host's checks
 	 */
-	public long[] getDistinctSchedules();	
+	public long[] getDistinctSchedules();
+	
+	/**
+	 * Returns the effective time of the last state change in seconds
+	 * @return the effective time of the last state change in seconds
+	 */
+	public long getStateTimestamp();
+	
+	/**
+	 * Returns the effective time of the last state change as a java date
+	 * @return the effective time of the last state change as a java date
+	 */
+	public Date getStateDate();
+	
 	
 
 }

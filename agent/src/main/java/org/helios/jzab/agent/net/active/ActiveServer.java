@@ -24,11 +24,14 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -75,6 +78,8 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	protected long refreshPeriod;
 	/** The hosts monitored for this server keyed by host name */
 	protected final Map<String, ActiveHost> activeHosts = new ConcurrentHashMap<String, ActiveHost>();
+	/** The asynch task executor */
+	protected final ThreadPoolExecutor executor;
 	
 	/** The configuration node name */
 	public static final String NODE = "hosts";
@@ -91,22 +96,27 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	/** THe regex pattern used to parse an active check submission response */
 	public static final Pattern INFO_RESPONSE_REGEX = Pattern.compile("Processed (\\d+) Failed (\\d+) Total (\\d+) Seconds spent (.*)$");
 	
+	/** The scheduler bucket to manage and aggregate delay windows for this server's active hosts */
 	protected final PassiveScheduleBucket<ActiveHost, ActiveServer> scheduleBucket;
-
+	/** A set of registered server response listeners */
+	protected final Set<ActiveServerResponseListener> listeners = new CopyOnWriteArraySet<ActiveServerResponseListener>();
+	
 	
 	/**
 	 * Creates a new ActiveServer
 	 * @param address The ip address or host name of the zabbix server
 	 * @param port The zabbix server's listening port
 	 * @param refreshPeriod The frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
+	 * @param executor The asynch task executor
 	 * @param parentScheduler The parent scheduler bucket
 	 * @param hosts The configuration nodes for the hosts to be monitored for this zabbix server
 	 */
-	public ActiveServer(String address, int port, long refreshPeriod, IScheduleBucket<ActiveServer> parentScheduler, Node hosts) {
+	public ActiveServer(String address, int port, long refreshPeriod, ThreadPoolExecutor executor, IScheduleBucket<ActiveServer> parentScheduler, Node hosts) {
 		if(address==null || address.trim().isEmpty()) throw new IllegalArgumentException("The passed zabix address was null", new Throwable());
 		this.address = address;
 		this.port = port;
 		this.refreshPeriod = refreshPeriod;
+		this.executor = executor;
 		// ==================  UPDATE ME  ===================		
 		scheduleBucket = new PassiveScheduleBucket<ActiveHost,ActiveServer>(parentScheduler, this);
 		// ==================================================
@@ -230,14 +240,23 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	}
 	
 	
-	
+	protected void fireResponseEvent(final JSONObject json) {
+		final ActiveServer fserver = this;
+		executor.execute(new Runnable(){
+			public void run() {
+				for(ActiveServerResponseListener listener: listeners) {
+					listener.onResponse(fserver, json);
+				}
+			}
+		});
+	}
 	
 	/**
 	 * Routes a received JSON response
 	 * @param hostName the host name that this response is for
 	 * @param json the received JSON response
 	 */
-	protected void handleJson(String hostName, JSONObject json) {
+	protected void handleJson(String hostName, final JSONObject json) {
 		if(hostName==null) throw new RuntimeException("The correlating host name was null", new Throwable());
 		log.debug("Host [{}], JSON Keys: {}",hostName,  Arrays.toString(JSONObject.getNames(json)));
 		try {
@@ -258,6 +277,8 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		} catch (Exception e) {
 			log.warn("Failed to handle JSON response: {}", e.getMessage());
 			log.debug("Failed to handle JSON response: {}", json, e);
+		} finally {
+			fireResponseEvent(json);
 		}
 	}
 	
@@ -294,16 +315,59 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 			ah.upsertActiveChecks(dataArray);
 		}
 		log.debug(ah.displayScheduleBuckets());
-		long start = System.currentTimeMillis();
-		String[] results = ah.executeChecks();
-		long elapsed = System.currentTimeMillis()-start;
-		log.info("Executed Checks for [{}] in [{}] ms.", ah.hostName, elapsed);
-		if(log.isTraceEnabled()) {
-			for(String result: results) {
-				log.trace("Refreshed Active Check [{}]", result);
-			}
+//		long start = System.currentTimeMillis();
+//		String[] results = ah.executeChecks();
+//		long elapsed = System.currentTimeMillis()-start;
+//		log.info("Executed Checks for [{}] in [{}] ms.", ah.hostName, elapsed);
+//		if(log.isTraceEnabled()) {
+//			for(String result: results) {
+//				log.trace("Refreshed Active Check [{}]", result);
+//			}
+//		}
+	}
+	
+	/**
+	 * Adds a new response listener
+	 * @param listener the listener to add
+	 */
+	public void addListener(ActiveServerResponseListener listener) {
+		if(listener!=null) {
+			listeners.add(listener);
 		}
 	}
+
+	/**
+	 * Removes a response listener
+	 * @param listener the listener to remove
+	 */
+	public void removeListener(ActiveServerResponseListener listener) {
+		if(listener!=null) {
+			listeners.remove(listener);
+		}
+	}
+	
+	
+	/**
+	 * Executes all the checks in all this server's active hosts
+	 * @param os The output stream to write the check results to
+	 */
+	public void executeChecks(OutputStream os) {			
+		for(ActiveHost ah: activeHosts.values()) {
+			ah.executeChecks(os);
+		}
+	}
+	
+	/**
+	 * Executes all the checks in all this server's active hosts for the passed delay
+	 * @param delay The delay window
+	 * @param os The output stream to write the check results to
+	 */
+	public void executeChecks(long delay,OutputStream os) {		
+		for(ActiveHost ah: activeHosts.values()) {
+			ah.executeChecks(delay, os);
+		}
+	}
+	
 
 	/**
 	 * Adds a new host to be monitored

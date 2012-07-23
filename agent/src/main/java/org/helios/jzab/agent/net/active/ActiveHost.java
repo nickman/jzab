@@ -24,15 +24,16 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -125,21 +126,38 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 	}
 	
 	/**
+	 * Returns the effective time of the last state change in seconds
+	 * @return the effective time of the last state change in seconds
+	 */
+	public long getStateTimestamp() {
+		return TimeUnit.SECONDS.convert(stateTimestamp, TimeUnit.MILLISECONDS);
+	}
+	
+	/**
+	 * Returns the effective time of the last state change as a java date
+	 * @return the effective time of the last state change as a java date
+	 */
+	public Date getStateDate() {
+		return new Date(stateTimestamp);
+	}
+	
+	
+	/**
 	 * Runnable entry point for executing this host's checks
 	 * {@inheritDoc}
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
 	public void run() {
-		ByteBuffer buffer = ZabbixConstants.collectionBuffer.get();
-		Long delay = ZabbixConstants.currentScheduleWindow.get();
-		log.debug("Collecting for host [{}] on delay [{}]", hostName, delay);
-		for(ActiveHostCheck check:  delay==-1 ? hostChecks.values() : scheduleBucket.get(delay)) {
-			if(!check.collect(buffer)) {
-				// submit
-				check.collect(buffer);
-			}
-		}		
+//		ByteBuffer buffer = ZabbixConstants.collectionBuffer.get();
+//		Long delay = ZabbixConstants.currentScheduleWindow.get();
+//		log.debug("Collecting for host [{}] on delay [{}]", hostName, delay);
+//		for(ActiveHostCheck check:  delay==-1 ? hostChecks.values() : scheduleBucket.get(delay)) {
+//			if(!check.collect(buffer)) {
+//				// submit
+//				check.collect(buffer);
+//			}
+//		}		
 	}
 	
 	protected void submit(ByteBuffer bb) {
@@ -183,18 +201,16 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 	/**
 	 * Executes all the checks for the passed delay window
 	 * @param delay The delay window
+	 * @param os THe output stream to write the results to
 	 * @return A string array of all the results
 	 */
-	public String[] executeChecks(long delay) {
+	public void executeChecks(long delay, OutputStream os) {
 		Set<ActiveHostCheck> checks = scheduleBucket.get(delay);
-		if(checks==null || checks.isEmpty()) return new String[]{};
-		Set<String> results = new HashSet<String>(checks.size());
 		for(ActiveHostCheck check: checks) {
 			try {
-				results.add(check.call());
+				check.collect(os);
 			} catch (Exception e) {}
 		}
-		return results.toArray(new String[results.size()]);
 	}
 	
 	/**
@@ -231,14 +247,13 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 	
 	/**
 	 * Executes all the checks for this host
+	 * @param os The output stream to write the check results to
 	 * @return A string array of all the results
 	 */
-	public String[] executeChecks() {
-		Set<String> results = new HashSet<String>(hostChecks.size());
+	public void executeChecks(OutputStream os) {		
 		for(long delay: getDistinctSchedules()) {
-			Collections.addAll(results, executeChecks(delay));
-		}
-		return results.toArray(new String[results.size()]);
+			executeChecks(delay, os);
+		}		
 	}
 	 
 	
@@ -400,7 +415,7 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 		}
 		
 		/** The JSON response template */
-		public static final String RESPONSE_TEMPLATE = "{ \"host\": \"%s\", \"key\": \"%s\", \"value\": \"%s\", \"clock\": %s }"; 
+		public static final String RESPONSE_TEMPLATE = "{ \"host\": \"%s\", \"key\": \"%s\", \"value\": \"%s\", \"clock\": %s },"; 
 		
 		/**
 		 * Executes this check and returns the formated string result
@@ -415,17 +430,14 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 		
 		/**
 		 * Executes this check and writes the result to the passed byte buffer
-		 * @param bb The collection byte buffer
+		 * @param os The output stream to write the results to
 		 * @return true if the result was successfully written to the buffer and the buffer was marked. Otherwise, the buffer is reset to it's original mark and false is returned.
 		 */
-		public boolean collect(ByteBuffer bb) {
+		public boolean collect(OutputStream os) {
 			try {
-				bb.mark();
-				bb.asCharBuffer().append(call());
-				bb.mark();
+				os.write(call().getBytes());
 				return true;
-			} catch (Exception e) {
-				bb.reset();
+			} catch (Exception e) {				
 				return false;
 			}
 		}

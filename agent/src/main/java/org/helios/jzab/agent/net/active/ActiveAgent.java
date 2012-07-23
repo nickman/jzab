@@ -24,6 +24,14 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,8 +48,14 @@ import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
+import org.helios.jzab.agent.net.codecs.ZabbixConstants;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.DefaultFileRegion;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -195,7 +209,7 @@ public class ActiveAgent implements ActiveAgentMXBean {
 				log.warn("Duplicate active server definition [{}]", key);
 				continue;
 			}
-			activeServers.put(key, new ActiveServer(address, port, refresh, scheduleBucket,  XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
+			activeServers.put(key, new ActiveServer(address, port, refresh, executor, scheduleBucket,  XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
 			serverCount++;
 		}
 		if(serverCount==0) {
@@ -230,9 +244,87 @@ public class ActiveAgent implements ActiveAgentMXBean {
 		for(ActiveServer server: activeServers.values()) {
 			long currentTime = SystemClock.currentTimeMillis();
 			if(server.requiresRefresh(currentTime)) {
-				server.refreshActiveChecks();				
+				server.addListener(new ActiveServerResponseListener() {
+					public boolean process(String responseStatus, String responseType) {
+						return ActiveServer.RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus) 
+								&&
+							ActiveServer.RESPONSE_SUBMISSION.equalsIgnoreCase(responseType);
+					}
+					public void onResponse(ActiveServer server, JSONObject response) {
+						executeInitialCheck(server);
+					}
+				});
+				server.refreshActiveChecks();
+				//executeInitialCheck(server);
 			}
 		}		
+	}
+	
+	protected void executeInitialCheck(final ActiveServer server) {
+		final boolean inMem = inMemoryCollation;
+		executor.execute(new Runnable() {
+			public void run() {
+				final File tmpStream;
+				try {
+					log.debug("Starting initial check execution for [{}]", server);
+					OutputStream os = null;
+					FileOutputStream fos = null;
+					
+					if(!inMem) {
+						tmpStream = File.createTempFile("jzab-sub", ".tmp");
+						log.debug("Streaming Results for [{}] to file [{}]", server.getAddress() + ":" + server.port, tmpStream);
+						fos = new FileOutputStream(tmpStream);
+						os = new BufferedOutputStream(fos);
+					} else {
+						tmpStream = null;
+						log.debug("Streaming Results for [{}] to in-memory buffer", server.getAddress() + ":" + server.port);
+						os = new ByteArrayOutputStream(10240);
+					}
+					log.debug("Executing initial checks for [{}]", server);
+					long start = System.currentTimeMillis();
+					server.executeChecks(os);
+					
+					os.write(String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes());
+					os.flush();
+					os.close();
+					long elapsed = System.currentTimeMillis()-start;
+					log.debug("\nCompleted execution of initial checks for [{}] in [{}] ms. \nSending results to server....", server, elapsed);
+					Channel channel = ActiveClient.getInstance().newChannel(server.address, server.port);
+					channel.getPipeline().addLast("jsonHandler", server);
+					final Object payload;
+					final RandomAccessFile raf;
+					if(inMem) {
+						String s = ((ByteArrayOutputStream)os).toString();
+						raf = null;
+						payload = s;
+					} else {
+						raf = new RandomAccessFile(tmpStream, "rw");
+						FileChannel fc = raf.getChannel();
+						fc.truncate(raf.length()-1);
+						fc.write(ByteBuffer.wrap(String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes()));
+						fc.force(true);
+						fc.close();
+						payload = new DefaultFileRegion(raf.getChannel(), 0, raf.length(), true);
+						channel.write(ZabbixConstants.ZABBIX_HEADER);
+						channel.write(ZabbixConstants.ZABBIX_PROTOCOL);
+						channel.write(ZabbixConstants.encodeLittleEndianLongBytes(raf.length()));
+					}
+					channel.write(payload).addListener(new ChannelFutureListener() {
+						public void operationComplete(ChannelFuture future) throws Exception {
+							if(!inMem) {
+								if(raf!=null) raf.close();
+								if(tmpStream !=null) tmpStream.delete();
+							}
+							log.debug("Initial Active Check Complete for [{}]", server);
+						}
+					});
+				} catch (Exception e) {
+					log.error("Failed to send initial checks for [{}]", server, e);
+				} finally {
+					// nothing ?
+				}	
+			}
+		});
 	}
 	
 	/** Sets of active servers with scheduled checks keyed by the delay of the checks */
