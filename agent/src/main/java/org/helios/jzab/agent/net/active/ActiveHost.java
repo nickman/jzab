@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,7 +38,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.agent.commands.ICommandProcessor;
+import org.helios.jzab.agent.net.codecs.ZabbixConstants;
 import org.helios.jzab.util.StringHelper;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -50,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveHost</code></p>
  */
-public class ActiveHost {
+public class ActiveHost implements Runnable {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The host name we're monitoring for */
@@ -100,6 +104,34 @@ public class ActiveHost {
 	public boolean requiresRefresh(long currentTime) {
 		if(state.get().requiresUpdate()) return true;
 		return TimeUnit.SECONDS.convert(currentTime - stateTimestamp, TimeUnit.MILLISECONDS) > refreshPeriod; 
+	}
+	
+	/**
+	 * Runnable entry point for executing this host's checks
+	 * {@inheritDoc}
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		ByteBuffer buffer = ZabbixConstants.collectionBuffer.get();
+		Long delay = ZabbixConstants.currentScheduleWindow.get();
+		log.debug("Collecting for host [{}] on delay [{}]", hostName, delay);
+		for(ActiveHostCheck check:  delay==-1 ? hostChecks.values() : scheduleBucket.get(delay)) {
+			if(!check.collect(buffer)) {
+				// submit
+				check.collect(buffer);
+			}
+		}		
+	}
+	
+	protected void submit(ByteBuffer bb) {
+		ChannelBuffer cb = ChannelBuffers.directBuffer(ZabbixConstants.BASELINE_SIZE + bb.position());
+		
+		long payloadSize = 0;
+		cb.writeBytes(ZabbixConstants.ZABBIX_HEADER);
+		cb.writeByte(ZabbixConstants.ZABBIX_PROTOCOL);
+		cb.writeBytes(ZabbixConstants.encodeLittleEndianLongBytes(payloadSize));
+		cb.writeBytes(bb);
 	}
 	
 	/**
@@ -357,11 +389,27 @@ public class ActiveHost {
 		 * @see java.util.concurrent.Callable#call()
 		 */
 		@Override
-		public String call() throws Exception {
+		public String call()  {
 			Object result = commandProcessor.execute(processorArguments);
 			return String.format(RESPONSE_TEMPLATE, hostName, itemKeyEsc, StringHelper.escapeQuotes(result.toString()), SystemClock.currentTimeSecs() );
 		}
 		
+		/**
+		 * Executes this check and writes the result to the passed byte buffer
+		 * @param bb The collection byte buffer
+		 * @return true if the result was successfully written to the buffer and the buffer was marked. Otherwise, the buffer is reset to it's original mark and false is returned.
+		 */
+		public boolean collect(ByteBuffer bb) {
+			try {
+				bb.mark();
+				bb.asCharBuffer().append(call());
+				bb.mark();
+				return true;
+			} catch (Exception e) {
+				bb.reset();
+				return false;
+			}
+		}
 		
 		
 		/**

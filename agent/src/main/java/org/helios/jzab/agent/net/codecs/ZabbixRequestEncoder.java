@@ -63,6 +63,9 @@ public class ZabbixRequestEncoder extends OneToOneEncoder {
 	@Override
 	protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
 		if(msg==null) return null;
+		if(msg instanceof ChannelBuffer) {
+			return msg;
+		}
 		byte[] payload = msg.toString().getBytes();
 		ChannelBuffer buffer = ChannelBuffers.buffer(ZabbixConstants.BASELINE_SIZE + payload.length);
 		buffer.writeBytes(ZabbixConstants.ZABBIX_HEADER);

@@ -25,6 +25,7 @@
 package org.helios.jzab.agent.net.active;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -187,15 +188,23 @@ public class ActiveAgent implements ActiveAgentMXBean {
 		
 	}
 	
+	/**
+	 * Initializes this agent's active servers
+	 */
 	protected void initializeServers() {
 		log.debug("Initializing Servers");
 		for(ActiveServer server: activeServers.values()) {
 			long currentTime = SystemClock.currentTimeMillis();
 			if(server.requiresRefresh(currentTime)) {
-				server.refreshActiveChecks();
-				
+				server.refreshActiveChecks();				
 			}
-		}
+		}		
+	}
+	
+	/** Sets of active servers with scheduled checks keyed by the delay of the checks */
+	protected final Map<Long, Set<ActiveServer>> serverSchedules = new ConcurrentHashMap<Long, Set<ActiveServer>>();
+	
+	protected void setupServerSchedules() {
 		
 	}
 	
