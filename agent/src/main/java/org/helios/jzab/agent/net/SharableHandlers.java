@@ -27,7 +27,8 @@ package org.helios.jzab.agent.net;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.helios.jzab.agent.net.codecs.SessionTokenHandler;
+import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
 import org.helios.jzab.agent.net.codecs.ZabbixRequestEncoder;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
 import org.helios.jzab.agent.net.passive.PassiveRequestInvoker;
@@ -79,7 +80,7 @@ public class SharableHandlers {
         addChannelHandler("stringEncoder", new StringEncoder());
         addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
         addChannelHandler("responseDecoder", new ZabbixResponseDecoder());
-        addChannelHandler("sessionTokenHandler", new SessionTokenHandler("host", "request"));        
+        addChannelHandler("responseRoutingHandler", new ResponseRoutingHandler(ThreadPoolFactory.getInstance("TaskExecutor"), "host", "request"));        
     }
    
     /**

@@ -43,6 +43,8 @@ import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -51,6 +53,8 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -181,14 +185,16 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
-		pipeline.addLast("logger", loggingHandler);
+		if(log.isTraceEnabled()) {
+			pipeline.addLast("logger", loggingHandler);
+		}
 		//pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
-		pipeline.addLast("sessionTokenHandler1", sharableHandlers.getHandler("sessionTokenHandler"));
+		pipeline.addLast("routingHandler1", sharableHandlers.getHandler("responseRoutingHandler"));
 		pipeline.addLast("responseEncoder", sharableHandlers.getHandler("responseEncoder"));		
 //		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
 //		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
 		pipeline.addLast("responseDecoder", new ZabbixResponseDecoder());
-		pipeline.addLast("sessionTokenHandler2", sharableHandlers.getHandler("sessionTokenHandler"));
+		pipeline.addLast("routingHandler2", sharableHandlers.getHandler("responseRoutingHandler"));
 		return pipeline;
 	}
 	
@@ -215,7 +221,6 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		channelGroup.add(channel);
 		return channel;
 	}
-	
 	
 	
 

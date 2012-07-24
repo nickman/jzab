@@ -26,10 +26,12 @@ package org.helios.jzab.agent.net.active;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -41,14 +43,18 @@ import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.agent.commands.ICommandProcessor;
 import org.helios.jzab.agent.logging.LoggerManager;
-import org.helios.jzab.agent.net.active.schedule.IScheduleBucket;
+import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
 import org.helios.jzab.agent.net.codecs.ZabbixConstants;
+import org.helios.jzab.agent.net.routing.JSONResponseHandler;
+import org.helios.jzab.agent.net.routing.RoutingObjectName;
+import org.helios.jzab.agent.net.routing.RoutingObjectNameFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.StringHelper;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,11 +66,13 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveHost</code></p>
  */
-public class ActiveHost implements Runnable, ActiveHostMXBean {
+public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBean, Iterable<ActiveHostCheck> {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The host name we're monitoring for */
 	protected final String hostName;
+	/** The ActiveServer parent for this host */
+	protected final ActiveServer server;
 	/** The frequency in seconds that this host's marching orders should be refreshed */
 	protected long refreshPeriod;
 	/** The command manager to execute checks */
@@ -78,6 +86,8 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 	protected final Map<String, ActiveHostCheck> hostChecks = new ConcurrentHashMap<String, ActiveHostCheck>();
 	/** The schedule bucket map for this active host */
 	protected final PassiveScheduleBucket<ActiveHostCheck, ActiveHost> scheduleBucket; 
+	/** The routing object names for this host */
+	protected final RoutingObjectName[] routingNames; 
 	
 	
 	/** The JSON key for the active check mtime */
@@ -89,23 +99,28 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 	/** The JSON key for the active check last log size */
 	public static final String CHECK_LASTLOG_SIZE = "lastlogsize";
 	
+	/** The JSON key */
+	
 	
 	/**
 	 * Creates a new ActiveHost
+	 * @param server The parent ActiveServer
 	 * @param hostName The host name we're monitoring for
-	 * @param refreshPeriod The frequency in seconds that this host's marching orders should be refreshed
-	 * @param parentScheduler The parent scheduler 
-	 * @param the parent server's hostname or ip address
-	 * @param the parent server's listening port
+	 * @param refreshPeriod The frequency in seconds that this host's marching orders should be refreshed 
 	 */
-	public ActiveHost(String hostName, long refreshPeriod, IScheduleBucket<ActiveHost> parentScheduler, String server, int port) {
-		if(hostName==null || hostName.trim().isEmpty()) throw new IllegalArgumentException("The passed host name was null or blank", new Throwable());		
+	public ActiveHost(ActiveServer server, String hostName, long refreshPeriod) {
+		if(hostName==null || hostName.trim().isEmpty()) throw new IllegalArgumentException("The passed host name was null or blank", new Throwable());
+		this.server = server;
 		this.hostName = hostName;
 		this.refreshPeriod = refreshPeriod;
-		scheduleBucket = new PassiveScheduleBucket<ActiveHostCheck, ActiveHost>(parentScheduler, this);
+		scheduleBucket = new PassiveScheduleBucket<ActiveHostCheck, ActiveHost>(server.scheduleBucket, this);
+		routingNames = new RoutingObjectName[]{RoutingObjectNameFactory.getInstance().getRoute(true, KEY_REQUEST, VALUE_ACTIVE_CHECK_REQUEST, KEY_HOST, hostName)};
+		RoutingObjectNameFactory.getInstance().registerJSONResponseHandler(this);
 		log.debug("Created ActiveHost [{}]", hostName);
-		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server).append(",port=").append(port).append(",host=").append(hostName)), this);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server.getAddress()).append(",port=").append(server.getPort()).append(",host=").append(hostName)), this);
 	}
+	
+	
 	
 	/**
 	 * Determines if this active host requires a marching orders refresh
@@ -141,6 +156,36 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 		return new Date(stateTimestamp);
 	}
 	
+	/**
+	 * Returns the number of active checks for this host
+	 * @return the number of active checks for this host
+	 */
+	public int getActiveCheckCount() {
+		return hostChecks.size();
+	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.json.JSONObject)
+	 */
+	@Override
+	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
+		String requestType = routing.getKeyProperty(KEY_REQUEST);
+		if(VALUE_ACTIVE_CHECK_REQUEST.equals(requestType)) {
+			int[] results = upsertActiveChecks(response.getJSONArray(KEY_DATA));
+			log.debug("Active Host [{}] Check Update Results (adds/updates/nochanges/removeds) {}", hostName, Arrays.toString(results)); 
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#getRoutingObjectNames()
+	 */
+	@Override
+	public RoutingObjectName[] getRoutingObjectNames() {
+		return routingNames;
+	}
 	
 	/**
 	 * Runnable entry point for executing this host's checks
@@ -349,6 +394,55 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 		return requiresRefresh(System.currentTimeMillis());
 	}
 	
+	/**
+	 * Returns the refresh period in seconds.
+	 * @return the refresh period in seconds.
+	 */
+	public long getRefreshPeriod() {
+		return refreshPeriod;
+	}
+
+
+
+	/**
+	 * Sets the refresh period in seconds
+	 * @param refreshPeriod the refresh period in seconds
+	 */
+	public void setRefreshPeriod(long refreshPeriod) {
+		if(refreshPeriod<2) throw new IllegalArgumentException("Refresh period must be at least 1 second", new Throwable());
+		this.refreshPeriod = refreshPeriod;
+	}
+
+
+
+	/**
+	 * Return the host name
+	 * @return the hostName
+	 */
+	public String getHostName() {
+		return hostName;
+	}
+
+
+
+	/**
+	 * Returns the parent active server
+	 * @return the parent active server
+	 */
+	public ActiveServer getServer() {
+		return server;
+	}
+
+
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Iterable#iterator()
+	 */
+	@Override
+	public Iterator<ActiveHostCheck> iterator() {		
+		return Collections.unmodifiableCollection(hostChecks.values()).iterator();
+	}
 	
 	
 	
@@ -603,4 +697,9 @@ public class ActiveHost implements Runnable, ActiveHostMXBean {
 		}
 		
 	}
+
+
+
+
+
 }

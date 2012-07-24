@@ -49,6 +49,7 @@ import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
 import org.helios.jzab.agent.net.codecs.ZabbixConstants;
+import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
@@ -209,7 +210,7 @@ public class ActiveAgent implements ActiveAgentMXBean {
 				log.warn("Duplicate active server definition [{}]", key);
 				continue;
 			}
-			activeServers.put(key, new ActiveServer(address, port, refresh, executor, scheduleBucket,  XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
+			activeServers.put(key, new ActiveServer(this, address, port, refresh, executor, scheduleBucket,  XMLHelper.getChildNodeByName(serverNode, "hosts", false)));
 			serverCount++;
 		}
 		if(serverCount==0) {
@@ -244,21 +245,67 @@ public class ActiveAgent implements ActiveAgentMXBean {
 		for(ActiveServer server: activeServers.values()) {
 			long currentTime = SystemClock.currentTimeMillis();
 			if(server.requiresRefresh(currentTime)) {
-				server.addListener(new ActiveServerResponseListener() {
-					public boolean process(String responseStatus, String responseType) {
-						return ActiveServer.RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus) 
-								&&
-							ActiveServer.RESPONSE_SUBMISSION.equalsIgnoreCase(responseType);
-					}
-					public void onResponse(ActiveServer server, JSONObject response) {
-						executeInitialCheck(server);
-					}
-				});
-				server.refreshActiveChecks();
+				for(ActiveHost ah: server) {
+					requestActiveChecks(server, ah, true);
+				}
+				//server.refreshActiveChecks();
 				//executeInitialCheck(server);
 			}
 		}		
 	}
+	
+	/**
+	 * Issues a request for an Active Check summary from the zabbix server.
+	 * The response for this request will be roited back to the matching instance of the {@link ActiveHost}
+	 * and handled in {@link ActiveHost#upsertActiveChecks(org.json.JSONArray)}
+	 * @param server The active server to get the active checks from 
+	 * @param host The active host to get the active checks for
+	 * @param force If true, will force the request, even if the host is up to date
+	 */
+	public void requestActiveChecks(ActiveServer server, ActiveHost host, boolean force) {
+		if(!host.isRequiresRefresh() && !force) {
+			log.debug("ActiveCheck request cancelled. Host [{}] for server [{}] is up to date and no force requested", host.getHostName(), server.getId());
+		} else {
+			final Channel channel = ActiveClient.getInstance().newChannel(server.getAddress(), server.getPort());
+			try {
+				log.debug("[Active Check] Acquired channel [{}]", channel);
+				channel.write(new JSONObject()
+					.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_REQUEST)
+					.put(JSONResponseHandler.KEY_HOST, host.getHostName())
+				);
+			} catch (Exception e) {
+				log.error("Failed to execute ActiveCheck request for server [{}]. Error was [{}]", server, e.getMessage());
+				log.debug("Failed to execute ActiveCheck request for server [{}]", server, e);
+			}			
+		}
+	}
+	
+	
+	
+	/**
+	 * Issues a request for an Active Check summary from the zabbix server.
+	 * The response for this request will be roited back to the matching instance of the {@link ActiveHost}
+	 * and handled in {@link ActiveHost#upsertActiveChecks(org.json.JSONArray)}
+	 * @param serverId The ID of zabbix server to get the active checks from 
+	 * @param hostName THe host name to get the active checks for
+	 * @param force If true, will force the request, even if the host is up to date
+	 */
+	public void requestActiveChecks(String serverId, String hostName, boolean force) {
+		if(serverId==null) throw new IllegalArgumentException("The passed serverId was null", new Throwable());
+		if(hostName==null) throw new IllegalArgumentException("The passed hostName was null", new Throwable());
+		ActiveServer server = this.activeServers.get(serverId);
+		if(server==null) {
+			log.warn("Unable to request active checks. No server with id [{}] was found", serverId);
+			throw new RuntimeException("No server with id [" + serverId + "] was found", new Throwable());			
+		}
+		ActiveHost activeHost = server.getActiveHost(hostName);
+		if(activeHost==null) {
+			log.warn("Unable to request active checks. No host named [{}] was found for server with id [{}]", hostName, serverId);
+			throw new RuntimeException("No server with id [" + serverId + "] was found", new Throwable());			
+		}
+		requestActiveChecks(server, activeHost, force);
+	}
+
 	
 	protected void executeInitialCheck(final ActiveServer server) {
 		final boolean inMem = inMemoryCollation;
@@ -291,8 +338,8 @@ public class ActiveAgent implements ActiveAgentMXBean {
 					long elapsed = System.currentTimeMillis()-start;
 					log.debug("\nCompleted execution of initial checks for [{}] in [{}] ms. \nSending results to server....", server, elapsed);
 					Channel channel = ActiveClient.getInstance().newChannel(server.address, server.port);
-					channel.getPipeline().addLast("jsonHandler", server);
-					server.channelHostNameDecode.put(channel.getId(), server.getAddress());
+					//channel.getPipeline().addLast("jsonHandler", server);
+					
 					final Object payload;
 					final RandomAccessFile raf;
 					if(inMem) {

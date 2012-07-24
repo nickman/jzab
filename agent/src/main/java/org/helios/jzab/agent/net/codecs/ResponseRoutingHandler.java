@@ -24,12 +24,17 @@
  */
 package org.helios.jzab.agent.net.codecs;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
 
+import org.helios.jzab.agent.net.routing.JSONResponseHandler;
+import org.helios.jzab.agent.net.routing.RoutingObjectName;
+import org.helios.jzab.agent.net.routing.RoutingObjectNameFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -41,26 +46,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * <p>Title: SessionTokenHandler</p>
+ * <p>Title: ResponseRoutingHandler</p>
  * <p>Description: Handler to detect a session key in the scope of an outgoing JSON request and if found, injects it back into the response JSON payload</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.codecs.SessionTokenHandler</code></p>
+ * <p><code>org.helios.jzab.agent.net.codecs.ResponseRoutingHandler</code></p>
  */
 
-public class SessionTokenHandler extends SimpleChannelHandler {
+public class ResponseRoutingHandler extends SimpleChannelHandler {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());	
 	/** A map of key/value pairs keyed by channel ID */
 	protected final Map<Integer, Map<String, String>> sessionKeys = new ConcurrentHashMap<Integer, Map<String, String>>();
 	/** A set of keys that qualify for session tokens */
 	protected final Set<String> keysToLookFor = new HashSet<String>();
+	/** The routing executor */
+	protected final ThreadPoolExecutor executor;
 	
 	/**
-	 * Creates a new SessionTokenHandler
+	 * Creates a new ResponseRoutingHandler
+	 * @param executor The routing executor
 	 * @param keys An aray of case sensitive keys
 	 */
-	public SessionTokenHandler(String...keys) {
+	public ResponseRoutingHandler(ThreadPoolExecutor executor, String...keys) {
+		this.executor = executor;
 		if(keys!=null) {
 			for(String key: keys) {
 				if(key!=null) {
@@ -68,7 +77,7 @@ public class SessionTokenHandler extends SimpleChannelHandler {
 				}
 			}
 		}
-		log.debug("Created SessionTokenHandler with keys {}", keysToLookFor);
+		log.debug("Created ResponseRoutingHandler with keys {}", keysToLookFor);
 	}
 	
 	/**
@@ -84,8 +93,9 @@ public class SessionTokenHandler extends SimpleChannelHandler {
 			Channel channel = e.getChannel();
 			for(String key: keysToLookFor) {
 				if(request.has(key)) {
-					addPair(channel.getId(), key, request.getString(key));
-					log.debug("Capturing key [{}] for channel [{}]", key, channel);
+					String value = request.getString(key);
+					addPair(channel.getId(), key, value);
+					log.debug("Captured key [{}] for channel [{}]", key + "/" + value, channel);
 					keysFound = true;
 				}
 			}
@@ -112,11 +122,26 @@ public class SessionTokenHandler extends SimpleChannelHandler {
 		if(msg instanceof JSONObject) {
 			Map<String, String> map = sessionKeys.get(e.getChannel().getId());
 			if(map!=null) {
-				JSONObject response = (JSONObject)msg;
-				for(Map.Entry<String, String> entry: map.entrySet()) {
-					if(!response.has(entry.getKey())) {
-						response.put(entry.getKey(), entry.getValue());
-						log.debug("Injected key [{}] for channel [{}]", entry.getKey() + "/" + entry.getValue(), e.getChannel().getId());
+				final JSONObject response = (JSONObject)msg;
+				for(String jsonKey: JSONObject.getNames(response)) {
+					if(JSONResponseHandler.KEY_DATA.equals(jsonKey)) continue;
+					map.put(jsonKey, response.getString(jsonKey));
+				}
+				Collection<RoutingObjectName> routingMatches = RoutingObjectNameFactory.getInstance().lookup(map);
+				log.debug("Located [{}] Routing Matches for [{}]", routingMatches.size(), map);
+				for(final RoutingObjectName ron : routingMatches) {
+					for(final JSONResponseHandler responseHandler : ron) {
+						executor.execute(new Runnable(){
+							public void run() {
+								try {
+									log.debug("Passing JSONResponse to [{}] for Routing [{}]", responseHandler, ron);
+									responseHandler.jsonResponse(ron, response);
+								} catch (Exception e) {
+									log.warn("Failed to process json response for routing [{}] on handler [{}]", ron, responseHandler);
+									log.debug("Handler failed to process json response [{}]", responseHandler, e);
+								}
+							}
+						});
 					}
 				}
 			}

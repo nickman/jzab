@@ -24,9 +24,13 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 
 /**
  * <p>Title: ActiveHostMXBean</p>
@@ -67,6 +71,12 @@ public interface ActiveHostMXBean {
 	public long[] getDistinctSchedules();
 	
 	/**
+	 * Returns the number of active checks for this host
+	 * @return the number of active checks for this host
+	 */
+	public int getActiveCheckCount();
+	
+	/**
 	 * Returns the effective time of the last state change in seconds
 	 * @return the effective time of the last state change in seconds
 	 */
@@ -77,6 +87,30 @@ public interface ActiveHostMXBean {
 	 * @return the effective time of the last state change as a java date
 	 */
 	public Date getStateDate();
+	
+	/**
+	 * Returns the refresh period in seconds.
+	 * @return the refresh period in seconds.
+	 */
+	public long getRefreshPeriod();
+
+
+
+	/**
+	 * Sets the refresh period in seconds
+	 * @param refreshPeriod the refresh period in seconds
+	 */
+	public void setRefreshPeriod(long refreshPeriod);
+
+
+
+	/**
+	 * Return the host name
+	 * @return the hostName
+	 */
+	public String getHostName();
+
+
 	
 	
 

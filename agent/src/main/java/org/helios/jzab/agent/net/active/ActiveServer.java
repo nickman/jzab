@@ -26,7 +26,9 @@ package org.helios.jzab.agent.net.active;
 
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,15 +41,14 @@ import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.schedule.IScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
+import org.helios.jzab.agent.net.routing.JSONResponseHandler;
+import org.helios.jzab.agent.net.routing.RoutingObjectName;
+import org.helios.jzab.agent.net.routing.RoutingObjectNameFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
-import org.jboss.netty.channel.MessageEvent;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,10 +67,11 @@ import org.w3c.dom.Node;
  * </ol>
  */
 
-public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveServerMXBean  {
+public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServerMXBean, Iterable<ActiveHost>  {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-
+	/** The parent ActiveAgent for this server */
+	protected final ActiveAgent agent;
 	/** The ip address or host name of the zabbix server */
 	protected final String address;
 	/** The zabbix server's listening port */
@@ -80,6 +82,9 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	protected final Map<String, ActiveHost> activeHosts = new ConcurrentHashMap<String, ActiveHost>();
 	/** The asynch task executor */
 	protected final ThreadPoolExecutor executor;
+	/** The routing object names for this host */
+	protected final RoutingObjectName[] routingNames; 
+	
 	
 	/** The configuration node name */
 	public static final String NODE = "hosts";
@@ -107,6 +112,7 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	
 	/**
 	 * Creates a new ActiveServer
+	 * @param The parent agent for this server
 	 * @param address The ip address or host name of the zabbix server
 	 * @param port The zabbix server's listening port
 	 * @param refreshPeriod The frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
@@ -114,22 +120,23 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	 * @param parentScheduler The parent scheduler bucket
 	 * @param hosts The configuration nodes for the hosts to be monitored for this zabbix server
 	 */
-	public ActiveServer(String address, int port, long refreshPeriod, ThreadPoolExecutor executor, IScheduleBucket<ActiveServer> parentScheduler, Node hosts) {
+	public ActiveServer(ActiveAgent agent, String address, int port, long refreshPeriod, ThreadPoolExecutor executor, IScheduleBucket<ActiveServer> parentScheduler, Node hosts) {
 		if(address==null || address.trim().isEmpty()) throw new IllegalArgumentException("The passed zabix address was null", new Throwable());
 		this.address = address;
+		this.agent = agent;
 		this.port = port;
 		this.refreshPeriod = refreshPeriod;
 		this.executor = executor;
 		// ==================  UPDATE ME  ===================		
 		scheduleBucket = new PassiveScheduleBucket<ActiveHost,ActiveServer>(parentScheduler, this);
 		// ==================================================
-		
+		int cnt = 0;
 		if(hosts!=null) {
 			String nodeName = hosts.getNodeName();
 			if(!NODE.equalsIgnoreCase(nodeName)) {
 				throw new RuntimeException("Configuration Node expected to have node name [" + NODE + "] but was [" + nodeName + "]", new Throwable());
 			}
-			int cnt = 0;
+			
 			for(Node hostNode: XMLHelper.getChildNodesByName(hosts, "host", false)) {
 				String name = XMLHelper.getAttributeByName(hostNode, "name", "");
 				if(name.trim().isEmpty()) {
@@ -139,10 +146,36 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 				addActiveHost(name, refresh);
 				cnt++;
 			}
-			log.debug("Added [{}] hosts for active server [{}]", cnt, address + ":" + port);
-			JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveServer,server=").append(address).append(",port=").append(port)), this);
+		}
+		routingNames = new RoutingObjectName[]{RoutingObjectNameFactory.getInstance().getRoute(true, KEY_REQUEST, VALUE_ACTIVE_CHECK_SUBMISSION)};
+		RoutingObjectNameFactory.getInstance().registerJSONResponseHandler(this);
+		log.debug("Added [{}] hosts for active server [{}]", cnt, address + ":" + port);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveServer,server=").append(address).append(",port=").append(port)), this);
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.json.JSONObject)
+	 */
+	@Override
+	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
+		String requestType = routing.getKeyProperty(KEY_REQUEST);
+		if(VALUE_ACTIVE_CHECK_SUBMISSION.equals(requestType)) {
+			
+			 
 		}
 	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#getRoutingObjectNames()
+	 */
+	@Override
+	public RoutingObjectName[] getRoutingObjectNames() {
+		return routingNames;
+	}
+		
 	
 	/**
 	 * Determines if this active server has any hosts requiring a marching orders refresh
@@ -164,11 +197,6 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		return requiresRefresh(SystemClock.currentTimeMillis());
 	}
 	
-	/** The active check request template */
-	public static final String ACTIVE_CHECK_REQUEST_TEMPLATE = "{\"request\":\"active checks\",\"host\":\"%s\"}";
-
-	/** A map of host names keyed by the channel id of the channel issuing the asynch request */
-	protected final Map<Integer, String> channelHostNameDecode = new ConcurrentHashMap<Integer, String>();
 	
 	/**
 	 * Returns the logging level for this active agent listener
@@ -201,49 +229,22 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	}
 	
 	/**
-	 * Executes an active check request for each host requiring an update. 
+	 * Returns the name ActiveHost
+	 * @param hostName the ActiveHost name 
+	 * @return the ActiveHost or null if it was not found
 	 */
-	public void refreshActiveChecks() {
-		for(final ActiveHost ah: activeHosts.values()) {
-			if(ah.isRequiresRefresh()) {
-				final Channel channel = ActiveClient.getInstance().newChannel(address, port);
-				channel.getPipeline().addLast("jsonHandler", this);		
-				channelHostNameDecode.put(channel.getId(), ah.hostName);
-				try {
-					channel.write(new JSONObject(String.format(ACTIVE_CHECK_REQUEST_TEMPLATE, ah.hostName))).addListener(new ChannelFutureListener() {
-						@Override
-						public void operationComplete(ChannelFuture future) throws Exception {
-							if(future.isSuccess()) {
-								log.debug("Request Sent to [{}] for Host [{}]", address, ah.hostName);
-							} else {
-								log.debug("Request Sent to Host [{}] failed", ah.hostName, future.getCause());
-								channelHostNameDecode.remove(channel.getId());
-							}
-						}
-					});
-				} catch (JSONException je) {
-					log.error("Failed to create ActiveCheck Request", je);
-				}
-			}
-		}
+	public ActiveHost getActiveHost(String hostName) {
+		if(hostName==null) throw new IllegalArgumentException("The passed hostName was null", new Throwable());
+		return this.activeHosts.get(hostName);
 	}
 	
 	/**
-	 * Handles decoded JSON responses from the associated zabbix server
 	 * {@inheritDoc}
-	 * @see org.jboss.netty.channel.ChannelUpstreamHandler#handleUpstream(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelEvent)
+	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
-	public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		if(e instanceof MessageEvent) {
-			Object msg = ((MessageEvent)e).getMessage();
-			if(msg instanceof JSONObject) {				
-				handleJson(channelHostNameDecode.remove(e.getChannel().getId()), (JSONObject)msg);
-			} else {
-				log.warn("Unexpected message type received: [{}]", msg.getClass().getName());
-			}
-		}
-		ctx.sendUpstream(e);		
+	public Iterator<ActiveHost> iterator() {		
+		return Collections.unmodifiableCollection(activeHosts.values()).iterator();
 	}
 	
 	
@@ -258,36 +259,36 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		});
 	}
 	
-	/**
-	 * Routes a received JSON response
-	 * @param hostName the host name that this response is for
-	 * @param json the received JSON response
-	 */
-	protected void handleJson(String hostName, final JSONObject json) {
-		if(hostName==null) throw new RuntimeException("The correlating host name was null", new Throwable());
-		log.debug("Host [{}], JSON Keys: {}",hostName,  Arrays.toString(JSONObject.getNames(json)));
-		try {
-			String responseStatus = json.getString(RESPONSE_STATUS);
-			String responseType = json.getString("request");
-			if(!RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus)) {
-				log.warn("Response indicated request failure [{}]", responseStatus);
-			} else {
-				if(RESPONSE_DATA_TYPE.equalsIgnoreCase(responseType)) {
-					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA_VALUE));
-				} else if(RESPONSE_SUBMISSION.equalsIgnoreCase(responseType)) {
-					processSubmissionResponse(hostName, json);
-				} else {
-					log.warn("Unrecognized Server Response Type [{}]", responseType);
-				}
-			}
-			
-		} catch (Exception e) {
-			log.warn("Failed to handle JSON response: {}", e.getMessage());
-			log.debug("Failed to handle JSON response: {}", json, e);
-		} finally {
-			fireResponseEvent(json);
-		}
-	}
+//	/**
+//	 * Routes a received JSON response
+//	 * @param hostName the host name that this response is for
+//	 * @param json the received JSON response
+//	 */
+//	protected void handleJson(String hostName, final JSONObject json) {
+//		if(hostName==null) throw new RuntimeException("The correlating host name was null", new Throwable());
+//		log.debug("Host [{}], JSON Keys: {}",hostName,  Arrays.toString(JSONObject.getNames(json)));
+//		try {
+//			String responseStatus = json.getString(RESPONSE_STATUS);
+//			String responseType = json.getString("request");
+//			if(!RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus)) {
+//				log.warn("Response indicated request failure [{}]", responseStatus);
+//			} else {
+//				if(RESPONSE_DATA_TYPE.equalsIgnoreCase(responseType)) {
+//					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA_VALUE));
+//				} else if(RESPONSE_SUBMISSION.equalsIgnoreCase(responseType)) {
+//					processSubmissionResponse(hostName, json);
+//				} else {
+//					log.warn("Unrecognized Server Response Type [{}]", responseType);
+//				}
+//			}
+//			
+//		} catch (Exception e) {
+//			log.warn("Failed to handle JSON response: {}", e.getMessage());
+//			log.debug("Failed to handle JSON response: {}", json, e);
+//		} finally {
+//			fireResponseEvent(json);
+//		}
+//	}
 	
 	/**
 	 * Parses and processes the active check submission response
@@ -382,7 +383,7 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	 * @param refreshPeriod The frequency in seconds that marching orders should be refreshed for this host
 	 */
 	public void addActiveHost(String hostName, long refreshPeriod) {
-		activeHosts.put(hostName, new ActiveHost(hostName, refreshPeriod, scheduleBucket, address, port));
+		activeHosts.put(hostName, new ActiveHost(this, hostName, refreshPeriod));
 	}
 
 	/**
@@ -391,6 +392,14 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	 */
 	public void addActiveHost(String hostName) {
 		addActiveHost(hostName, getRefreshPeriod());
+	}
+	
+	/**
+	 * Returns this server's address and port based ID.
+	 * @return this server's address and port based ID.
+	 */
+	public String getId() {
+		return address + ":" + port;
 	}
 	
 
@@ -430,6 +439,8 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		return port;
 	}
 
+	
+	
 
 	/**
 	 * {@inheritDoc}
@@ -497,6 +508,7 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		// TODO Auto-generated method stub
 		
 	}
+
 
 	
 	

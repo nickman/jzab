@@ -52,5 +52,25 @@ public interface ActiveServerMXBean {
 	 */
 	public Map<Long, Integer> getScheduleCounts();
 	
+	/**
+	 * Returns this server's address and port based ID.
+	 * @return this server's address and port based ID.
+	 */
+	public String getId();
+	
+	/**
+	 * Returns the ip address or host name of the zabbix server 
+	 * @return the address
+	 */
+	public String getAddress();
+
+
+	/**
+	 * Returns the zabbix server's listening port
+	 * @return the port
+	 */
+	public int getPort();
+	
+	
 
 }
