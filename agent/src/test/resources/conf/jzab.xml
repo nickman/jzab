@@ -18,24 +18,25 @@ config version
  -->
  
  <logging-factory type="" /> 	
- <active-agent refresh="10" collection-policy="THREAD_PER_HOST" collate-in-memory="true">
+ <active-agent refresh="10" collection-policy="THREAD_PER_HOST" collate-in-memory="false">
  	<scheduler-pool name="Scheduler" />
  	<task-pool  name="TaskExecutor" />
  	
  	<servers>
-	 	<server address="10.230.12.145" port="10051" refresh="30">
+	 	<server address="zabbix" port="10051" refresh="30">
+	 		<hosts>
+	 			<host name="mulder" refresh="120" />
+	 			<!--  <host name="GroovyActive" refresh="120" /> -->
+	 		</hosts>
+	 	</server>
+ 	
+ 	<!--
+ 	    	 	<server address="10.230.12.145" port="10051" refresh="30">
 	 		<hosts>
 	 			<host name="NicholasActive" refresh="120" />
 	 		</hosts>
 	 	</server>
- 	
- 	<!--    
-	 	<server address="zabbix" port="10051" refresh="30">
-	 		<hosts>
-	 			<host name="mulder" refresh="120" />
-	 			<host name="GroovyActive" refresh="120" />
-	 		</hosts>
-	 	</server>
+ 	    
 	 	
 	 	<server address="zabbix2" port="10051" refresh="40">
 	 		<hosts>

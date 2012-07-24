@@ -292,23 +292,24 @@ public class ActiveAgent implements ActiveAgentMXBean {
 					log.debug("\nCompleted execution of initial checks for [{}] in [{}] ms. \nSending results to server....", server, elapsed);
 					Channel channel = ActiveClient.getInstance().newChannel(server.address, server.port);
 					channel.getPipeline().addLast("jsonHandler", server);
+					server.channelHostNameDecode.put(channel.getId(), server.getAddress());
 					final Object payload;
 					final RandomAccessFile raf;
 					if(inMem) {
-						String s = ((ByteArrayOutputStream)os).toString();
+						String s = new String();((ByteArrayOutputStream)os).toString();
+						s = s.substring(0, s.length()-1);
 						raf = null;
 						payload = s;
 					} else {
 						raf = new RandomAccessFile(tmpStream, "rw");
 						FileChannel fc = raf.getChannel();
 						fc.truncate(raf.length()-1);
+						fc.position(fc.size());
 						fc.write(ByteBuffer.wrap(String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes()));
 						fc.force(true);
+						long length = fc.size();
 						fc.close();
-						payload = new DefaultFileRegion(raf.getChannel(), 0, raf.length(), true);
-						channel.write(ZabbixConstants.ZABBIX_HEADER);
-						channel.write(ZabbixConstants.ZABBIX_PROTOCOL);
-						channel.write(ZabbixConstants.encodeLittleEndianLongBytes(raf.length()));
+						payload = new DefaultFileRegion(raf.getChannel(), 0, length, true);
 					}
 					channel.write(payload).addListener(new ChannelFutureListener() {
 						public void operationComplete(ChannelFuture future) throws Exception {

@@ -37,9 +37,7 @@ import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.SharableHandlers;
-import org.helios.jzab.agent.net.codecs.ZabbixRequestEncoder;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
-import org.helios.jzab.agent.net.passive.PassiveRequestInvoker;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -51,10 +49,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
-import org.jboss.netty.handler.codec.frame.Delimiters;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
 import org.slf4j.Logger;
@@ -189,10 +183,12 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		ChannelPipeline pipeline = Channels.pipeline();
 		pipeline.addLast("logger", loggingHandler);
 		//pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
-		pipeline.addLast("responseEncoder", sharableHandlers.getHandler("responseEncoder"));
+		pipeline.addLast("sessionTokenHandler1", sharableHandlers.getHandler("sessionTokenHandler"));
+		pipeline.addLast("responseEncoder", sharableHandlers.getHandler("responseEncoder"));		
 //		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
 //		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
 		pipeline.addLast("responseDecoder", new ZabbixResponseDecoder());
+		pipeline.addLast("sessionTokenHandler2", sharableHandlers.getHandler("sessionTokenHandler"));
 		return pipeline;
 	}
 	

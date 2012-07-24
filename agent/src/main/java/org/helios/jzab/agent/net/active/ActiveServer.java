@@ -89,7 +89,10 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 	public static final String RESPONSE_STATUS_OK = "success";
 	
 	/** The JSON item key for the response data */
-	public static final String RESPONSE_DATA = "data";
+	public static final String RESPONSE_DATA_VALUE = "data";
+	/** The JSON item key for the response data type */
+	public static final String RESPONSE_DATA_TYPE = "active checks";
+	
 	/** The JSON item key for the active check submission response */
 	public static final String RESPONSE_SUBMISSION = "info";
 	
@@ -206,17 +209,21 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 				final Channel channel = ActiveClient.getInstance().newChannel(address, port);
 				channel.getPipeline().addLast("jsonHandler", this);		
 				channelHostNameDecode.put(channel.getId(), ah.hostName);
-				channel.write(String.format(ACTIVE_CHECK_REQUEST_TEMPLATE, ah.hostName)).addListener(new ChannelFutureListener() {
-					@Override
-					public void operationComplete(ChannelFuture future) throws Exception {
-						if(future.isSuccess()) {
-							log.debug("Request Sent to [{}] for Host [{}]", address, ah.hostName);
-						} else {
-							log.debug("Request Sent to Host [{}] failed", ah.hostName, future.getCause());
-							channelHostNameDecode.remove(channel.getId());
+				try {
+					channel.write(new JSONObject(String.format(ACTIVE_CHECK_REQUEST_TEMPLATE, ah.hostName))).addListener(new ChannelFutureListener() {
+						@Override
+						public void operationComplete(ChannelFuture future) throws Exception {
+							if(future.isSuccess()) {
+								log.debug("Request Sent to [{}] for Host [{}]", address, ah.hostName);
+							} else {
+								log.debug("Request Sent to Host [{}] failed", ah.hostName, future.getCause());
+								channelHostNameDecode.remove(channel.getId());
+							}
 						}
-					}
-				});
+					});
+				} catch (JSONException je) {
+					log.error("Failed to create ActiveCheck Request", je);
+				}
 			}
 		}
 	}
@@ -261,12 +268,12 @@ public class ActiveServer implements ChannelUpstreamHandler, Runnable, ActiveSer
 		log.debug("Host [{}], JSON Keys: {}",hostName,  Arrays.toString(JSONObject.getNames(json)));
 		try {
 			String responseStatus = json.getString(RESPONSE_STATUS);
-			String responseType = JSONObject.getNames(json)[1];
+			String responseType = json.getString("request");
 			if(!RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus)) {
 				log.warn("Response indicated request failure [{}]", responseStatus);
 			} else {
-				if(RESPONSE_DATA.equalsIgnoreCase(responseType)) {
-					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA));
+				if(RESPONSE_DATA_TYPE.equalsIgnoreCase(responseType)) {
+					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA_VALUE));
 				} else if(RESPONSE_SUBMISSION.equalsIgnoreCase(responseType)) {
 					processSubmissionResponse(hostName, json);
 				} else {
