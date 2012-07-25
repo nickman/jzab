@@ -39,6 +39,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelLocal;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.json.JSONObject;
@@ -62,6 +63,9 @@ public class ResponseRoutingHandler extends SimpleChannelHandler {
 	protected final Set<String> keysToLookFor = new HashSet<String>();
 	/** The routing executor */
 	protected final ThreadPoolExecutor executor;
+	
+	/** An optional override for requests that opaque (not json) and cannot provide routing keys */
+	public static final ChannelLocal<Map<String, String>> ROUTING_OVERRIDE = new ChannelLocal<Map<String, String>>();
 	
 	/**
 	 * Creates a new ResponseRoutingHandler
@@ -121,6 +125,9 @@ public class ResponseRoutingHandler extends SimpleChannelHandler {
 		Object msg = e.getMessage();		
 		if(msg instanceof JSONObject) {
 			Map<String, String> map = sessionKeys.get(e.getChannel().getId());
+			if(map==null) {
+				map = ROUTING_OVERRIDE.remove(e.getChannel());
+			} 
 			if(map!=null) {
 				final JSONObject response = (JSONObject)msg;
 				for(String jsonKey: JSONObject.getNames(response)) {

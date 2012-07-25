@@ -185,6 +185,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
+		pipeline.addLast("logger", loggingHandler);
 		if(log.isTraceEnabled()) {
 			pipeline.addLast("logger", loggingHandler);
 		}

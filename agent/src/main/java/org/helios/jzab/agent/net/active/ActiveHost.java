@@ -56,6 +56,7 @@ import org.helios.jzab.agent.commands.ICommandProcessor;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
+import org.helios.jzab.agent.net.active.collection.IResultCollector;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
 import org.helios.jzab.agent.net.codecs.ZabbixConstants;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
@@ -142,7 +143,14 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
 	}
 	
-	
+	/**
+	 * Returns a set of ActiveHostChecks for the passed delay
+	 * @param delay The delay to get checks for
+	 * @return a set of ActiveHostChecks 
+	 */
+	public Set<ActiveHostCheck> getChecksForDelay(long delay) {
+		return Collections.unmodifiableSet(scheduleBucket.get(delay));
+	}
 	
 	/**
 	 * Determines if this active host requires a marching orders refresh
@@ -268,14 +276,14 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	/**
 	 * Executes all the checks for the passed delay window
 	 * @param delay The delay window
-	 * @param os THe output stream to write the results to
+	 * @param collector The collector stream to write the results to
 	 * @return A string array of all the results
 	 */
-	public void executeChecks(long delay, OutputStream os) {
+	public void executeChecks(long delay, IResultCollector collector) {
 		Set<ActiveHostCheck> checks = scheduleBucket.get(delay);
 		for(ActiveHostCheck check: checks) {
 			try {
-				check.collect(os);
+				check.execute(collector);				
 			} catch (Exception e) {}
 		}
 	}
@@ -335,13 +343,13 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	
 	/**
 	 * Executes all the checks for this host
-	 * @param os The output stream to write the check results to
+	 * @param collector The result collection stream
 	 * @return A string array of all the results
 	 */
-	public void executeChecks(OutputStream os) {		
-		for(long delay: getDistinctSchedules()) {
-			executeChecks(delay, os);
-		}		
+	public void executeChecks(IResultCollector collector) {
+		for(ActiveHostCheck check: hostChecks.values()) {
+			collector.addResult(check.call());
+		}
 	}
 	 
 	
@@ -393,6 +401,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 			}
 			int checksRemoved = clearMarkedChecks();
 			log.info("Removed [{}] Active Host Checks", checksRemoved);
+			setState(ActiveHostState.ACTIVE);
 			return new int[]{adds, updates , nochanges, checksRemoved };
 		} catch (Exception e) {
 			log.error("Failed to upsert Active Host Checks [{}]", e.getMessage());
@@ -568,16 +577,11 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		
 		/**
 		 * Executes this check and writes the result to the passed byte buffer
-		 * @param os The output stream to write the results to
+		 * @param collector The collector stream to write the results to
 		 * @return true if the result was successfully written to the buffer and the buffer was marked. Otherwise, the buffer is reset to it's original mark and false is returned.
 		 */
-		public boolean collect(OutputStream os) {
-			try {
-				os.write(call().getBytes());
-				return true;
-			} catch (Exception e) {				
-				return false;
-			}
+		public void execute(IResultCollector collector) {
+			collector.addResult(call());
 		}
 		
 		
@@ -802,6 +806,27 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 */
 	public void sendNotification(Notification arg0) {
 		notificationBroadcaster.sendNotification(arg0);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ActiveHost [");
+		if (hostName != null) {
+			builder.append("hostName=");
+			builder.append(hostName);
+			builder.append(", ");
+		}
+		if (server != null) {
+			builder.append("server=");
+			builder.append(server);
+		}
+		builder.append("]");
+		return builder.toString();
 	}
 
 

@@ -24,15 +24,9 @@
  */
 package org.helios.jzab.agent.net.active;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +43,10 @@ import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
+import org.helios.jzab.agent.net.active.collection.ActiveCollectionStream;
+import org.helios.jzab.agent.net.active.collection.ActiveCollectionStreamType;
+import org.helios.jzab.agent.net.active.collection.IResultCollector;
 import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
@@ -57,7 +55,6 @@ import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.DefaultFileRegion;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,6 +133,31 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		}
 		return instance;
 	}
+	
+	/**
+	 * Returns the active checks scheduled for the passed delay
+	 * @param delay The delay to get checks for
+	 * @return the active checks scheduled 
+	 */
+	public Set<ActiveHostCheck> getChecksForDelay(long delay) {
+		Set<ActiveHostCheck> set = new HashSet<ActiveHostCheck>();
+		for(ActiveServer server : scheduleBucket.get(delay)) {
+			set.addAll(server.getChecksForDelay(delay));
+		}
+		return set;
+	}
+	
+	/**
+	 * Executes all the checks in all this agent's servers for the passed delay
+	 * @param delay The delay window
+	 * @param collector The result collection stream
+	 */
+	public void executeChecks(long delay,IResultCollector collector) {		
+		for(ActiveServer server: activeServers.values()) {
+			server.executeChecks(delay, collector);
+		}
+	}
+		
 	
 	/**
 	 * Returns the number of active zabbix servers configured
@@ -467,8 +489,23 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	public void handleNotification(Notification notif, Object handback) {
 		if ( notif instanceof AttributeChangeNotification) {
 			AttributeChangeNotification acn = (AttributeChangeNotification)notif;
+			log.debug("Handling Attribute Change Notification [{}]", acn);
 			if(handback instanceof ActiveHost) {
-				ActiveHost activeHost = (ActiveHost)handback;
+				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
+					final ActiveHost activeHost = (ActiveHost)handback;
+					final ActiveServer server = activeHost.getServer();
+					executor.execute(new Runnable(){
+						public void run() {
+							Channel channel = ActiveClient.getInstance().newChannel(server.getAddress(), server.getPort());
+//							channel.getCloseFuture().addListener(new ChannelFutureListener() {
+//								public void operationComplete(ChannelFuture future) throws Exception {
+//									log.info("Closed Submission Channel", new Throwable());
+//								}
+//							});
+							ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTMEMORY, activeHost, channel);
+						}
+					});				
+				}
 			}
 		}
 		

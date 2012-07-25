@@ -22,16 +22,31 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net.active;
+package org.helios.jzab.agent.util;
+
+import java.nio.ByteOrder;
 
 /**
- * <p>Title: IActiveCollectionStream</p>
- * <p>Description: Defines a container that is used to accumulate the results of an active check sweep</p> 
+ * <p>Title: IReadableWritableByteChannelBufferFactory</p>
+ * <p>Description: Defines a factory for creating {@link ReadableWritableByteChannelBuffer} instances</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.active.IActiveCollectionStream</code></p>
+ * <p><code>org.helios.jzab.agent.util.IReadableWritableByteChannelBufferFactory</code></p>
  */
+public interface IReadableWritableByteChannelBufferFactory {
+	/**
+	 * Creates a new ReadableWritableByteChannelBuffer
+	 * @param order The byte order of the underlying buffer
+	 * @param size The size of the buffer
+	 * @return a new ReadableWritableByteChannelBuffer
+	 */
+	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size);
 
-public interface IActiveCollectionStream {
-
+	/**
+	 * Creates a new ReadableWritableByteChannelBuffer using the native byte order
+	 * @param size The size of the buffer
+	 * @return a new ReadableWritableByteChannelBuffer
+	 */
+	public ReadableWritableByteChannelBuffer newInstance(int size);
+	
 }

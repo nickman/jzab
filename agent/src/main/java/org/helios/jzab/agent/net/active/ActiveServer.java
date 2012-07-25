@@ -24,10 +24,9 @@
  */
 package org.helios.jzab.agent.net.active;
 
-import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +38,8 @@ import java.util.regex.Pattern;
 
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
+import org.helios.jzab.agent.net.active.collection.IResultCollector;
 import org.helios.jzab.agent.net.active.schedule.IScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
@@ -46,9 +47,6 @@ import org.helios.jzab.agent.net.routing.RoutingObjectName;
 import org.helios.jzab.agent.net.routing.RoutingObjectNameFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -67,7 +65,7 @@ import org.w3c.dom.Node;
  * </ol>
  */
 
-public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServerMXBean, Iterable<ActiveHost>  {
+public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, Iterable<ActiveHost>  {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The parent ActiveAgent for this server */
@@ -162,7 +160,7 @@ public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServer
 	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
 		String requestType = routing.getKeyProperty(KEY_REQUEST);
 		if(VALUE_ACTIVE_CHECK_SUBMISSION.equals(requestType)) {
-			
+			processSubmissionResponse(response);
 			 
 		}
 	}
@@ -292,11 +290,10 @@ public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServer
 	
 	/**
 	 * Parses and processes the active check submission response
-	 * @param hostName the host name that this active check response is for
 	 * @param response The server response to the active check submission
 	 * @throws JSONException Thrown if JSON response cannot be parsed
 	 */
-	protected void processSubmissionResponse(String hostName, JSONObject response) throws JSONException {
+	protected void processSubmissionResponse(JSONObject response) throws JSONException {
 		Matcher matcher = INFO_RESPONSE_REGEX.matcher(response.getString(RESPONSE_SUBMISSION));
 		if(!matcher.matches()) {
 			log.warn("Failed to match expected response with value [{}]", response.toString());
@@ -305,7 +302,7 @@ public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServer
 			long failed = Long.parseLong(matcher.group(2));
 			long total = Long.parseLong(matcher.group(3));
 			float time = Float.parseFloat(matcher.group(1));
-			log.info(String.format("\nActive Check Submission Results for [%s]\n\tProcessed:%s\n\tFailed:%s\n\tTotal:\n\tProcess Time:%s\n", hostName, processed, failed, total, time));
+			log.info(String.format("\nActive Check Submission Results for [%s]\n\tProcessed:%s\n\tFailed:%s\n\tTotal:\n\tProcess Time:%s\n", processed, failed, total, time));
 			// DO Something USEFUL with this data
 		}
 	}
@@ -355,25 +352,40 @@ public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServer
 	}
 	
 	
+	
 	/**
-	 * Executes all the checks in all this server's active hosts
-	 * @param os The output stream to write the check results to
+	 * Executes all the checks for all hosts for this server
+	 * @param collector The result collection stream
 	 */
-	public void executeChecks(OutputStream os) {			
-		for(ActiveHost ah: activeHosts.values()) {
-			ah.executeChecks(os);
+	public void executeChecks(IResultCollector collector) {
+		for(ActiveHost host: activeHosts.values()) {
+			host.executeChecks(collector);
 		}
 	}
+
 	
 	/**
 	 * Executes all the checks in all this server's active hosts for the passed delay
 	 * @param delay The delay window
-	 * @param os The output stream to write the check results to
+	 * @param collector The result collection stream
 	 */
-	public void executeChecks(long delay,OutputStream os) {		
+	public void executeChecks(long delay,IResultCollector collector) {		
 		for(ActiveHost ah: activeHosts.values()) {
-			ah.executeChecks(delay, os);
+			ah.executeChecks(delay, collector);
 		}
+	}
+	
+	/**
+	 * Returns a set of ActiveHostChecks for the passed delay
+	 * @param delay the delay to get checks for
+	 * @return a set of ActiveHostChecks 
+	 */
+	public Set<ActiveHostCheck> getChecksForDelay(long delay) {
+		Set<ActiveHostCheck> set = new HashSet<ActiveHostCheck>();
+		for(ActiveHost host: scheduleBucket.get(delay)) {
+			set.addAll(host.getChecksForDelay(delay));
+		}
+		return set;
 	}
 	
 
@@ -499,15 +511,7 @@ public class ActiveServer implements Runnable, JSONResponseHandler, ActiveServer
 		return builder.toString();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Runnable#run()
-	 */
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
-	}
+
 
 
 	

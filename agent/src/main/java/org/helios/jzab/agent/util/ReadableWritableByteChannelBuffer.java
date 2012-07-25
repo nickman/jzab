@@ -148,6 +148,14 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 	}
 	
 	/**
+	 * Resets the buffer's writer and reader index
+	 */
+	public void reset() {
+		buffer.resetWriterIndex();
+		buffer.resetReaderIndex();
+	}
+	
+	/**
 	 * Returns the wrapped Netty channel buffer
 	 * @return the wrapped Netty channel buffer
 	 */
