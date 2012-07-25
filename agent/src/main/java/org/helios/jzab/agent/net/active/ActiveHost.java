@@ -37,11 +37,23 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.management.AttributeChangeNotification;
+import javax.management.ListenerNotFoundException;
+import javax.management.MBeanNotificationInfo;
+import javax.management.Notification;
+import javax.management.NotificationBroadcaster;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilter;
+import javax.management.NotificationListener;
+import javax.management.ObjectName;
 
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.agent.commands.ICommandProcessor;
+import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
@@ -66,7 +78,7 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveHost</code></p>
  */
-public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBean, Iterable<ActiveHostCheck> {
+public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBean, Iterable<ActiveHostCheck>, NotificationBroadcaster {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The host name we're monitoring for */
@@ -77,7 +89,16 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	protected long refreshPeriod;
 	/** The command manager to execute checks */
 	protected final CommandManager commandManager = CommandManager.getInstance();
+	/** The notification manager */
+	protected final NotificationBroadcasterSupport notificationBroadcaster = new NotificationBroadcasterSupport(ThreadPoolFactory.getInstance("NotificationProcessor"));
+	/** The notif info */
+	protected final MBeanNotificationInfo[] notificationInfos = new MBeanNotificationInfo[]{
+			new MBeanNotificationInfo(new String[]{"activehost.statechange"}, AttributeChangeNotification.class.getName(), "Fired when the state of an ActiveHost changes")
+	}; 
+	/** The sequence number generator for JMX notification sequences */
+	protected final AtomicLong notificationSequence = new AtomicLong(0L);
 	
+	protected final ObjectName objectName;
 	/** The state of this host */
 	protected final AtomicReference<ActiveHostState> state = new AtomicReference<ActiveHostState>(ActiveHostState.INIT);
 	/** The timestamp of the currently defined state in ms. */
@@ -99,7 +120,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	/** The JSON key for the active check last log size */
 	public static final String CHECK_LASTLOG_SIZE = "lastlogsize";
 	
-	/** The JSON key */
+	
 	
 	
 	/**
@@ -117,7 +138,8 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		routingNames = new RoutingObjectName[]{RoutingObjectNameFactory.getInstance().getRoute(true, KEY_REQUEST, VALUE_ACTIVE_CHECK_REQUEST, KEY_HOST, hostName)};
 		RoutingObjectNameFactory.getInstance().registerJSONResponseHandler(this);
 		log.debug("Created ActiveHost [{}]", hostName);
-		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server.getAddress()).append(",port=").append(server.getPort()).append(",host=").append(hostName)), this);
+		objectName = JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server.getAddress()).append(",port=").append(server.getPort()).append(",host=").append(hostName));
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
 	}
 	
 	
@@ -288,6 +310,27 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		return map;		
 	}
 	
+	/**
+	 * Returns the ID of this active host
+	 * @return the ID of this active host
+	 */
+	public String getId() {
+		return server.getId() + "/" + hostName;
+	}
+	
+	/**
+	 * Updates the state of this active host, sending a JMX attribute change notification if this is really a valid state change
+	 * @param state The new state
+	 */
+	protected void setState(ActiveHostState state) {
+		if(state==null) throw new IllegalArgumentException("The passed ActiveHostState was null", new Throwable());
+		ActiveHostState priorState  = this.state.getAndSet(state);
+		if(priorState!=state) {
+			this.stateTimestamp = SystemClock.currentTimeMillis();
+			sendNotification(new AttributeChangeNotification(objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("State change from [%s] to [%s]", priorState, state), "State", ActiveHostState.class.getName(), priorState.name(), state.name()));					
+		}		
+	}
+	
 	
 	
 	/**
@@ -313,6 +356,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 *  <li>The number of checks with no change<li>
 	 *  <li>The number of checks deleted<li>
 	 * </ol>
+	 * 
 	 */
 	public int[] upsertActiveChecks(JSONArray activeChecks) {
 		markAllChecks(true);
@@ -696,6 +740,68 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 			return true;
 		}
 		
+	}
+
+
+
+	/**
+	 * @param listener
+	 * @param filter
+	 * @param handback
+	 * @see javax.management.NotificationBroadcasterSupport#addNotificationListener(javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
+	 */
+	public void addNotificationListener(NotificationListener listener,
+			NotificationFilter filter, Object handback) {
+		notificationBroadcaster.addNotificationListener(listener, filter,
+				handback);
+	}
+
+
+
+	/**
+	 * @return
+	 * @see javax.management.NotificationBroadcasterSupport#getNotificationInfo()
+	 */
+	public MBeanNotificationInfo[] getNotificationInfo() {
+		return notificationBroadcaster.getNotificationInfo();
+	}
+
+
+
+	/**
+	 * @param listener
+	 * @param filter
+	 * @param handback
+	 * @throws ListenerNotFoundException
+	 * @see javax.management.NotificationBroadcasterSupport#removeNotificationListener(javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
+	 */
+	public void removeNotificationListener(NotificationListener listener,
+			NotificationFilter filter, Object handback)
+			throws ListenerNotFoundException {
+		notificationBroadcaster.removeNotificationListener(listener, filter,
+				handback);
+	}
+
+
+
+	/**
+	 * @param listener
+	 * @throws ListenerNotFoundException
+	 * @see javax.management.NotificationBroadcasterSupport#removeNotificationListener(javax.management.NotificationListener)
+	 */
+	public void removeNotificationListener(NotificationListener listener)
+			throws ListenerNotFoundException {
+		notificationBroadcaster.removeNotificationListener(listener);
+	}
+
+
+
+	/**
+	 * @param arg0
+	 * @see javax.management.NotificationBroadcasterSupport#sendNotification(javax.management.Notification)
+	 */
+	public void sendNotification(Notification arg0) {
+		notificationBroadcaster.sendNotification(arg0);
 	}
 
 

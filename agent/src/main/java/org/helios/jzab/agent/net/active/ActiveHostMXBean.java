@@ -110,7 +110,11 @@ public interface ActiveHostMXBean {
 	 */
 	public String getHostName();
 
-
+	/**
+	 * Returns the ID of this active host
+	 * @return the ID of this active host
+	 */
+	public String getId();
 	
 	
 

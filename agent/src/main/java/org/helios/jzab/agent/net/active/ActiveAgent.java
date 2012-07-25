@@ -40,6 +40,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.management.AttributeChangeNotification;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.SystemClock;
@@ -48,7 +51,6 @@ import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
 import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
-import org.helios.jzab.agent.net.codecs.ZabbixConstants;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
@@ -68,7 +70,7 @@ import org.w3c.dom.Node;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveAgent</code></p>
  */
-public class ActiveAgent implements ActiveAgentMXBean {
+public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -242,10 +244,11 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	 */
 	protected void initializeServers() {
 		log.debug("Initializing Servers");
-		for(ActiveServer server: activeServers.values()) {
+		for(ActiveServer server: activeServers.values()) {			
 			long currentTime = SystemClock.currentTimeMillis();
 			if(server.requiresRefresh(currentTime)) {
 				for(ActiveHost ah: server) {
+					ah.addNotificationListener(this, null, ah);
 					requestActiveChecks(server, ah, true);
 				}
 				//server.refreshActiveChecks();
@@ -307,13 +310,24 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	}
 
 	
-	protected void executeInitialCheck(final ActiveServer server) {
+	protected void executeInitialCheck(final ActiveHost activeHost) {
 		final boolean inMem = inMemoryCollation;
 		executor.execute(new Runnable() {
 			public void run() {
 				final File tmpStream;
 				try {
-					log.debug("Starting initial check execution for [{}]", server);
+					log.debug("Starting initial check execution for [{}]", activeHost);
+					
+				} catch (Exception e) {
+					
+				} finally {
+					
+				}
+			}
+		});
+	}
+		
+/*
 					OutputStream os = null;
 					FileOutputStream fos = null;
 					
@@ -372,9 +386,8 @@ public class ActiveAgent implements ActiveAgentMXBean {
 				} finally {
 					// nothing ?
 				}	
-			}
-		});
-	}
+		
+ */
 	
 	/** Sets of active servers with scheduled checks keyed by the delay of the checks */
 	protected final Map<Long, Set<ActiveServer>> serverSchedules = new ConcurrentHashMap<Long, Set<ActiveServer>>();
@@ -444,6 +457,21 @@ public class ActiveAgent implements ActiveAgentMXBean {
 	 */
 	public void setInMemoryCollation(boolean inMemoryCollation) {
 		this.inMemoryCollation = inMemoryCollation;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see javax.management.NotificationListener#handleNotification(javax.management.Notification, java.lang.Object)
+	 */
+	@Override
+	public void handleNotification(Notification notif, Object handback) {
+		if ( notif instanceof AttributeChangeNotification) {
+			AttributeChangeNotification acn = (AttributeChangeNotification)notif;
+			if(handback instanceof ActiveHost) {
+				ActiveHost activeHost = (ActiveHost)handback;
+			}
+		}
+		
 	}
 	
 }

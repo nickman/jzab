@@ -23,15 +23,7 @@ config version
  	<task-pool  name="TaskExecutor" />
  	
  	<servers>
-        <server address="10.230.12.145" port="10051" refresh="30">
-	 		<hosts>
-	 			<host name="NicholasActive" refresh="120" />
-	 		</hosts>
-	 	</server>
  	 	
- 	
- 	<!--
- 	    
 	 	<server address="zabbix" port="10051" refresh="30">
 	 		<hosts>
 	 			<host name="mulder" refresh="120" />
@@ -39,11 +31,20 @@ config version
 	 		</hosts>
 	 	</server>
 	 	
+ 	
+ 	<!--
+        <server address="10.230.12.145" port="10051" refresh="30">
+	 		<hosts>
+	 			<host name="NicholasActive" refresh="120" />
+	 		</hosts>
+	 	</server>
+
 	 	<server address="zabbix2" port="10051" refresh="40">
 	 		<hosts>
 	 			<host name="scully" refresh="120" />
 	 		</hosts>
 	 	</server>
+ 	    
 	 	 -->
  	</servers>
  </active-agent>
