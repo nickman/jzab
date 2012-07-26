@@ -56,20 +56,20 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixResponse> {
 		log = LoggerFactory.getLogger(getClass() + "[" + channel.getRemoteAddress() + "]" );
 		if(state==null) {
 			state = ZabbixResponse.ZHEADER;
-			log.debug("Started Response Decode [{}]", state);
+			log.trace("Started Response Decode [{}]", state);
 		}		
 		switch(state) {
 			case ZHEADER:
 				byte[] header = new byte[4];
 				 buffer.readBytes(header);
-				 log.debug("Read Response Header [{}]", new String(header));
+				 log.trace("Read Response Header [{}]", new String(header));
 				 if(!Arrays.equals(ZabbixConstants.ZABBIX_HEADER,header)) {
 					 throw new Exception("Invalid Header " + Arrays.toString(header), new Throwable());
 				 }
 				 checkpoint(ZabbixResponse.ZPROTOCOL);
 			case ZPROTOCOL:
 				byte protocol = buffer.readByte();
-				log.debug("Read Response Protocol [{}]", protocol);
+				log.trace("Read Response Protocol [{}]", protocol);
 				if(protocol!=ZabbixConstants.ZABBIX_PROTOCOL) {
 					 throw new Exception("Invalid Protocol [" + protocol + "]", new Throwable());
 				}
@@ -79,14 +79,14 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixResponse> {
 				buffer.readBytes(rLength);
 				long length = ZabbixConstants.decodeLittleEndianLongBytes(rLength);
 				ctx.setAttachment(length);
-				log.debug("Read Response Length: [{}]", length);
+				log.trace("Read Response Length: [{}]", length);
 				checkpoint(ZabbixResponse.JSON);
 			case JSON:
 				length = (Long)ctx.getAttachment();
 				byte[] jsonBytes = new byte[(int)length];
 				buffer.readBytes(jsonBytes);
 				JSONObject obj = new JSONObject(new String(jsonBytes));
-				log.debug("Decoded JSONObject [{}]",  obj.toString());
+				log.trace("Decoded JSONObject [{}]",  obj.toString());
 				return obj;
 		}
 		return null;

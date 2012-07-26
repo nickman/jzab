@@ -130,5 +130,22 @@ public interface IActiveCollectionStream extends IResultCollector {
 	public int getLengthPosition();
 	
 	
+	/**
+	 * Returns the total size of the request to be sent to the zabbix server
+	 * @return the total size (in bytes) of the request to be sent to the zabbix server
+	 */
+	public long getTotalSize();
 	
+	/**
+	 * Returns the elapsed time to execute the checks in ms.
+	 * @return the elapsed time to execute the checks in ms.
+	 */
+	public long getCheckExecutionElapsedTime();
+	
+	/**
+	 * Returns the total elapsed time to execute this collection stream in ms.
+	 * @return the total elapsed time to execute this collection stream in ms.
+	 */
+	public long getTotalElapsedTime();
+
 }

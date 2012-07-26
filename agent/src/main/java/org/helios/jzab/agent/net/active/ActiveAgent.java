@@ -24,7 +24,6 @@
  */
 package org.helios.jzab.agent.net.active;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,8 +52,6 @@ import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +94,8 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	
 	/** Indicates if the active agent has been started */
 	protected final AtomicBoolean started = new AtomicBoolean(false);
+	/** Sets of active servers with scheduled checks keyed by the delay of the checks */
+	protected final Map<Long, Set<ActiveServer>> serverSchedules = new ConcurrentHashMap<Long, Set<ActiveServer>>();
 	
 	
 	/** The ActiveAgent JMX ObjectName */
@@ -212,7 +211,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		inMemoryCollation = XMLHelper.getAttributeByName(configNode, COLLATE_IN_MEM_ATTR, DEFAULT_COLLATE_IN_MEM);
 		
 		scheduleBucket = new ActiveScheduleBucket<ActiveServer, ActiveAgent>(
-				scheduler, commandThreadPolicy, inMemoryCollation, executor, ActiveServer.class
+				ActiveServer.class
 		);
 		
 		Node servers = XMLHelper.getChildNodeByName(configNode, "servers", false);
@@ -252,6 +251,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			return;
 		}
 		executor.execute(new Runnable() {
+			@Override
 			public void run() {
 				initializeServers();
 				setupServerSchedules();
@@ -315,6 +315,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * @param hostName THe host name to get the active checks for
 	 * @param force If true, will force the request, even if the host is up to date
 	 */
+	@Override
 	public void requestActiveChecks(String serverId, String hostName, boolean force) {
 		if(serverId==null) throw new IllegalArgumentException("The passed serverId was null", new Throwable());
 		if(hostName==null) throw new IllegalArgumentException("The passed hostName was null", new Throwable());
@@ -330,20 +331,43 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		}
 		requestActiveChecks(server, activeHost, force);
 	}
+	
+	/**
+	 * Executes a check of all an active hosts checks and submits asynchronously
+	 * @param serverId The id of the server managing the host to execute checks for
+	 * @param hostName The name of the active host to execute checks for
+	 */
+	public void executeChecks(String serverId, String hostName) {
+		if(serverId==null) throw new IllegalArgumentException("The passed serverId was null", new Throwable());
+		if(hostName==null) throw new IllegalArgumentException("The passed hostName was null", new Throwable());
+		ActiveServer server = activeServers.get(serverId);
+		if(server==null) {
+			log.warn("Unable to execute active checks. No server with id [{}] was found", serverId);
+			throw new RuntimeException("No server with id [" + serverId + "] was found", new Throwable());			
+		}
+		ActiveHost activeHost = server.getActiveHost(hostName);
+		if(activeHost==null) {
+			log.warn("Unable to execute active checks. No host named [{}] was found for server with id [{}]", hostName, serverId);
+			throw new RuntimeException("No server with id [" + serverId + "] was found", new Throwable());			
+		}
+		executeChecks(activeHost);
+	}
+	
 
 	
-	protected void executeInitialCheck(final ActiveHost activeHost) {
-		final boolean inMem = inMemoryCollation;
+	/**
+	 * Executes a check of all an active hosts checks and submits asynchronously
+	 * @param activeHost The active host to execute checks for
+	 */
+	protected void executeChecks(final ActiveHost activeHost) {
 		executor.execute(new Runnable() {
+			@Override
 			public void run() {
-				final File tmpStream;
 				try {
-					log.debug("Starting initial check execution for [{}]", activeHost);
-					
+					ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTMEMORY, activeHost, ActiveClient.getInstance().newChannel(activeHost.getServer().getAddress(), activeHost.getServer().getPort()));					
 				} catch (Exception e) {
-					
-				} finally {
-					
+					log.error("Collection Failure", e);
+				} finally {					
 				}
 			}
 		});
@@ -411,9 +435,10 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		
  */
 	
-	/** Sets of active servers with scheduled checks keyed by the delay of the checks */
-	protected final Map<Long, Set<ActiveServer>> serverSchedules = new ConcurrentHashMap<Long, Set<ActiveServer>>();
 	
+	/**
+	 * Schedules the repeating checks for this agent's current servers
+	 */
 	protected void setupServerSchedules() {
 		
 	}
@@ -422,6 +447,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * Returns a map of the number of servers registered for checks for each delay
 	 * @return a map of the number of servers registered for checks for each delay
 	 */
+	@Override
 	public Map<Long, Integer> getScheduleCounts() {
 		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
 		for(Map.Entry<Long, Set<ActiveServer>> entry: scheduleBucket.entrySet()) {
@@ -453,6 +479,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * Returns the command thread policy
 	 * @return the commandThreadPolicy
 	 */
+	@Override
 	public String getCommandThreadPolicy() {
 		return commandThreadPolicy.name();
 	}
@@ -461,6 +488,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * Sets the command thread policy
 	 * @param commandThreadPolicyName the commandThreadPolicy to set
 	 */
+	@Override
 	public void setCommandThreadPolicy(String commandThreadPolicyName) {
 		this.commandThreadPolicy = CommandThreadPolicy.forName(commandThreadPolicyName);
 	}
@@ -469,6 +497,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * Indicates if in-memory collation is being used
 	 * @return the inMemoryCollation true if using memory, false if using disk
 	 */
+	@Override
 	public boolean isInMemoryCollation() {
 		return inMemoryCollation;
 	}
@@ -477,6 +506,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * Sets the in-memory collation 
 	 * @param inMemoryCollation true to use in memory, false to use disk
 	 */
+	@Override
 	public void setInMemoryCollation(boolean inMemoryCollation) {
 		this.inMemoryCollation = inMemoryCollation;
 	}
@@ -492,25 +522,11 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			log.debug("Handling Attribute Change Notification [{}]", acn);
 			if(handback instanceof ActiveHost) {
 				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
-					final ActiveHost activeHost = (ActiveHost)handback;
-					final ActiveServer server = activeHost.getServer();
-					executor.execute(new Runnable(){
-						public void run() {
-							Channel channel = ActiveClient.getInstance().newChannel(server.getAddress(), server.getPort());
-//							channel.getCloseFuture().addListener(new ChannelFutureListener() {
-//								public void operationComplete(ChannelFuture future) throws Exception {
-//									log.info("Closed Submission Channel", new Throwable());
-//								}
-//							});
-							ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTMEMORY, activeHost, channel);
-						}
-					});				
+					executeChecks((ActiveHost)handback);
 				}
 			}
 		}
-		
 	}
-	
 }
 
 

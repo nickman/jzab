@@ -24,13 +24,8 @@
  */
 package org.helios.jzab.agent.net.active;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 
 /**
  * <p>Title: ActiveHostMXBean</p>

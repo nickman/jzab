@@ -77,5 +77,21 @@ public interface ActiveAgentMXBean {
 	 */
 	public Map<Long, Integer> getScheduleCounts();
 	
+	/**
+	 * Issues a request for an Active Check summary from the zabbix server.
+	 * The response for this request will be roited back to the matching instance of the {@link ActiveHost}
+	 * and handled in {@link ActiveHost#upsertActiveChecks(org.json.JSONArray)}
+	 * @param serverId The ID of zabbix server to get the active checks from 
+	 * @param hostName THe host name to get the active checks for
+	 * @param force If true, will force the request, even if the host is up to date
+	 */
+	public void requestActiveChecks(String serverId, String hostName, boolean force);	
+	
+	/**
+	 * Executes a check of all an active hosts checks and submits asynchronously
+	 * @param serverId The id of the server managing the host to execute checks for
+	 * @param hostName The name of the active host to execute checks for
+	 */
+	public void executeChecks(String serverId, String hostName);
 
 }

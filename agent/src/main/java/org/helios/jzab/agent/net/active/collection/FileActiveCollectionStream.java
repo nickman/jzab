@@ -32,6 +32,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 
+import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -77,21 +78,21 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	 */
 	@Override
 	public ChannelFuture writeToChannel(Channel channel) {
-		channel.getCloseFuture().addListener(new ChannelFutureListener() {
-			public void operationComplete(ChannelFuture future) throws Exception {
-				tmpFile.delete();
-			}
-		});
-		//return channel.write(new DefaultFileRegion(fileChannel, 0, tmpFile.length(), true));
 		try {
 			//ChannelFuture cf = channel.write(ChannelBuffers.wrappedBuffer(fileChannel.map(MapMode.READ_ONLY, 0, tmpFile.length())));
 			ChannelFuture cf = channel.write(new DefaultFileRegion(fileChannel, 0, tmpFile.length(), true));
-			
 			final FileChannel fChannel = fileChannel;
 			cf.addListener(new ChannelFutureListener() {
+				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
-					fChannel.close();
-					log.debug("Closed FileChannel for [{}]", tmpFile);
+					try { fChannel.close(); } catch (Exception e) {}
+					tmpFile.delete();
+					log.debug("Closed FileChannel for [{}]", tmpFile);					
+					if(future.isSuccess()) {					
+						long elapsed = SystemClock.currentTimeMillis()-startTime;
+						completeElapsedTime.set(elapsed);
+						log.debug("Collection Stream of size [{}] bytes Completed in [{}] ms.",  getTotalSize(), elapsed);
+					}
 				}
 			});
 			return cf;

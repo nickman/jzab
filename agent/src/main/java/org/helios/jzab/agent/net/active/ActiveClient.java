@@ -29,6 +29,7 @@ import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -36,6 +37,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.SharableHandlers;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
 import org.helios.jzab.util.JMXHelper;
@@ -53,8 +55,6 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -67,7 +67,7 @@ import org.w3c.dom.Node;
  * <p><code>org.helios.jzab.agent.net.ActiveClient</code></p>
  */
 
-public class ActiveClient extends NotificationBroadcasterSupport implements ChannelPipelineFactory {
+public class ActiveClient extends NotificationBroadcasterSupport implements ChannelPipelineFactory, ActiveClientMXBean  {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The name of this active agent  */
@@ -99,6 +99,9 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	/** The singleton ActiveClient instance ctor lock */
 	private static final Object lock = new Object();
 	
+	/** The ActiveAgent  JMX ObjectName */
+	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.client:service=ActiveClient");
+	
 	/** The netty logging handler for debugging the netty stack */
 	protected final LoggingHandler loggingHandler;
 	
@@ -109,6 +112,9 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	public static final String BOSS_POOL_TYPE = "boss-pool";
 	/** The config type name for the worker pool type */
 	public static final String WORKER_POOL_TYPE = "worker-pool";
+	
+	/** The channel connection timeout in ms. that is used on connection requests if no timeout socket option has been specified */
+	public static final int DEFAULT_CONNECT_TIMEOUT = 1000;
 	
 	/**
 	 * Returns the ActiveClient singleton instance
@@ -137,6 +143,14 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		return instance;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.ActiveClientMXBean#getChannelCount()
+	 */
+	@Override
+	public int getChannelCount() {
+		return channelGroup.size();
+	}
 	
 	/**
 	 * Creates a new ActiveClient
@@ -175,6 +189,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		bstrap = new ClientBootstrap(channelFactory);
 		bstrap.setPipelineFactory(this);
 		bstrap.setOptions(socketOptions);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
 		log.info("Created ActiveAgent [{}]", agentName);
 	}
 	
@@ -185,7 +200,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
-		pipeline.addLast("logger", loggingHandler);
+		//pipeline.addLast("logger", loggingHandler);
 		if(log.isTraceEnabled()) {
 			pipeline.addLast("logger", loggingHandler);
 		}
@@ -208,9 +223,42 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 
 	 */
 	
+	/**
+	 * Returns the logging level for this active client
+	 * @return the logging level for this active client
+	 */
+	@Override
+	public String getLevel() {
+		return LoggerManager.getInstance().getLoggerLevelManager().getLoggerLevel(getClass().getName());
+	}
 	
 	/**
-	 * Acquires a new channel to the passed socket
+	 * Sets the logger level for this active client
+	 * @param level The level to set this logger to
+	 */
+	@Override
+	public void setLevel(String level) {
+		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
+	}
+	
+	
+	/**
+	 * Acquires a new channel to the passed socket asyncrhonously.
+	 * The passed future listener should implement the action to be executed when the channel is acquired
+	 * and an error handler in the event that the connection fails.
+	 * @param host The host name or ip address to connect to
+	 * @param port The listening port
+	 * @param futureListener The callback executed when the connection is acquired or failed
+	 */
+	public void newChannel(String host, int port, ChannelFutureListener futureListener) {
+		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
+		if(futureListener==null) throw new IllegalArgumentException("The passed callback listener was null", new Throwable());
+		SocketAddress sa = new InetSocketAddress(host, port);
+		bstrap.connect(sa).addListener(futureListener);		
+	}
+	
+	/**
+	 * Acquires a new channel to the passed socket syncrhonously
 	 * @param host The host name or ip address to connect to
 	 * @param port The listening port
 	 * @return A connected channel
@@ -218,12 +266,47 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	public Channel newChannel(String host, int port) {
 		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
 		SocketAddress sa = new InetSocketAddress(host, port);
-		Channel channel = bstrap.connect(sa).awaitUninterruptibly().getChannel();
+		Channel channel = null;
+		ChannelFuture cf = null;
+		if(socketOptions.containsKey("connectTimeoutMillis")) {
+			cf = bstrap.connect(sa).awaitUninterruptibly();
+		} else {
+			cf = bstrap.connect(sa);
+			if(!cf.awaitUninterruptibly(DEFAULT_CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)) {				
+				if(!cf.cancel()) {
+					try { cf.getChannel().close(); } catch (Exception e) {}
+				}
+				// TIMEOUT THROW
+			}
+		}
+		if(!cf.isDone()) {
+			if(!cf.cancel()) {
+				try { cf.getChannel().close(); } catch (Exception e) {}
+			}	
+			// TIMEOUT THROW
+		} 
+		// operation completed
+		if(!cf.isSuccess()) {
+			// FAILED THROW
+		}
+		// operation succeeded
+		channel = cf.getChannel();		
 		channelGroup.add(channel);
 		return channel;
 	}
 	
-	
+	/**
+	 * Returns a map representation of the installed socket options for this client
+	 * @return a map representation of the installed socket options for this client
+	 */
+	@Override
+	public Map<String, String> getSocketOptions() {
+		Map<String, String> map = new HashMap<String, String>(socketOptions.size());
+		for(Map.Entry<String, Object> opt: socketOptions.entrySet()) {
+			map.put(opt.getKey(), opt.getValue().toString());
+		}
+		return map;
+	}
 
 	
 

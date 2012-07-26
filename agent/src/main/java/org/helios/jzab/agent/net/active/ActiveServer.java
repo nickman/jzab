@@ -294,15 +294,17 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * @throws JSONException Thrown if JSON response cannot be parsed
 	 */
 	protected void processSubmissionResponse(JSONObject response) throws JSONException {
-		Matcher matcher = INFO_RESPONSE_REGEX.matcher(response.getString(RESPONSE_SUBMISSION));
+		String info = response.getString(RESPONSE_SUBMISSION);
+		log.debug("Submission Response Info [{}]", info);
+		Matcher matcher = INFO_RESPONSE_REGEX.matcher(info);
 		if(!matcher.matches()) {
 			log.warn("Failed to match expected response with value [{}]", response.toString());
 		} else {
 			long processed = Long.parseLong(matcher.group(1));
 			long failed = Long.parseLong(matcher.group(2));
 			long total = Long.parseLong(matcher.group(3));
-			float time = Float.parseFloat(matcher.group(1));
-			log.info(String.format("\nActive Check Submission Results for [%s]\n\tProcessed:%s\n\tFailed:%s\n\tTotal:\n\tProcess Time:%s\n", processed, failed, total, time));
+			long time = Math.round(new Double(Double.parseDouble(matcher.group(4))*1000));
+			log.debug(String.format("\nActive Check Submission Results:\n\tServer:%s\n\tProcessed:%s\n\tFailed:%s\n\tTotal:%s\n\tProcess Time:%s\n", getId(), processed, failed, total, time));
 			// DO Something USEFUL with this data
 		}
 	}

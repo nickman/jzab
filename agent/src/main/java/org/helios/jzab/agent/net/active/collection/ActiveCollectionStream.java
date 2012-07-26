@@ -28,9 +28,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.net.active.ActiveAgent;
@@ -62,6 +62,13 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	/** The starting position of the ZABX payload length */
 	protected int lengthPosition = 0;
 	
+	/** The elapsed time to execute the checks */
+	protected long checksElapsed = -1L;
+	/** The elapsed time to complete the whole collection */
+	protected final AtomicLong completeElapsedTime = new AtomicLong(-1L);
+	/** The start time of this collection stream */
+	protected final long startTime;
+	
 	/** The UTF-8 charset */
 	protected final Charset charSet = Charset.forName("UTF-8");
 	
@@ -73,9 +80,10 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param type The collection stream type
 	 * @param host The active host to execute and submit checks for
 	 * @param channel The netty channel to send the results on
+	 * @return The collector stream created for the submission
 	 */	
-	public static void execute(ActiveCollectionStreamType type, ActiveHost host, Channel channel) {
-		execute(ByteOrder.nativeOrder(), DEFAULT_COLLECTION_BUFFER_SIZE, type, host, channel);
+	public static IActiveCollectionStream execute(ActiveCollectionStreamType type, ActiveHost host, Channel channel) {
+		return execute(ByteOrder.nativeOrder(), DEFAULT_COLLECTION_BUFFER_SIZE, type, host, channel);
 	}
 	
 	/**
@@ -85,14 +93,14 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param type The collection stream type
 	 * @param host The active host to execute and submit checks for
 	 * @param channel The netty channel to send the results on
+	 * @return The collector stream created for the submission
 	 */
-	public static void execute(ByteOrder order, int size, ActiveCollectionStreamType type, final ActiveHost host, final Channel channel) {
+	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, final ActiveHost host, final Channel channel) {
 		Map<String, String> route = new HashMap<String, String>(1);
 		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
 		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
-		log.debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);
-		final long startTime = System.currentTimeMillis();
-		IActiveCollectionStream collector = type.newCollectionStream(order, size);
+		log.debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);		
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);
 		log.debug("Collector for Active Host [{}] is [{}]", host, collector);
 		try {
 			collector.writeHeader();
@@ -100,21 +108,46 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 			collector.trimLastCharacter();
 			collector.writeJSONCloser();
 			collector.rewritePayloadLength();
-			collector.close();
-			final long totalSize = collector.getByteCount() + BASELINE_SIZE;
+			collector.close();			
 			collector.writeToChannel(channel).addListener(new ChannelFutureListener() {
+				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					if(future.isSuccess()) {
-						long elapsed = System.currentTimeMillis()-startTime;
-						log.info("Collection Stream for Active Host [{}] Completed in [{}] ms.", host, elapsed);
-						log.info("Size [{}] bytes.:", totalSize);
+						log.debug("Collection Stream Completion {}",  collector);
+					} else {
+						log.debug("Collection Stream Failed", future.getCause());
 					}
 				}
-			});
+			});			
 		} catch (Exception e) {
 			log.error("Submission Failed", e);
 		}
+		return collector;
 		
+	}
+	
+	/**
+	 * Returns the total size of the request to be sent to the zabbix server
+	 * @return the total size (in bytes) of the request to be sent to the zabbix server
+	 */
+	public long getTotalSize() {
+		return byteCount + BASELINE_SIZE;
+	}
+	
+	/**
+	 * Returns the elapsed time to execute the checks in ms.
+	 * @return the elapsed time to execute the checks in ms.
+	 */
+	public long getCheckExecutionElapsedTime() {
+		return checksElapsed;
+	}
+	
+	/**
+	 * Returns the total elapsed time to execute this collection stream in ms.
+	 * @return the total elapsed time to execute this collection stream in ms.
+	 */
+	public long getTotalElapsedTime() {
+		return completeElapsedTime.get();
 	}
 	
 	
@@ -123,21 +156,24 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param buffer The accumulation buffer
 	 */
 	public ActiveCollectionStream(ReadableWritableByteChannelBuffer buffer) {
-		this.buffer = buffer;		
+		this.buffer = buffer;
+		startTime = System.currentTimeMillis();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#rewritePayloadLength()
 	 */
+	@Override
 	public void rewritePayloadLength() {
-		buffer.setBytes(lengthPosition, encodeLittleEndianLongBytes(byteCount-1));
+		buffer.setBytes(lengthPosition, encodeLittleEndianLongBytes(byteCount));
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#getCollectionCloser()
 	 */
+	@Override
 	public byte[] getCollectionCloser() {
 		return String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes();
 	}
@@ -146,6 +182,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#collect(long)
 	 */
+	@Override
 	public void collect(long delay) {
 		ActiveAgent.getInstance().executeChecks(delay, this);
 	}
@@ -154,8 +191,11 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#collect(org.helios.jzab.agent.net.active.ActiveHost)
 	 */
+	@Override
 	public void collect(ActiveHost activeHost) {
+		long start = System.currentTimeMillis();
 		activeHost.executeChecks(this);
+		checksElapsed = System.currentTimeMillis()-start;
 	}
 	
 
@@ -179,7 +219,18 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 */
 	@Override
 	public ChannelFuture writeToChannel(Channel channel) {
-		return channel.write(buffer);
+			ChannelFuture cf = channel.write(buffer);
+			cf.addListener(new ChannelFutureListener() {
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					if(future.isSuccess()) {					
+						long elapsed = SystemClock.currentTimeMillis()-startTime;
+						completeElapsedTime.set(elapsed);
+						log.debug("Collection Stream of size [{}] bytes Completed in [{}] ms.",  getTotalSize(), elapsed);
+					}
+				}
+		});
+		return cf;
 	}
 
 	/**
@@ -190,6 +241,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	public void trimLastCharacter() {
 		if(resultCount>0) {
 			buffer.writerIndex(buffer.writerIndex()-1);
+			byteCount--;
 		}		
 	}
 
@@ -254,13 +306,19 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 */
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ActiveCollectionStream [");
-		if (buffer != null)
-			builder.append("buffer=").append(buffer).append(", ");
-		builder.append("byteCount=").append(byteCount).append(", resultCount=")
-				.append(resultCount).append(", lengthPosition=")
-				.append(lengthPosition).append("]");
+		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
+		builder.append(" [");
+		builder.append("\n\tTotalSize:");
+		builder.append(getTotalSize());
+		builder.append("\n\tCheck Time (ms):");
+		builder.append(getCheckExecutionElapsedTime());
+		builder.append("\n\tTotal Elapsed Time (ms):");
+		builder.append(getTotalElapsedTime());
+		builder.append("\n\tMessage Size (bytes):");
+		builder.append(getByteCount());
+		builder.append("\n\tCheck Count:");
+		builder.append(getResultCount());
+		builder.append("\n]");
 		return builder.toString();
 	}
 
@@ -268,6 +326,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the number of bytes in the payload
 	 * @return the number of bytes in the payload
 	 */
+	@Override
 	public long getByteCount() {
 		return byteCount;
 	}
@@ -276,6 +335,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the number of results collected
 	 * @return the number of results collected
 	 */
+	@Override
 	public int getResultCount() {
 		return resultCount;
 	}
@@ -284,6 +344,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the current buffer write position
 	 * @return the current buffer write position
 	 */
+	@Override
 	public int getLengthPosition() {
 		return lengthPosition;
 	}

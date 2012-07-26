@@ -289,8 +289,8 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	}
 	
 	/**
-	 * Returns the logging level for this active agent listener
-	 * @return the logging level for this active agent
+	 * Returns the logging level for this active host
+	 * @return the logging level for this active host
 	 */
 	@Override
 	public String getLevel() {
@@ -298,7 +298,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	}
 	
 	/**
-	 * Sets the logger level for this active agent
+	 * Sets the logger level for this active host
 	 * @param level The level to set this logger to
 	 */
 	@Override
