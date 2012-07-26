@@ -24,6 +24,15 @@ config version
  	
  	<servers>
 
+        <server address="10.230.12.145" port="10051" refresh="30">
+	 		<hosts>
+	 			<host name="NicholasActive" refresh="120" />
+	 		</hosts>
+	 	</server>
+ 	 	
+	 	
+ 	
+ 	<!--
 	 	<server address="zabbix" port="10051" refresh="30">
 	 		<hosts>
 	 			<host name="mulder" refresh="120" />
@@ -35,15 +44,7 @@ config version
 	 			<host name="scully" refresh="120" />
 	 		</hosts>
 	 	</server>
- 	 	
-	 	
  	
- 	<!--
-        <server address="10.230.12.145" port="10051" refresh="30">
-	 		<hosts>
-	 			<host name="NicholasActive" refresh="120" />
-	 		</hosts>
-	 	</server>
  	
  	
 

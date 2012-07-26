@@ -364,7 +364,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			@Override
 			public void run() {
 				try {
-					ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTMEMORY, activeHost, ActiveClient.getInstance().newChannel(activeHost.getServer().getAddress(), activeHost.getServer().getPort()));					
+					ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTDISK, activeHost, ActiveClient.getInstance().newChannel(activeHost.getServer().getAddress(), activeHost.getServer().getPort()));					
 				} catch (Exception e) {
 					log.error("Collection Failure", e);
 				} finally {					

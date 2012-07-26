@@ -100,8 +100,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
 		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
 		log.debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);		
-		final IActiveCollectionStream collector = type.newCollectionStream(order, size);
-		log.debug("Collector for Active Host [{}] is [{}]", host, collector);
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
 		try {
 			collector.writeHeader();
 			collector.collect(host);

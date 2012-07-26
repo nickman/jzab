@@ -1387,5 +1387,32 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 	public String toString() {
 		return buffer.toString();
 	}
+	
+	/**
+	 * Returns an {@link OutputStream} facade of this buffer.
+	 * @return an OutputStream
+	 */
+	public OutputStream asOutputStream() {
+		return new OutputStream() {
+			@Override
+			public void write(int b) throws IOException {
+				writeByte(b);
+			}
+		};
+	}
+	
+	/**
+	 * Returns an {@link InputStream} facade of this buffer.
+	 * @return an InputStream
+	 */
+	public InputStream asInputStream() {
+		return new InputStream() {
+			@Override
+			public int read() throws IOException {
+				return readByte();
+			}
+		};
+	}
+	
 
 }

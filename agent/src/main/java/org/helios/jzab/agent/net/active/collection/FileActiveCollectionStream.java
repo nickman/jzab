@@ -166,7 +166,6 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 		try {
 			long bytesTransferred = fileChannel.transferFrom(buffer, fileChannel.position(), bytesWritten);
 			fileChannel.position(fileChannel.position()+bytesTransferred);
-			log.debug("Result Written. Bytes:[{}]. FC Position:[{}]", bytesTransferred, fileChannel.position());
 			buffer.reset();
 			if(bytesTransferred!=bytesWritten) {
 				log.warn("Oi! bytesTransferred!=bytesWritten !  [{}] != [{}]", bytesTransferred, bytesWritten);

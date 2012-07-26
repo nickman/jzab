@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+	  <groupId>org.helios.jzab</groupId>
+	  <artifactId>plugins</artifactId>
+	  <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios.jzab</groupId>
+  <artifactId>native</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>native</name>
+  <url>https://github.com/nickman/jzab/plugins/native</url>
+  
+	<build>
+		<finalName>helios-jzab-plugin-native</finalName>
+		<plugins>
+			<plugin>
+	            <artifactId>maven-assembly-plugin</artifactId>
+	            <configuration>
+	                <archive>
+	                    <manifest>
+	                      <addClasspath>true</addClasspath>
+				          <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+				          <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>	                      
+	                      <mainClass>org.helios.jzab.plugin.nativex.HeliosSigar</mainClass> 
+	                    </manifest>
+						<manifestEntries>
+						</manifestEntries>	                    
+	                </archive>
+	            </configuration>
+	        </plugin>
+		</plugins>
+	</build>
+  
+  
+    <dependencies>
+      <!--
+	  TEST DEPENDENCIES
+	-->
+      <dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+      </dependency>
+
+      <!--
+	  CORE DEPENDENCIES
+	-->
+	
+	
+      
+				<dependency>
+			  <groupId>org.helios.jzab</groupId>
+			  <artifactId>zabbix-api</artifactId>
+				</dependency>
+				
+				<dependency>
+			  <groupId>org.helios.jzab</groupId>
+			  <artifactId>agent</artifactId>
+				</dependency>
+			      
+      
+    
+    <!-- 
+    	NATIVE OS DEPENDENCIES
+     -->  
+     
+		<dependency>
+		  <groupId>org.hyperic</groupId>
+		  <artifactId>sigar</artifactId>
+		  <version>1.6.4</version>
+		</dependency>
+     
+
+    </dependencies>
+
+</project>
