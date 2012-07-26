@@ -44,8 +44,8 @@ public class PassiveScheduleBucket<T, E> extends AbstractScheduleBucket<T,E> {
 	
 	/**
 	 * Creates a new PassiveScheduleBucket
-	 * @param parentBucket
-	 * @param scopedInstance
+	 * @param parentBucket The parent bucket that this bucket aggregates up to
+	 * @param scopedInstance The instance that will be aggregated up to the parent
 	 */
 	public PassiveScheduleBucket(IScheduleBucket<E> parentBucket, E scopedInstance) {
 		this.parentBucket = parentBucket;

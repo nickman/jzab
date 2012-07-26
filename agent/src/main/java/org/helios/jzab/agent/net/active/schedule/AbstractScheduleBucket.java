@@ -25,14 +25,13 @@
 package org.helios.jzab.agent.net.active.schedule;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * <p>Title: AbstractScheduleBucket</p>
- * <p>Description: </p> 
+ * <p>Description: The base abstract class for schedule buckets</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.schedule.AbstractScheduleBucket</code></p>
@@ -49,6 +48,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * @param delay The schedule delay for the item
 	 * @param item The item to manage
 	 */
+	@Override
 	public void addItem(long delay, T item) {
 		Set<T> set = scheduleBucket.get(delay);
 		if(set==null) {
@@ -78,6 +78,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * @param item the delay schedule to remove the item from
 	 * @return true if the item was removed, false if it was not found
 	 */
+	@Override
 	public boolean removeItem(long delay, T item) {
 		Set<T> set = scheduleBucket.get(delay);
 		if(set==null) return false;
@@ -96,6 +97,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * @param delay The delay key
 	 * @return a set of managed items which may be null if no items have that delay
 	 */
+	@Override
 	public Set<T> get(long delay) {
 		return scheduleBucket.get(delay);
 	}
@@ -104,6 +106,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * Returns an entry set of all the schedule entries
 	 * @return an entry set of all the schedule entries
 	 */
+	@Override
 	public Set<Map.Entry<Long,Set<T>>> entrySet() {
 		return scheduleBucket.entrySet();
 	}
@@ -112,6 +115,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * Returns a set of all the schedule delay keys
 	 * @return a set of all the schedule delay keys
 	 */
+	@Override
 	public Set<Long> keySet() {
 		return scheduleBucket.keySet();
 	}
@@ -120,6 +124,7 @@ public abstract class AbstractScheduleBucket<T,E> implements IScheduleBucket<T> 
 	 * Returns the number of entries
 	 * @return the number of entries
 	 */
+	@Override
 	public int size() {
 		return scheduleBucket.size();
 	}

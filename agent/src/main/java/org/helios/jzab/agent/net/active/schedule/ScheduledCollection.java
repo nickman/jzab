@@ -24,8 +24,6 @@
  */
 package org.helios.jzab.agent.net.active.schedule;
 
-import java.util.concurrent.ThreadPoolExecutor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +43,6 @@ public class ScheduledCollection implements Runnable {
 	protected final CommandThreadPolicy threadPolicy;
 	/** The delay for which this execution is being targetted */
 	protected final long delayCollection;
-	/** Indicates if in-memory or disk-based result collation is being used */
-	protected final boolean inMemoryCollation;
-	/** The task execution thread pool */
-	protected final ThreadPoolExecutor taskThreadPool;
 	
 	/** Instance logger */
 	protected final Logger log; 
@@ -58,16 +52,12 @@ public class ScheduledCollection implements Runnable {
 	
 	/**
 	 * Creates a new ScheduledCollection
-	 * @param taskThreadPool The task execution thread pool 
 	 * @param threadPolicy The threading policy for this collection 
 	 * @param delayCollection The delay for which this execution is being targetted
-	 * @param inMemoryCollation true for in-memory collation, false for disk-based
 	 */
-	public ScheduledCollection(ThreadPoolExecutor taskThreadPool, CommandThreadPolicy threadPolicy, long delayCollection, boolean inMemoryCollation) {
-		this.taskThreadPool = taskThreadPool;
+	public ScheduledCollection(CommandThreadPolicy threadPolicy, long delayCollection) {
 		this.threadPolicy = threadPolicy;
 		this.delayCollection = delayCollection;
-		this.inMemoryCollation = inMemoryCollation;
 		log = LoggerFactory.getLogger(getClass().getName() + "-" + delayCollection);
 		log.info("Created Scheduled Collection for delay [{}]", delayCollection);
 	}
@@ -79,6 +69,7 @@ public class ScheduledCollection implements Runnable {
 	 * {@inheritDoc}
 	 * @see java.lang.Runnable#run()
 	 */
+	@Override
 	public void run() {
 		
 	}

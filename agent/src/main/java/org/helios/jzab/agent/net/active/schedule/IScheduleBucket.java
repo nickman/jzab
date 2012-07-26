@@ -34,7 +34,6 @@ import java.util.Set;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.schedule.IScheduleBucket</code></p>
  * @param <T> The type of items managed by this bucket
- * @param <E> The scoped instance type which is passed to the parent on events
  */
 public interface IScheduleBucket<T> {
 	/**

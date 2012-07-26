@@ -29,10 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,20 +44,13 @@ import org.slf4j.LoggerFactory;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ScheduleBucket</code></p>
- * @param <T> The expected type of the scheduled items
+ * @param <T> The type of items managed by this bucket
+ * @param <E> The scoped instance type which is passed to the parent
  */
 
 public class ActiveScheduleBucket<T,E> extends AbstractScheduleBucket<T,E> {
 	/** Instance logger */
 	protected final Logger log; 
-	/** The scheduler */
-	protected final ScheduledThreadPoolExecutor scheduler;
-	/** The threading policy for this collection */
-	protected final CommandThreadPolicy threadPolicy;
-	/** Indicates if in-memory or disk-based result collation is being used */
-	protected final boolean inMemoryCollation;
-	/** The task execution thread pool */
-	protected final ThreadPoolExecutor taskThreadPool;
 	
 	
 	/** A map of scheduled task handles keyed by the scheduled delay */
@@ -70,19 +60,9 @@ public class ActiveScheduleBucket<T,E> extends AbstractScheduleBucket<T,E> {
 	
 	/**
 	 * Creates a new ActiveScheduleBucket
-	 * @param scheduler The scheduler that manages execution schedules
-	 * @param threadPolicy The threading policy for this collection
-	 * @param inMemoryCollation Indicates if in-memory or disk-based result collation is being used
-	 * @param taskThreadPool The task execution thread pool 
 	 * @param managedType The type of the items managed by this instance
 	 */
-	public ActiveScheduleBucket(ScheduledThreadPoolExecutor scheduler,
-			CommandThreadPolicy threadPolicy, 
-			boolean inMemoryCollation, ThreadPoolExecutor taskThreadPool, Class<T> managedType) {
-		this.scheduler = scheduler;
-		this.threadPolicy = threadPolicy;
-		this.inMemoryCollation = inMemoryCollation;
-		this.taskThreadPool = taskThreadPool;
+	public ActiveScheduleBucket(Class<T> managedType) {
 		log = LoggerFactory.getLogger(getClass().getName() + "-Active-" + managedType.getSimpleName());
 	}
 
@@ -114,6 +94,7 @@ public class ActiveScheduleBucket<T,E> extends AbstractScheduleBucket<T,E> {
 	 * Initates a scheduled task to execute the items in the passed schedule delay
 	 * @param delay The schedule delay
 	 */
+	@Override
 	public void fireStartScheduledEvent(long delay) {
 		
 	}
@@ -122,6 +103,7 @@ public class ActiveScheduleBucket<T,E> extends AbstractScheduleBucket<T,E> {
 	 * Cancels a scheduled task for the passed schedule delay
 	 * @param delay The schedule delay
 	 */
+	@Override
 	public void fireCancelScheduledEvent(long delay) {
 		ScheduledFuture<?> handle = scheduleHandles.remove(delay);
 		if(handle!=null) {
