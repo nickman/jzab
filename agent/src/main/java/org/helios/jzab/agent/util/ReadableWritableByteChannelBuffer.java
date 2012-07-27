@@ -1428,6 +1428,7 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 	 * @return the number of bytes read and written into this buffer
 	 */
 	public long readInputStream(InputStream is, boolean closeOnDone) {
+		if(is==null) throw new IllegalArgumentException("The passed stream was null", new Throwable());
 		long bytes = 0;
 		final int wi = buffer.writerIndex();
 		byte[] buff = new byte[1024];
@@ -1465,6 +1466,7 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 	 * @return The number of bytes written to the output stream
 	 */
 	public long writeOutputStream(OutputStream os, boolean closeOnDone) {
+		if(os==null) throw new IllegalArgumentException("The passed stream was null", new Throwable());
 		long bytes = buffer.readableBytes();
 		final int ri = buffer.readerIndex();
 		try {
