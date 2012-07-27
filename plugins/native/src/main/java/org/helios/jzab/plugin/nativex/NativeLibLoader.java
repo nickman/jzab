@@ -25,21 +25,34 @@
 package org.helios.jzab.plugin.nativex;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
+import org.hyperic.sigar.Cpu;
+import org.hyperic.sigar.Sigar;
+import org.hyperic.sigar.SigarLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * <p>Title: NativeLibLoader</p>
  * <p>Description: Utility class to load a native library acquired as a resource from the classpath.</p> 
+ * <p>Attempts to load the named library as follows:<ol>
+ * 		<li>Uses a straight load on the offchance that the library is in the <code>{java.library.path}</code></li>
+ * 		<li>Attempts to read the lib file from <code>./src/main/resources/META-INF/native/</code> which is where it might be found when in dev mode</li>
+ * 		<li>Looks in <code>{user.home}/.jzab/native</code></li>
+ * 		<li>Writes out a temp file to <code>{java.io.tmpdir}</code>, loads it and schedules it for deletion on shutdown.</li>
+ * </ol>
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.plugin.nativex.NativeLibLoader</code></p>
@@ -47,15 +60,98 @@ import org.slf4j.LoggerFactory;
 public class NativeLibLoader {
 	/** Static class logger */
 	protected static final Logger  LOG = LoggerFactory.getLogger(NativeLibLoader.class);
-
 	
+	/** The approximated location of the native libraries if not loaded from the JAR  (usually during dev) */
+	private static final String NO_JAR_NATIVE_DIR = "./src/main/resources/META-INF/native/";
+	/** The classloader resource prefix for loading the native lib from the jar */
+	private static final String NATIVE_DIR_PREFIX = "META-INF/native/";
+	
+
+	/**
+	 * Loads the native library for the current environment
+	 */
+	public static void loadLib() {
+		String libName = getLibNameQuietly();
+		// === Try lib path ===
+		try {
+			Sigar.load();
+			LOG.debug("Located lib  [{}] in lib path", libName);
+			return;
+		} catch (Throwable e) {			
+		}
+		
+		//  ===  Look in jZab home ===
+		File dir = new File(System.getProperty("user.home") + File.separator + ".jZab" + File.separator + "native" );
+		if(dir.exists() && dir.isDirectory()) {
+			File libFile = new File(dir.getAbsolutePath() + File.separator + libName);
+			if(libFile.exists()) {
+				try {
+					System.load(libFile.getAbsolutePath());
+					LOG.debug("Located lib  at [{}]", libFile.getAbsolutePath());
+					return;
+				} catch (Throwable e) {}
+			}
+		}
+		//  ===  Look in Dev Location ===
+		File devFile = new File(NO_JAR_NATIVE_DIR + libName);
+		try {
+			System.load(devFile.getAbsolutePath());
+			LOG.debug("Located lib at [{}]", devFile.getAbsolutePath());
+			return;
+		} catch (Throwable e) {			
+		}
+		//  ===  Extract and write tmp===
+		extractNativeLib(libName);
+	}
+	
+	/**
+	 * Reads the native library from the source and writes to the temp file.
+	 * @throws IOException
+	 */
+	private static void extractNativeLib(String nativeLibraryName) {
+		FileChannel fc = null;
+		try {
+			ReadableWritableByteChannelBuffer buff = ReadableWritableByteChannelBuffer.newDirectDynamic(4096);
+			LOG.debug("Reading library as resource [{}{}]", NATIVE_DIR_PREFIX , nativeLibraryName );
+			long bytes = buff.readInputStream(NativeLibLoader.class.getClassLoader().getResourceAsStream("native" + nativeLibraryName));
+			LOG.debug("Read [{}] bytes", bytes);
+			File tmpFile = File.createTempFile("jzabTmp", nativeLibraryName);
+			SnipeFilesRepo.getInstance().bypass(tmpFile);
+			LOG.debug("Writing to tmp file [{}] ", tmpFile);
+			fc = new RandomAccessFile(tmpFile, "rw").getChannel();
+			long written = fc.transferFrom(buff, 0, bytes);
+			LOG.debug("Wrote [{}] bytes to tmp file [{}] ", written, tmpFile);
+			fc.force(true);
+			fc.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Unable to load native library [" + nativeLibraryName + "]", e);
+		} finally {
+			try { fc.force(true); } catch (Exception e) {}
+			try { fc.close(); } catch (Exception e) {}
+		}
+	}
+	
+	
+	private static String getLibNameQuietly() {
+		final PrintStream err = System.err;
+		final PrintStream out = System.out;
+		// Redirects err to a null output stream
+		System.setErr(new PrintStream(new OutputStream(){public void write(int arg0) throws IOException {LOG.debug("Err Int");}}));
+		System.setOut(System.err);
+		try {
+			return SigarLoader.getNativeLibraryName();
+		} finally {
+			System.setErr(err);
+			System.setOut(out);
+		}
+	}
 	
 	/**
 	 * Adds a file to be sniped
 	 * @param name The name of the file
 	 */
-	public void deleteFile(CharSequence name) {
-		SnipeFilesRepo.getInstance().addFile(name);
+	static void deleteFile(CharSequence name) {
+		SnipeFilesRepo.getInstance().bypass(new File(name.toString()));
 	
 	}
 	
@@ -63,21 +159,24 @@ public class NativeLibLoader {
 	 * Adds a file to be sniped
 	 * @param file The file
 	 */
-	public void deleteFile(File file) {
-		SnipeFilesRepo.getInstance().addFile(file);
+	static void deleteFile(File file) {
+		SnipeFilesRepo.getInstance().bypass(file);
 	}
 	
 	public static void main(String[] args) {
-		LOG.info("Snipe Test");
-		try {
-			for(int i = 0; i < 5; i++) {
-				File f = File.createTempFile("Foo", "ffo.tmp");
-				SnipeFilesRepo.getInstance().bypass(f);
-			}
-		} catch (Exception e) {
-			LOG.error("Failed", e);
-		}
-		
+//		LOG.info("Snipe Test");
+//		try {
+//			for(int i = 0; i < 5; i++) {
+//				File f = File.createTempFile("Foo", "ffo.tmp");
+//				SnipeFilesRepo.getInstance().bypass(f);
+//			}
+//		} catch (Exception e) {
+//			LOG.error("Failed", e);
+//		}
+		LOG.info("Test System Load");
+		loadLib();
+		Cpu cpu = HeliosSigar.getInstance().getCpu();
+		LOG.info("CPU:\n[{}]", cpu);
 	}
 	
 	
@@ -195,10 +294,15 @@ public class NativeLibLoader {
 				if(serFile.canRead()) {
 					FileChannel fc = null;
 					try {
-						ReadableWritableByteChannelBuffer buff = ReadableWritableByteChannelBuffer.newDirectDynamic((int)serFile.length());
+						int size = (int)serFile.length();
+						if(size<1) return;
+						ReadableWritableByteChannelBuffer buff = ReadableWritableByteChannelBuffer.newDirectDynamic(size);
 						fc = new RandomAccessFile(serFile, "rw").getChannel();
-						fc.transferFrom(buff, 0, serFile.length());
-						
+						ByteBuffer bb = ByteBuffer.allocate(size);
+						long bt = fc.read(bb);
+						bb.flip();
+						buff.write(bb);
+						LOG.info("Loaded [{}] bytes", bt);
 						Set<String> set = (Set<String>)new ObjectInputStream(buff.asInputStream()).readObject();
 						for(String s: set) {
 							if(s!=null && !s.trim().isEmpty()) {
@@ -236,7 +340,8 @@ public class NativeLibLoader {
 				oos.flush();
 				buff.asOutputStream().flush();
 				LOG.info("Out: [{}]", buff);
-				long bt = fc.transferTo(0, buff.writerIndex(), buff);
+				//long bt = fc.transferTo(0, buff.writerIndex(), buff);
+				long bt = fc.write(buff.toByteBuffer());
 				fc.force(true);
 				fc.close();
 				LOG.debug("Saved [{}] bytes for [{}] file names", bt, filesToSnipe.size());

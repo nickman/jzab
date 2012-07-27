@@ -99,10 +99,6 @@ public class HeliosSigar implements SigarProxy {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	/** The native agent version */
 	private final String sigarVersion;
-	/** The native library file name */
-	private final String nativeLibraryName;
-	/** The native agent library file name */
-	private final File nativeLibraryFileName;
 	/** The native agent Java API version */
 	private String version;
 	/** The number of processors visible to the JVM */
@@ -135,16 +131,10 @@ public class HeliosSigar implements SigarProxy {
 	 */
 	private HeliosSigar() {
 		try {
-			nativeLibraryName = getLibNameQuietly();
-			sigarVersion = Sigar.VERSION_STRING;
-			if(log.isDebugEnabled()) log.debug("Target native library [" + nativeLibraryName + "] v." + sigarVersion );
-			String[] libParts = nativeLibraryName.split("\\.");
-			nativeLibraryFileName = File.createTempFile(libParts[0], "." + libParts[1]);
-			nativeLibraryFileName.deleteOnExit();
-			extractNativeLib();
-			System.load(nativeLibraryFileName.toString());
+			NativeLibLoader.loadLib();
 			sigar = new Sigar();
 			pid = sigar.getPid();
+			sigarVersion = Sigar.VERSION_STRING;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to load native agent library", e);
 		}
@@ -171,65 +161,6 @@ public class HeliosSigar implements SigarProxy {
 		log.info("{}", HeliosSigar.getInstance());
 	}
 	
-	/**
-	 * Reads the native library from the source and writes to the temp file.
-	 * @throws IOException
-	 */
-	private void extractNativeLib() throws IOException {
-		boolean fromJar = false;
-		loadVersion();
-		try {
-			fromJar = this.getClass().getProtectionDomain().getCodeSource().getLocation().toString().toLowerCase().endsWith(".jar");
-		} catch (Exception e) {
-			fromJar = false;
-			version = "Development";
-		}
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(300000);
-		byte[] buffer = new byte[8096];
-		InputStream libInStream = null;
-		BufferedInputStream bis = null;
-		FileOutputStream fos = null;
-		BufferedOutputStream bos = null;
-		try {
-			if(fromJar) {
-				libInStream = getClass().getClassLoader().getResourceAsStream(NATIVE_DIR_PREFIX + nativeLibraryName);
-				if(log.isDebugEnabled()) log.debug("Reading library as resource [" + NATIVE_DIR_PREFIX + nativeLibraryName + "]");
-			} else {
-				StringBuilder location = new StringBuilder(this.getClass().getProtectionDomain().getCodeSource().getLocation().toString());
-				location.append(File.separator).append("..").append(File.separator).append("..").append(File.separator);
-				//location.append(File.separator).append("..").append(File.separator);
-				location.append(NO_JAR_NATIVE_DIR).append(nativeLibraryName);
-				String fName = location.toString();
-				if(fName.startsWith("file:")) {
-					fName = fName.replaceFirst("file:", "");
-				}
-				File libFile = new File(fName);				
-				if(!libFile.canRead()) {
-					throw new RuntimeException("Cannot read file [" + libFile + "]");
-				}
-				libInStream = new FileInputStream(libFile);
-				if(log.isDebugEnabled()) log.debug("Reading library from file [" + libFile + "]");
-			}
-			bis = new BufferedInputStream(libInStream);
-			int bytesRead = 0;
-			while((bytesRead=bis.read(buffer))!=-1) {
-				baos.write(buffer, 0, bytesRead);
-			}
-			if(log.isDebugEnabled()) log.debug("Read [" + baos.size() + "] bytes from input stream.");
-			fos = new FileOutputStream(nativeLibraryFileName);
-			bos = new BufferedOutputStream(fos);
-			baos.flush();
-			bos.write(baos.toByteArray());			
-		} finally {
-			try { bis.close(); } catch (Exception e) {}
-			try { libInStream.close(); } catch (Exception e) {}
-			try { bos.flush(); } catch (Exception e) {}
-			try { fos.flush(); } catch (Exception e) {}
-			try { bos.close(); } catch (Exception e) {}
-			try { fos.close(); } catch (Exception e) {}
-			
-		}		
-	}
 	
 	/**
 	 * Loads the NativeAgent Java API version from the manifest
@@ -256,8 +187,7 @@ public class HeliosSigar implements SigarProxy {
 		final StringBuilder b = new StringBuilder("Helios NativeAgent[");
 		b.append(TAB).append("Version:").append(this.version);
 		b.append(TAB).append("sigarVersion:").append(this.sigarVersion);
-		b.append(TAB).append("nativeLibraryName:").append(this.nativeLibraryName);
-		b.append(TAB).append("nativeLibraryFileName:").append(this.nativeLibraryFileName);
+		b.append(TAB).append("nativeLibraryName:").append(SigarLoader.getNativeLibraryName());
 		b.append(TAB).append("pid:").append(this.pid);
 		try {
 			b.append(TAB).append("Host:").append(this.getFQDN());
@@ -274,19 +204,7 @@ public class HeliosSigar implements SigarProxy {
 		return sigarVersion;
 	}
 
-	/**
-	 * @return the nativeLibraryName
-	 */
-	public String getNativeLibraryName() {
-		return nativeLibraryName;
-	}
 
-	/**
-	 * @return the nativeLibraryFileName
-	 */
-	public File getNativeLibraryFileName() {
-		return nativeLibraryFileName;
-	}
 
 	/**
 	 * @return the version
@@ -325,11 +243,14 @@ public class HeliosSigar implements SigarProxy {
 
 	/**
 	 * @return
-	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getCpu()
 	 */
-	public Cpu getCpu() throws SigarException {
-		return sigar.getCpu();
+	public Cpu getCpu()  {
+		try {
+			return sigar.getCpu();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invokeinternal Sigar call", se);
+		}
 	}
 
 	/**

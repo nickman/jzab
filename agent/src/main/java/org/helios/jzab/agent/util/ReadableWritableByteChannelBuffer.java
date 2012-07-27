@@ -1380,13 +1380,7 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 		return buffer.compareTo(buffer);
 	}
 
-	/**
-	 * @return
-	 * @see org.jboss.netty.buffer.ChannelBuffer#toString()
-	 */
-	public String toString() {
-		return buffer.toString();
-	}
+
 	
 	/**
 	 * Returns an {@link OutputStream} facade of this buffer.
@@ -1409,9 +1403,93 @@ public class ReadableWritableByteChannelBuffer implements ChannelBuffer, Readabl
 		return new InputStream() {
 			@Override
 			public int read() throws IOException {
-				return readByte();
+				int i = readByte();
+				return i;
 			}
 		};
+	}
+	
+	/**
+	 * Reads the passed input stream into this buffer and closes the stream on completion
+	 * If the read fails, the writer index is reset, leaving the buffer unmodified.
+	 * @param is The input stream
+	 * @return the number of bytes read and written into this buffer
+	 */
+	public long readInputStream(InputStream is) {
+		return readInputStream(is, true);
+	}
+	
+	
+	/**
+	 * Reads the passed input stream into this buffer.
+	 * If the read fails, the writer index is reset, leaving the buffer unmodified.
+	 * @param is The input stream
+	 * @param closeOnDone If true, the input stream will be closed on completion
+	 * @return the number of bytes read and written into this buffer
+	 */
+	public long readInputStream(InputStream is, boolean closeOnDone) {
+		long bytes = 0;
+		final int wi = buffer.writerIndex();
+		byte[] buff = new byte[1024];
+		int bytesRead = -1;
+		try {
+			while((bytesRead = is.read(buff))!=-1) {
+				bytes += bytesRead;
+				buffer.writeBytes(buff, 0, bytesRead);
+			}
+			return bytes;
+		} catch (Exception  e) {
+			buffer.writerIndex(wi);
+			throw new RuntimeException("Failed to read in stream", e);
+		} finally {
+			if(closeOnDone) try { is.close(); } catch (Exception e) {}			
+		}
+	}
+	
+	/**
+	 * Writes the readable content of this buffer to the passed output stream, flushing and closing the output stream on completion 
+	 * If the write fails, the reader index is reset, leaving the buffer unmodified.
+	 * @param os The output stream to write to
+	 * @return The number of bytes written to the output stream
+	 */
+	public long writeOutputStream(OutputStream os) {
+		return writeOutputStream(os, true);
+	}
+	
+	
+	/**
+	 * Writes the readable content of this buffer to the passed output stream.
+	 * If the write fails, the reader index is reset, leaving the buffer unmodified.
+	 * @param os The output stream to write to
+	 * @param closeOnDone If true, the output stream will be flushed and closed on completion
+	 * @return The number of bytes written to the output stream
+	 */
+	public long writeOutputStream(OutputStream os, boolean closeOnDone) {
+		long bytes = buffer.readableBytes();
+		final int ri = buffer.readerIndex();
+		try {
+			for(long i = 0; i < bytes; i++) {
+				os.write(buffer.readByte());
+			}
+			return bytes;
+		} catch (Exception  e) {
+			buffer.readerIndex(ri);
+			throw new RuntimeException("Failed to read in stream", e);
+		} finally {
+			if(closeOnDone) {
+				try { os.flush(); } catch (Exception e) {}
+				try { os.close(); } catch (Exception e) {}			
+			}
+		}
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return buffer.toString();
 	}
 	
 
