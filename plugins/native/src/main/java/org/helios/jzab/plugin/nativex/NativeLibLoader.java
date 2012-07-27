@@ -26,19 +26,20 @@ package org.helios.jzab.plugin.nativex;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
-import org.hyperic.sigar.Cpu;
+import org.helios.jzab.plugin.nativex.util.ByteBufferStreams;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarLoader;
 import org.slf4j.Logger;
@@ -111,15 +112,19 @@ public class NativeLibLoader {
 	private static void extractNativeLib(String nativeLibraryName) {
 		FileChannel fc = null;
 		try {
-			ReadableWritableByteChannelBuffer buff = ReadableWritableByteChannelBuffer.newDirectDynamic(4096);
+			
 			LOG.debug("Reading library as resource [{}{}]", NATIVE_DIR_PREFIX , nativeLibraryName );
-			long bytes = buff.readInputStream(NativeLibLoader.class.getClassLoader().getResourceAsStream("native" + nativeLibraryName));
-			LOG.debug("Read [{}] bytes", bytes);
+			InputStream is = null;
+			
+			ByteBufferStreams buff = ByteBufferStreams.readInputStreamDirect(NativeLibLoader.class.getClassLoader().getResourceAsStream("META-INF/native/" + nativeLibraryName));
+			int size = buff.position();
+			LOG.debug("Read [{}] bytes into buffer [{}]", size, buff);
+			buff.flip();
 			File tmpFile = File.createTempFile("jzabTmp", nativeLibraryName);
 			SnipeFilesRepo.getInstance().bypass(tmpFile);
 			LOG.debug("Writing to tmp file [{}] ", tmpFile);
 			fc = new RandomAccessFile(tmpFile, "rw").getChannel();
-			long written = fc.transferFrom(buff, 0, bytes);
+			long written = fc.map(MapMode.READ_WRITE, 0, size).put(buff.getBuffer()).position();			
 			LOG.debug("Wrote [{}] bytes to tmp file [{}] ", written, tmpFile);
 			fc.force(true);
 			fc.close();
@@ -136,8 +141,8 @@ public class NativeLibLoader {
 		final PrintStream err = System.err;
 		final PrintStream out = System.out;
 		// Redirects err to a null output stream
-		System.setErr(new PrintStream(new OutputStream(){public void write(int arg0) throws IOException {LOG.debug("Err Int");}}));
-		System.setOut(System.err);
+		System.setErr(ByteBufferStreams.nullPrintStream());
+		System.setOut(ByteBufferStreams.nullPrintStream());
 		try {
 			return SigarLoader.getNativeLibraryName();
 		} finally {
@@ -173,10 +178,15 @@ public class NativeLibLoader {
 //		} catch (Exception e) {
 //			LOG.error("Failed", e);
 //		}
-		LOG.info("Test System Load");
-		loadLib();
-		Cpu cpu = HeliosSigar.getInstance().getCpu();
-		LOG.info("CPU:\n[{}]", cpu);
+		
+		
+//		LOG.info("Test System Load");
+//		loadLib();
+//		Cpu cpu = HeliosSigar.getInstance().getCpu();
+//		LOG.info("CPU:\n[{}]", cpu);
+		
+		LOG.info("LibExtract");
+		extractNativeLib(getLibNameQuietly());
 	}
 	
 	
