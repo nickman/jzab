@@ -40,6 +40,7 @@ import java.util.Set;
 
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 import org.helios.jzab.plugin.nativex.util.ByteBufferStreams;
+import org.hyperic.sigar.Cpu;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarLoader;
 import org.slf4j.Logger;
@@ -182,11 +183,12 @@ public class NativeLibLoader {
 		
 //		LOG.info("Test System Load");
 //		loadLib();
-//		Cpu cpu = HeliosSigar.getInstance().getCpu();
-//		LOG.info("CPU:\n[{}]", cpu);
 		
 		LOG.info("LibExtract");
 		extractNativeLib(getLibNameQuietly());
+		Cpu cpu = HeliosSigar.getInstance().getCpu();
+		LOG.info("CPU:\n[{}]", cpu);
+		
 	}
 	
 	
