@@ -71,6 +71,17 @@ public interface ActiveServerMXBean {
 	 */
 	public int getPort();
 	
+	/**
+	 * Executes all the active checks for all hosts and submits them
+	 */
+	public void executeChecks();
+	
+	/**
+	 * Requests an updates on all active checks for all hosts (forced)
+	 */
+	public void requestMarchingOrders();
+	
+	
 	
 
 }

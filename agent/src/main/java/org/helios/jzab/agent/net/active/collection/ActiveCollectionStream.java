@@ -116,6 +116,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 					} else {
 						log.debug("Collection Stream Failed", future.getCause());
 					}
+					future.getChannel().close();
 				}
 			});			
 		} catch (Exception e) {
@@ -129,6 +130,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the total size of the request to be sent to the zabbix server
 	 * @return the total size (in bytes) of the request to be sent to the zabbix server
 	 */
+	@Override
 	public long getTotalSize() {
 		return byteCount + BASELINE_SIZE;
 	}
@@ -137,6 +139,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the elapsed time to execute the checks in ms.
 	 * @return the elapsed time to execute the checks in ms.
 	 */
+	@Override
 	public long getCheckExecutionElapsedTime() {
 		return checksElapsed;
 	}
@@ -145,6 +148,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * Returns the total elapsed time to execute this collection stream in ms.
 	 * @return the total elapsed time to execute this collection stream in ms.
 	 */
+	@Override
 	public long getTotalElapsedTime() {
 		return completeElapsedTime.get();
 	}

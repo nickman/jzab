@@ -166,6 +166,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the state of this host
 	 * @return the state of this host
 	 */
+	@Override
 	public String getState() {
 		return state.get().name();
 	}
@@ -174,6 +175,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the effective time of the last state change in seconds
 	 * @return the effective time of the last state change in seconds
 	 */
+	@Override
 	public long getStateTimestamp() {
 		return TimeUnit.SECONDS.convert(stateTimestamp, TimeUnit.MILLISECONDS);
 	}
@@ -182,6 +184,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the effective time of the last state change as a java date
 	 * @return the effective time of the last state change as a java date
 	 */
+	@Override
 	public Date getStateDate() {
 		return new Date(stateTimestamp);
 	}
@@ -190,6 +193,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the number of active checks for this host
 	 * @return the number of active checks for this host
 	 */
+	@Override
 	public int getActiveCheckCount() {
 		return hostChecks.size();
 	}
@@ -262,6 +266,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns an array of the unique schedule windows for this active host's checks
 	 * @return an array of longs representing the unique delays for this active host's checks
 	 */
+	@Override
 	public long[] getDistinctSchedules() {
 		Set<Long> setOfTimes = new HashSet<Long>(scheduleBucket.keySet());
 		long[] times = new long[setOfTimes.size()];
@@ -310,6 +315,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns a map of the number of hosts registered for checks for each delay
 	 * @return a map of the number of hosts registered for checks for each delay
 	 */
+	@Override
 	public Map<Long, Integer> getScheduleCounts() {
 		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
 		for(Map.Entry<Long, Set<ActiveHostCheck>> entry: scheduleBucket.entrySet()) {
@@ -322,6 +328,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the ID of this active host
 	 * @return the ID of this active host
 	 */
+	@Override
 	public String getId() {
 		return server.getId() + "/" + hostName;
 	}
@@ -339,12 +346,25 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		}		
 	}
 	
+	/**
+	 * Executes all the active checks for this host and submits them
+	 */
+	@Override
+	public void executeChecks() {
+		ActiveAgent.getInstance().executeChecks(this);
+	}
 	
+	/**
+	 * Requests an updates on active checks assigned to this host (forced)
+	 */
+	@Override
+	public void requestMarchingOrders() {
+		ActiveAgent.getInstance().requestActiveChecks(getServer(), this, true);
+	}
 	
 	/**
 	 * Executes all the checks for this host
 	 * @param collector The result collection stream
-	 * @return A string array of all the results
 	 */
 	public void executeChecks(IResultCollector collector) {
 		for(ActiveHostCheck check: hostChecks.values()) {
@@ -451,6 +471,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Returns the refresh period in seconds.
 	 * @return the refresh period in seconds.
 	 */
+	@Override
 	public long getRefreshPeriod() {
 		return refreshPeriod;
 	}
@@ -461,6 +482,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Sets the refresh period in seconds
 	 * @param refreshPeriod the refresh period in seconds
 	 */
+	@Override
 	public void setRefreshPeriod(long refreshPeriod) {
 		if(refreshPeriod<2) throw new IllegalArgumentException("Refresh period must be at least 1 second", new Throwable());
 		this.refreshPeriod = refreshPeriod;
@@ -472,6 +494,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Return the host name
 	 * @return the hostName
 	 */
+	@Override
 	public String getHostName() {
 		return hostName;
 	}
@@ -524,12 +547,6 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		protected final ICommandProcessor commandProcessor;
 		/** The parsed arguments to pass to the command processor for this check */
 		protected final String[] processorArguments;
-		
-		/** The last value collected for this check */
-		protected Object lastValue;
-		/** The last time data was successfully collected for this check */
-		protected long lastCheck;
-		
 		
 		/**
 		 * Creates a new ActiveHostCheck
@@ -628,40 +645,6 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		}
 
 
-		/**
-		 * Returns the last value collected for this check
-		 * @return the last value collected
-		 */
-		public Object getLastValue() {
-			return lastValue;
-		}
-
-
-		/**
-		 * Sets the last value collected for this check
-		 * @param lastValue the last value collected to set
-		 */
-		public void setLastValue(Object lastValue) {
-			this.lastValue = lastValue;
-		}
-
-
-		/**
-		 * Returns the last time (UTC long) data was successfully collected for this check
-		 * @return the last Check time
-		 */
-		public long getLastCheck() {
-			return lastCheck;
-		}
-
-
-		/**
-		 * Sets the last time (UTC long) data was successfully collected for this check
-		 * @param lastCheck the lastCheck to set
-		 */
-		public void setLastCheck(long lastCheck) {
-			this.lastCheck = lastCheck;
-		}
 
 
 		/**
@@ -754,6 +737,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * @param handback
 	 * @see javax.management.NotificationBroadcasterSupport#addNotificationListener(javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
 	 */
+	@Override
 	public void addNotificationListener(NotificationListener listener,
 			NotificationFilter filter, Object handback) {
 		notificationBroadcaster.addNotificationListener(listener, filter,
@@ -766,6 +750,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * @return
 	 * @see javax.management.NotificationBroadcasterSupport#getNotificationInfo()
 	 */
+	@Override
 	public MBeanNotificationInfo[] getNotificationInfo() {
 		return notificationBroadcaster.getNotificationInfo();
 	}
@@ -793,6 +778,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * @throws ListenerNotFoundException
 	 * @see javax.management.NotificationBroadcasterSupport#removeNotificationListener(javax.management.NotificationListener)
 	 */
+	@Override
 	public void removeNotificationListener(NotificationListener listener)
 			throws ListenerNotFoundException {
 		notificationBroadcaster.removeNotificationListener(listener);

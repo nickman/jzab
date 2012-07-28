@@ -154,7 +154,7 @@ public class ResponseRoutingHandler extends SimpleChannelHandler {
 			}
 			sessionKeys.remove(e.getChannel().getId());
 		}
-		super.messageReceived(ctx, e);
+		super.messageReceived(ctx, e);		
 	}
 	
 	/**

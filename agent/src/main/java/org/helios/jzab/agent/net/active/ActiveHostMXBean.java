@@ -111,6 +111,17 @@ public interface ActiveHostMXBean {
 	 */
 	public String getId();
 	
+	/**
+	 * Executes all the active checks for this host and submits them
+	 */
+	public void executeChecks();
+	
+	/**
+	 * Requests an updates on active checks assigned to this host (forced)
+	 */
+	public void requestMarchingOrders();
+	
+	
 	
 
 }

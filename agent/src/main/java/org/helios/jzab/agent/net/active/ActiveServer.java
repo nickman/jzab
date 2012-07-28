@@ -153,6 +153,27 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	}
 	
 	/**
+	 * Executes all the active checks for all hosts and submits them
+	 */
+	@Override
+	public void executeChecks() {
+		for(ActiveHost host: activeHosts.values()) {
+			host.executeChecks();
+		}
+	}
+	
+	/**
+	 * Requests an updates on all active checks for all hosts (forced)
+	 */
+	@Override
+	public void requestMarchingOrders() {
+		for(ActiveHost host: activeHosts.values()) {
+			host.requestMarchingOrders();
+		}		
+	}
+	
+	
+	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.json.JSONObject)
 	 */
