@@ -113,6 +113,19 @@ public enum AggregateFunction implements IAggregator {
 	}
 	
 	/**
+	 * Retrieves an AggregateFunction by name, returning null for no match
+	 * @param name The name of the function to apply
+	 * @return the named AggregateFunction or null if one was not found
+	 */
+	public static AggregateFunction getAggregateFunction(CharSequence name) {
+		try {
+			return forName(name);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	/**
 	 * Computes and returns the aggregate for the named aggregator and list of input items
 	 * @param name The name of the aggregator function
 	 * @param items The list of items to aggregate
