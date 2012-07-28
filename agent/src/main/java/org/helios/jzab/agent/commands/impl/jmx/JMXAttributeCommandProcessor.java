@@ -26,10 +26,8 @@ package org.helios.jzab.agent.commands.impl.jmx;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXServiceURL;
 
-import org.helios.jzab.agent.commands.AbstractCommandProcessor;
 import org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction;
 import org.helios.jzab.util.JMXHelper;
 
@@ -50,28 +48,11 @@ import org.helios.jzab.util.JMXHelper;
  * </ol>
  */
 
-public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
+public class JMXAttributeCommandProcessor extends BaseJMXCommandProcessor {
 	/** This processors command keys */
 	public static final String COMMAND_KEY  = "jmxattr"; 
 	
-	/** The property name for the {@link #compoundDelimiter}  */
-	public static final String DELIMITER_KEY  = "compound-delimiter";
 	
-	/** The mandatory prefix for strings representing a {@link JMXServiceURL} */
-	public static final String JMX_SVC_URL_PREFIX = "service:jmx:";
-	
-	/** The delimiter between an MBean's attribute name and the subkeys of opentypes. Set by processor properties. */
-	protected String compoundDelimiter = null;
-	
-	/**
-	 * Initializes the {@link #compoundDelimiter}
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#init()
-	 */
-	public void init() {
-		compoundDelimiter = processorProperties.getProperty(DELIMITER_KEY, "/");
-		super.init();
-	}
 	
 	/**
 	 * {@inheritDoc}
@@ -84,7 +65,7 @@ public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
 
 	/**
 	 * Var parameters:<ol>
-	 *  <li><b>JMX Object Name</b>: (Mandatory) The target MBean's ObjectName. Can be a pattern in which case, arg# 3 will be used to determine an aggregate function, defaulting to sum.</li>
+	 *  <li><b>JMX Object Name</b>: (Mandatory) The target MBean's ObjectName. Can be a pattern in which case, arg# 3 will be used to determine an aggregate function</li>
 	 *  <li><b>Attribute Name</b>: (Mandatory) The name of the target attribute</li>
 	 *  <li><b>Aggregate function name</b>: (Optional) The aggregation function name used to aggregate multiple values returned. Function names are defined in {@link AggregateFunction}</li>
 	 *  <li><b>Domain</b>: (Optional) Defines the MBeanServer domain in which the target MBeans are registered. Can also be interpreted as a {@link JMXServiceURL} in which case a remote connection will be used to retrieve the attribute values.</li>
@@ -97,39 +78,31 @@ public class JMXAttributeCommandProcessor extends AbstractCommandProcessor {
 		if(args==null || args.length < 2) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
 		ObjectName on = JMXHelper.objectName(args[0]);
 		String attrName = args[1];
-		String aggrFuncName = null;
+		AggregateFunction aggrFunc = null;
 		String domain = null;
 		if(args.length>2) {
-			aggrFuncName = args[2];
+			String aggrFuncName = args[2];
+			if(!aggrFuncName.trim().isEmpty()) {
+				aggrFunc = AggregateFunction.getAggregateFunction(aggrFuncName);
+				if(aggrFunc==null) {
+					log.error("Invalid aggregate name [{}]", aggrFunc);
+					return COMMAND_ERROR;
+				}
+			}
+			
 		}
 		if(args.length>3) {
 			domain = args[3];
 		}
-		JMXConnector connector = null;
 		MBeanServerConnection server = null;
 		try {
-			if(domain!=null && !domain.trim().isEmpty()) {
-				domain = domain.trim();
-				if(domain.indexOf(JMX_SVC_URL_PREFIX)!=-1) {
-					try {
-						connector = JMXHelper.getJMXConnection(domain, true, null);
-						server = connector.getMBeanServerConnection();
-					} catch (Exception e) {
-						log.debug("Failed to make JMX connection to [{}]", domain, e);
-						log.error("Failed to make JMX connection to [{}]", domain);
-						return COMMAND_ERROR;
-					}
-				} else {
-					server = JMXHelper.getLocalMBeanServer(domain, true);
-				}
-			} else {
-				server = JMXHelper.getHeliosMBeanServer();
-			}
-			if(server==null) return COMMAND_NOT_SUPPORTED;
+			server = getServerForDomain(domain);
 			return JMXHelper.getAttribute(server, compoundDelimiter, on, attrName);
-		} finally {
-			if(connector!=null) try { connector.close(); } catch (Exception e) {}
-		}
+		} catch (Exception e) {
+			log.debug("Failed to get MBeanServerConnection for domain [{}]", domain, e);
+			log.error("Failed to get MBeanServerConnection for domain [{}]", domain);
+			return COMMAND_NOT_SUPPORTED;			
+		}		
 	}
 
 }
