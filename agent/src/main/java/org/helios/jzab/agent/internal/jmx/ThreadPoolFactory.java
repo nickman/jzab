@@ -133,8 +133,6 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 		log.info("Created and registered ThreadPool [{}], daemon:[{}]", objectName, daemonThreads);
 	}
 	
-
-
 	/**
 	 * {@inheritDoc}
 	 * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)

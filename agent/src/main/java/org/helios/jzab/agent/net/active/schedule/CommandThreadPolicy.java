@@ -34,11 +34,11 @@ package org.helios.jzab.agent.net.active.schedule;
 
 public enum CommandThreadPolicy {
 	/** One thread is allocated to execute checks for each configured zabbix server */
-	THREAD_PER_SERVER,
+	SERVER,
 	/** One thread is allocated to execute checks for each configured active host. The default.  */
-	THREAD_PER_HOST,
+	HOST,
 	/** One thread is allocated to execute checks for each configured active check */
-	THREAD_PER_CHECK;
+	CHECK;
 	
 	/**
 	 * Decodes the passed string into a CommandThreadPolicy, applying trim and uppercase to the passed value

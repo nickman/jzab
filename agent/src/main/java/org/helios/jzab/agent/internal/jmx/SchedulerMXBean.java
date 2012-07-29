@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.internal.jmx;
 
+import java.util.Set;
+
 import javax.management.MXBean;
 
 /**
@@ -91,6 +93,17 @@ public interface SchedulerMXBean {
 	 */
 	public boolean isTerminating();
 	
+	/**
+	 * Returns a set of the scheduled tasks
+	 * @return an set of the scheduled tasks
+	 */
+	public Set<TrackedScheduledFuture> getScheduledTasks();
 	
+	/**
+	 * Returns the number of pending tasks
+	 * @return the number of pending tasks
+	 */
+	public int getPendingTaskCount();
+
 
 }

@@ -40,32 +40,49 @@ import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBufferFactory {
 	/** Uses a dynamic heap buffer to accumulate results */
 	MEMORY(false, new AbstractReadableWritableByteChannelBufferFactory(){
+	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDynamic(order, size);
 	}}),
 	/** Uses a dynamic direct (non-heap) buffer to accumulate results */
 	DIRECTMEMORY(false, new AbstractReadableWritableByteChannelBufferFactory(){
+	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDirectDynamic(order, size);
 	}}),
 	/** Uses a temporary file buffer to accumulate results */
 	DISK(true, new AbstractReadableWritableByteChannelBufferFactory(){
+	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDynamic(order, size);
 	}}),
 	/** Uses a temporary memory mapped file buffer to accumulate results */
 	DIRECTDISK(true, new AbstractReadableWritableByteChannelBufferFactory(){
+	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDirectDynamic(order, size);
 	}});
 	
 
-	
+	/**
+	 * Decodes the passed string into a ActiveCollectionStreamType, applying trim and uppercase to the passed value
+	 * @param name The name to decode
+	 * @return the decoded ActiveCollectionStreamType
+	 */
+	public static ActiveCollectionStreamType forName(CharSequence name) {
+		if(name==null || name.toString().trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		try {
+			return ActiveCollectionStreamType.valueOf(name.toString().trim().toUpperCase());
+		} catch (Exception e) {
+			throw new IllegalArgumentException("The passed name [" + name + "] was not a valid ActiveCollectionStreamType", new Throwable());
+		}
+	}
+
 
 	
 	/**
 	 * Creates a new ActiveCollectionStreamType
-	 * @param boolean true if the streamer is disk based, false if it is memory based 
+	 * @param diskBased true if the streamer is disk based, false if it is memory based 
 	 * @param factory The buffer factory
 	 */
 	private ActiveCollectionStreamType(boolean diskBased, IReadableWritableByteChannelBufferFactory factory) {

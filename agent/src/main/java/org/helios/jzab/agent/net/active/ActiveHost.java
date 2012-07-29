@@ -24,8 +24,6 @@
  */
 package org.helios.jzab.agent.net.active;
 
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -46,6 +44,7 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationEmitter;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -53,19 +52,18 @@ import javax.management.ObjectName;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.agent.commands.ICommandProcessor;
+import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
+import org.helios.jzab.agent.internal.jmx.TrackedScheduledFuture;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 import org.helios.jzab.agent.net.active.collection.IResultCollector;
 import org.helios.jzab.agent.net.active.schedule.PassiveScheduleBucket;
-import org.helios.jzab.agent.net.codecs.ZabbixConstants;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.agent.net.routing.RoutingObjectName;
 import org.helios.jzab.agent.net.routing.RoutingObjectNameFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.StringHelper;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,15 +77,19 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.ActiveHost</code></p>
  */
-public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBean, Iterable<ActiveHostCheck>, NotificationBroadcaster {
+public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterable<ActiveHostCheck>, NotificationBroadcaster {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The host name we're monitoring for */
 	protected final String hostName;
 	/** The ActiveServer parent for this host */
 	protected final ActiveServer server;
+	/** The scheduled task to refresh active checks */
+	protected TrackedScheduledFuture refreshTask = null;
 	/** The frequency in seconds that this host's marching orders should be refreshed */
 	protected long refreshPeriod;
+	/** The changes in the last refresh */
+	protected final LastRefreshChange lastRefreshChange = new LastRefreshChange();
 	/** The command manager to execute checks */
 	protected final CommandManager commandManager = CommandManager.getInstance();
 	/** The notification manager */
@@ -99,6 +101,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	/** The sequence number generator for JMX notification sequences */
 	protected final AtomicLong notificationSequence = new AtomicLong(0L);
 	
+	/** This host's JMX ObjectName */
 	protected final ObjectName objectName;
 	/** The state of this host */
 	protected final AtomicReference<ActiveHostState> state = new AtomicReference<ActiveHostState>(ActiveHostState.INIT);
@@ -139,8 +142,39 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		routingNames = new RoutingObjectName[]{RoutingObjectNameFactory.getInstance().getRoute(true, KEY_REQUEST, VALUE_ACTIVE_CHECK_REQUEST, KEY_HOST, hostName)};
 		RoutingObjectNameFactory.getInstance().registerJSONResponseHandler(this);
 		log.debug("Created ActiveHost [{}]", hostName);
-		objectName = JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveHost,server=").append(server.getAddress()).append(",port=").append(server.getPort()).append(",host=").append(hostName));
+		objectName = JMXHelper.objectName(new StringBuilder(
+				server.getObjectName().toString())
+				.append(",host=").append(hostName)
+		);
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
+		scheduleNextRefresh();
+	}
+	
+	/**
+	 * Returns the scheduled task for the next refresh
+	 * @return the refreshTask
+	 */
+	@Override
+	public TrackedScheduledFuture getRefreshTask() {
+		return refreshTask;
+	}
+	
+	/**
+	 * Schedules the next refresh
+	 */
+	protected void scheduleNextRefresh() {
+		final ActiveHost finalHost = this;
+		refreshTask = ScheduledThreadPoolFactory.getInstance("Scheduler").schedule("Refresh Task for [" + getId() + "]", new Runnable(){
+			@Override
+			public void run() {
+				try {
+					ActiveAgent.getInstance().requestActiveChecks(server, finalHost, true);
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+					scheduleNextRefresh();
+				}
+			}
+		}, refreshPeriod, TimeUnit.SECONDS);
 	}
 	
 	/**
@@ -201,7 +235,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.json.JSONObject)
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.helios.jzab.agent.net.routing.RoutingObjectName, org.json.JSONObject)
 	 */
 	@Override
 	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
@@ -221,32 +255,7 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		return routingNames;
 	}
 	
-	/**
-	 * Runnable entry point for executing this host's checks
-	 * {@inheritDoc}
-	 * @see java.lang.Runnable#run()
-	 */
-	@Override
-	public void run() {
-//		ByteBuffer buffer = ZabbixConstants.collectionBuffer.get();
-//		Long delay = ZabbixConstants.currentScheduleWindow.get();
-//		log.debug("Collecting for host [{}] on delay [{}]", hostName, delay);
-//		for(ActiveHostCheck check:  delay==-1 ? hostChecks.values() : scheduleBucket.get(delay)) {
-//			if(!check.collect(buffer)) {
-//				// submit
-//				check.collect(buffer);
-//			}
-//		}		
-	}
 	
-	protected void submit(ByteBuffer bb) {
-		ChannelBuffer cb = ChannelBuffers.directBuffer(ZabbixConstants.BASELINE_SIZE + bb.position());		
-		long payloadSize = 0;
-		cb.writeBytes(ZabbixConstants.ZABBIX_HEADER);
-		cb.writeByte(ZabbixConstants.ZABBIX_PROTOCOL);
-		cb.writeBytes(ZabbixConstants.encodeLittleEndianLongBytes(payloadSize));
-		cb.writeBytes(bb);
-	}
 	
 	/**
 	 * Returns a string displaying each schedule bucket delay and the number of checks in each bucket.
@@ -282,7 +291,6 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * Executes all the checks for the passed delay window
 	 * @param delay The delay window
 	 * @param collector The collector stream to write the results to
-	 * @return A string array of all the results
 	 */
 	public void executeChecks(long delay, IResultCollector collector) {
 		Set<ActiveHostCheck> checks = scheduleBucket.get(delay);
@@ -339,8 +347,8 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 */
 	protected void setState(ActiveHostState state) {
 		if(state==null) throw new IllegalArgumentException("The passed ActiveHostState was null", new Throwable());
-		ActiveHostState priorState  = this.state.getAndSet(state);
-		if(priorState!=state) {
+		ActiveHostState priorState  = this.state.getAndSet(state);		
+		if(priorState!=state) {			
 			this.stateTimestamp = SystemClock.currentTimeMillis();
 			sendNotification(new AttributeChangeNotification(objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("State change from [%s] to [%s]", priorState, state), "State", ActiveHostState.class.getName(), priorState.name(), state.name()));					
 		}		
@@ -372,6 +380,14 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		}
 	}
 	 
+	/**
+	 * Returns the changes made in the last refresh 
+	 * @return the changes made in the last refresh
+	 */
+	@Override
+	public LastRefreshChange getLastRefreshChange() {
+		return lastRefreshChange;
+	}
 	
 	
 	
@@ -386,7 +402,8 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 	 * </ol>
 	 * 
 	 */
-	public int[] upsertActiveChecks(JSONArray activeChecks) {
+	public synchronized int[] upsertActiveChecks(JSONArray activeChecks) {
+		final long start = SystemClock.currentTimeMillis();
 		markAllChecks(true);
 		int adds = 0, updates = 0, nochanges = 0;
 		try {
@@ -422,12 +439,16 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 			int checksRemoved = clearMarkedChecks();
 			log.info("Removed [{}] Active Host Checks", checksRemoved);
 			setState(ActiveHostState.ACTIVE);
+			long elapsed = SystemClock.currentTimeMillis()-start;
+			lastRefreshChange.update(elapsed, checksRemoved, adds, updates, nochanges);
 			return new int[]{adds, updates , nochanges, checksRemoved };
 		} catch (Exception e) {
 			log.error("Failed to upsert Active Host Checks [{}]", e.getMessage());
 			log.debug("Failed to upsert Active Host Checks for JSON [{}]", activeChecks,  e);
 			return null;
-		}		
+		} finally {
+			scheduleNextRefresh();
+		}
 	}
 	
 	/**
@@ -592,10 +613,12 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 			return String.format(RESPONSE_TEMPLATE, hostName, itemKeyEsc, StringHelper.escapeQuotes(result.toString()), SystemClock.currentTimeSecs() );
 		}
 		
+
+		
+		
 		/**
 		 * Executes this check and writes the result to the passed byte buffer
 		 * @param collector The collector stream to write the results to
-		 * @return true if the result was successfully written to the buffer and the buffer was marked. Otherwise, the buffer is reset to it's original mark and false is returned.
 		 */
 		public void execute(IResultCollector collector) {
 			collector.addResult(call());
@@ -731,12 +754,21 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 
 
 
-	/**
-	 * @param listener
-	 * @param filter
-	 * @param handback
-	 * @see javax.management.NotificationBroadcasterSupport#addNotificationListener(javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
-	 */
+    /**
+     * Adds a listener.
+     *
+     * @param listener The listener to receive notifications.
+     * @param filter The filter object. If filter is null, no
+     * filtering will be performed before handling notifications.
+     * @param handback An opaque object to be sent back to the
+     * listener when a notification is emitted. This object cannot be
+     * used by the Notification broadcaster object. It should be
+     * resent unchanged with the notification to the listener.
+     *
+     * @exception IllegalArgumentException thrown if the listener is null.
+     *
+     * @see #removeNotificationListener
+     */
 	@Override
 	public void addNotificationListener(NotificationListener listener,
 			NotificationFilter filter, Object handback) {
@@ -747,7 +779,8 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 
 
 	/**
-	 * @return
+	 * Returns the notification info for this ActiveHost
+	 * @return the notification info for this ActiveHost
 	 * @see javax.management.NotificationBroadcasterSupport#getNotificationInfo()
 	 */
 	@Override
@@ -757,12 +790,25 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 
 
 
+    /**
+     * Removes a listener from this MBean.  If the listener
+     * has been registered with different handback objects or
+     * notification filters, all entries corresponding to the listener
+     * will be removed.
+     *
+     * @param listener A listener that was previously added to this MBean.
+     *
+     * @exception ListenerNotFoundException The listener is not
+     * registered with the MBean.
+     *
+     * @see #addNotificationListener
+     * @see NotificationEmitter#removeNotificationListener
+     */
 	/**
-	 * @param listener
-	 * @param filter
-	 * @param handback
-	 * @throws ListenerNotFoundException
-	 * @see javax.management.NotificationBroadcasterSupport#removeNotificationListener(javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
+	 * @param listener A listener that was previously added to this MBean.
+	 * @param filter The filter that the listener was registered with
+	 * @param handback The handback that the listener was registered with
+	 * @throws ListenerNotFoundException The listener is not registered with the MBean.
 	 */
 	public void removeNotificationListener(NotificationListener listener,
 			NotificationFilter filter, Object handback)
@@ -773,11 +819,20 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 
 
 
-	/**
-	 * @param listener
-	 * @throws ListenerNotFoundException
-	 * @see javax.management.NotificationBroadcasterSupport#removeNotificationListener(javax.management.NotificationListener)
-	 */
+    /**
+     * Removes a listener from this MBean.  If the listener
+     * has been registered with different handback objects or
+     * notification filters, all entries corresponding to the listener
+     * will be removed.
+     *
+     * @param listener A listener that was previously added to this
+     * MBean.
+     *
+     * @exception ListenerNotFoundException The listener is not registered with the MBean.
+     *
+     * @see #addNotificationListener
+     * @see NotificationEmitter#removeNotificationListener
+     */
 	@Override
 	public void removeNotificationListener(NotificationListener listener)
 			throws ListenerNotFoundException {
@@ -787,11 +842,12 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 
 
 	/**
-	 * @param arg0
+	 * Sends a JMX notification
+	 * @param notif The notification to send
 	 * @see javax.management.NotificationBroadcasterSupport#sendNotification(javax.management.Notification)
 	 */
-	public void sendNotification(Notification arg0) {
-		notificationBroadcaster.sendNotification(arg0);
+	public void sendNotification(Notification notif) {
+		notificationBroadcaster.sendNotification(notif);
 	}
 
 	/**
@@ -814,9 +870,79 @@ public class ActiveHost implements Runnable, JSONResponseHandler, ActiveHostMXBe
 		builder.append("]");
 		return builder.toString();
 	}
-
-
-
-
+	
+	public static interface LastRefreshChangeMBean {
+		public int getRemoved();
+		public int getAdded();
+		public int getUpdated();
+		public int getNoChange();
+		public long getElapsedTime();
+		public Date getDate();
+	}
+	
+	public static class LastRefreshChange implements LastRefreshChangeMBean {
+		private int removed = 0;
+		private int added = 0;
+		private int updated = 0;
+		private int noChange = 0;
+		private long elapsed = 0L;
+		private long time = 0L;
+		
+		/**
+		 * Updates in this order: removed, added, updated, noChange
+		 * @param values
+		 */
+		public void update(long elapsed, int...values) {
+			removed = values[0];
+			added = values[1];
+			updated = values[2];
+			noChange = values[3];
+			time = SystemClock.currentTimeMillis();
+			elapsed = elapsed;
+		}
+		
+		public long getElapsedTime() {
+			return elapsed;
+		}
+		
+		public Date getDate() {
+			return new Date(time);
+		}
+		
+		/**
+		 * Returns 
+		 * @return the removed
+		 */
+		@Override
+		public int getRemoved() {
+			return removed;
+		}
+		/**
+		 * Returns 
+		 * @return the added
+		 */
+		@Override
+		public int getAdded() {
+			return added;
+		}
+		/**
+		 * Returns 
+		 * @return the updated
+		 */
+		@Override
+		public int getUpdated() {
+			return updated;
+		}
+		/**
+		 * Returns 
+		 * @return the noChange
+		 */
+		@Override
+		public int getNoChange() {
+			return noChange;
+		}
+		
+		
+	}
 
 }

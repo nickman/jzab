@@ -18,7 +18,7 @@ config version
  -->
  
  <logging-factory type="" /> 	
- <active-agent refresh="10" collection-policy="THREAD_PER_HOST" collate-in-memory="false">
+ <active-agent refresh="10"  collection-timeout="2"  threading-policy="SERVER" collation-type="DIRECTMEMORY" >
  	<scheduler-pool name="Scheduler" />
  	<task-pool  name="TaskExecutor" />
  	
@@ -26,8 +26,8 @@ config version
 
 	 	<server address="zabbix" port="10051" refresh="30">
 	 		<hosts>
-	 			<host name="mulder" refresh="120" />
-	 			<host name="GroovyActive" refresh="120" />
+	 			<host name="mulder" refresh="20" />
+	 			<host name="GroovyActive" refresh="1200" />
 	 		</hosts>
 	 	</server>
  	 	

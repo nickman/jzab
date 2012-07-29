@@ -29,8 +29,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.AttributeChangeNotification;
@@ -40,6 +40,7 @@ import javax.management.ObjectName;
 
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory;
+import org.helios.jzab.agent.internal.jmx.TaskScheduler;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
@@ -52,6 +53,8 @@ import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,20 +72,23 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/** The task scheduler */
-	protected final ScheduledThreadPoolExecutor scheduler;
+	protected final TaskScheduler scheduler;
 	/** The asynch task executor */
 	protected final ThreadPoolExecutor executor;
 	
 	/** The collection threading policy */
 	protected CommandThreadPolicy commandThreadPolicy;
-	/** Indicates if in memory collation of collection results should be used */
-	protected boolean inMemoryCollation;
+	/** The result collation type policy */
+	protected ActiveCollectionStreamType collectionStreamType;
 	
 	/** The master schedule bucket for this agent */
 	protected final ActiveScheduleBucket<ActiveServer, ActiveAgent> scheduleBucket;
 	
 	/** The agent level refresh period in seconds */
 	protected long agentRefreshPeriod;
+	/** The agent level collection timeout in seconds */
+	protected long agentCollectionTimeout;
+	
 	
 	/** A map of the configured active servers keyed by <code>address:port</code> */
 	protected final Map<String, ActiveServer> activeServers = new ConcurrentHashMap<String, ActiveServer>();
@@ -102,8 +108,24 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.active:service=ActiveAgent");
 	/** The configuration node name */
 	public static final String NODE = "active-agent";
+
+	/** The default collection threading policy */
+	public static final CommandThreadPolicy DEFAULT_COLLECTION_THREADING_POLICY = CommandThreadPolicy.HOST;
+	/** The collection threading policy attribute name */
+	public static final String COLLECTION_THREADING_POLICY_ATTR = "threading-policy";
+	/** The default collation policy */
+	public static final ActiveCollectionStreamType DEFAULT_COLLATION_TYPE = ActiveCollectionStreamType.DISK;
+	/** The collation policy attribute name */
+	public static final String COLLATION_TYPE_ATTR = "collation-type";
+	/** The default collection timeout in seconds */
+	public static final long DEFAULT_COLLECTION_TIMEOUT = 5;
+	/** The collection timeout attribute name */
+	public static final String COLLECTION_TIMEOUT_ATTR = "collection-timeout";
+	
 	/** The default agent refresh period on which the agent attempts to refresh marching orders for all monitored servers, which is 3600 or 1 hour */
 	public static final long DEFAULT_AGENT_REFRESH = 60 *60;
+	/** The agent refresh attribute name */
+	public static final String AGENT_REFRESH_ATTR = "refresh";
 	
 	
 	/**
@@ -166,22 +188,6 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		return activeServers.size();
 	}
 	
-	
-	/**
-	 * IMPLEMENT THIS:
-	 * 		collection-policy="THREAD_PER_HOST" collate-in-memory="true"
-	 */
-	
-	/** The default collection threading policy */
-	public static final String DEFAULT_COLLECTION_POLICY = CommandThreadPolicy.THREAD_PER_HOST.name();
-	/** The collection threading policy attribute name */
-	public static final String COLLECTION_POLICY_ATTR = "collection-policy";
-	/** The default collate in memory flag */
-	public static final boolean DEFAULT_COLLATE_IN_MEM = true;
-	/** The collate in memory  attribute name */
-	public static final String COLLATE_IN_MEM_ATTR = "collate-in-memory";
-	
-	
 	/**
 	 * Creates a new ActiveAgent
 	 * @param configNode The configuration node
@@ -193,7 +199,8 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		if(!NODE.equals(nodeName)) {
 			throw new RuntimeException("Configuration Node expected to have node name [" + NODE + "] but was [" + nodeName + "]", new Throwable());
 		}
-		agentRefreshPeriod = XMLHelper.getAttributeByName(configNode, "refresh", DEFAULT_AGENT_REFRESH);		
+		agentRefreshPeriod = XMLHelper.getAttributeByName(configNode, AGENT_REFRESH_ATTR, DEFAULT_AGENT_REFRESH);
+		agentCollectionTimeout = XMLHelper.getAttributeByName(configNode, COLLECTION_TIMEOUT_ATTR, DEFAULT_COLLECTION_TIMEOUT);
 		String schedulerName = null, executorName = null;
 		try {
 			schedulerName = XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, "scheduler-pool", false), "name", "Scheduler");
@@ -207,12 +214,31 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		} catch (Exception e) {
 			throw new RuntimeException("ActiveAgent failed to get task executor named [" + executorName + "]", e);
 		}
-		commandThreadPolicy = CommandThreadPolicy.forName(XMLHelper.getAttributeByName(configNode, COLLECTION_POLICY_ATTR, DEFAULT_COLLECTION_POLICY));		
-		inMemoryCollation = XMLHelper.getAttributeByName(configNode, COLLATE_IN_MEM_ATTR, DEFAULT_COLLATE_IN_MEM);
+		
+		
+		
+		commandThreadPolicy = CommandThreadPolicy.forName(XMLHelper.getAttributeByName(configNode, COLLECTION_THREADING_POLICY_ATTR, DEFAULT_COLLECTION_THREADING_POLICY.name()));
+		collectionStreamType = ActiveCollectionStreamType.forName(XMLHelper.getAttributeByName(configNode, COLLATION_TYPE_ATTR, DEFAULT_COLLATION_TYPE.name()));
 		
 		scheduleBucket = new ActiveScheduleBucket<ActiveServer, ActiveAgent>(
 				ActiveServer.class
-		);
+		) {
+			/**
+			 * {@inheritDoc}
+			 * @see org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket#fireStartScheduledEvent(long)
+			 */
+			@Override
+			public void fireStartScheduledEvent(final long delay) {
+				super.fireStartScheduledEvent(delay);
+				scheduler.scheduleAtFixedRate("Delayed Active Checks [" + delay + "]", new Runnable(){
+					@Override
+					public void run() {
+						ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTDISK, delay, ActiveClient.getInstance().newChannel("zabbix", 10051));
+					}
+				}, delay, delay, TimeUnit.SECONDS);
+			}
+		};
+		
 		
 		Node servers = XMLHelper.getChildNodeByName(configNode, "servers", false);
 		if(servers==null) {
@@ -253,8 +279,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				initializeServers();
-				setupServerSchedules();
+				initializeServers();				
 				started.set(true);
 			}
 		});		
@@ -301,6 +326,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			} catch (Exception e) {
 				log.error("Failed to execute ActiveCheck request for server [{}]. Error was [{}]", server, e.getMessage());
 				log.debug("Failed to execute ActiveCheck request for server [{}]", server, e);
+				throw new RuntimeException(e);
 			}			
 		}
 	}
@@ -337,6 +363,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	 * @param serverId The id of the server managing the host to execute checks for
 	 * @param hostName The name of the active host to execute checks for
 	 */
+	@Override
 	public void executeChecks(String serverId, String hostName) {
 		if(serverId==null) throw new IllegalArgumentException("The passed serverId was null", new Throwable());
 		if(hostName==null) throw new IllegalArgumentException("The passed hostName was null", new Throwable());
@@ -373,75 +400,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		});
 	}
 		
-/*
-					OutputStream os = null;
-					FileOutputStream fos = null;
-					
-					if(!inMem) {
-						tmpStream = File.createTempFile("jzab-sub", ".tmp");
-						log.debug("Streaming Results for [{}] to file [{}]", server.getAddress() + ":" + server.port, tmpStream);
-						fos = new FileOutputStream(tmpStream);
-						os = new BufferedOutputStream(fos);
-					} else {
-						tmpStream = null;
-						log.debug("Streaming Results for [{}] to in-memory buffer", server.getAddress() + ":" + server.port);
-						os = new ByteArrayOutputStream(10240);
-					}
-					log.debug("Executing initial checks for [{}]", server);
-					os.write("{\"request\":\"agent data\", \"data\":[".getBytes());
-					long start = System.currentTimeMillis();
-					server.executeChecks(os);
-					
-					os.write(String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes());
-					os.flush();
-					os.close();
-					long elapsed = System.currentTimeMillis()-start;
-					log.debug("\nCompleted execution of initial checks for [{}] in [{}] ms. \nSending results to server....", server, elapsed);
-					Channel channel = ActiveClient.getInstance().newChannel(server.address, server.port);
-					//channel.getPipeline().addLast("jsonHandler", server);
-					
-					final Object payload;
-					final RandomAccessFile raf;
-					if(inMem) {
-						String s = new String();((ByteArrayOutputStream)os).toString();
-						s = s.substring(0, s.length()-1);
-						raf = null;
-						payload = s;
-					} else {
-						raf = new RandomAccessFile(tmpStream, "rw");
-						FileChannel fc = raf.getChannel();
-						fc.truncate(raf.length()-1);
-						fc.position(fc.size());
-						fc.write(ByteBuffer.wrap(String.format("],\"clock\":%s}", SystemClock.currentTimeSecs()).getBytes()));
-						fc.force(true);
-						long length = fc.size();
-						fc.close();
-						payload = new DefaultFileRegion(raf.getChannel(), 0, length, true);
-					}
-					channel.write(payload).addListener(new ChannelFutureListener() {
-						public void operationComplete(ChannelFuture future) throws Exception {
-							if(!inMem) {
-								if(raf!=null) raf.close();
-								if(tmpStream !=null) tmpStream.delete();
-							}
-							log.debug("Initial Active Check Complete for [{}]", server);
-						}
-					});
-				} catch (Exception e) {
-					log.error("Failed to send initial checks for [{}]", server, e);
-				} finally {
-					// nothing ?
-				}	
-		
- */
 	
-	
-	/**
-	 * Schedules the repeating checks for this agent's current servers
-	 */
-	protected void setupServerSchedules() {
-		
-	}
 	
 	/**
 	 * Returns a map of the number of servers registered for checks for each delay
@@ -492,24 +451,25 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	public void setCommandThreadPolicy(String commandThreadPolicyName) {
 		this.commandThreadPolicy = CommandThreadPolicy.forName(commandThreadPolicyName);
 	}
-
+	
 	/**
-	 * Indicates if in-memory collation is being used
-	 * @return the inMemoryCollation true if using memory, false if using disk
+	 * Returns the collation type name
+	 * @return the collation type name
 	 */
 	@Override
-	public boolean isInMemoryCollation() {
-		return inMemoryCollation;
+	public String getCollationType() {
+		return collectionStreamType.name();
 	}
 
 	/**
-	 * Sets the in-memory collation 
-	 * @param inMemoryCollation true to use in memory, false to use disk
+	 * Sets the collation type name
+	 * @param collationTypeName the collation type name to set
 	 */
 	@Override
-	public void setInMemoryCollation(boolean inMemoryCollation) {
-		this.inMemoryCollation = inMemoryCollation;
+	public void setCollationType(String collationTypeName) {
+		this.collectionStreamType = ActiveCollectionStreamType.forName(collationTypeName);
 	}
+	
 
 	/**
 	 * {@inheritDoc}
@@ -527,6 +487,43 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			}
 		}
 	}
+
+	/**
+	 * Returns the agent level refresh period in seconds
+	 * @return the agent level refresh period in seconds
+	 */
+	@Override
+	public long getAgentRefreshPeriod() {
+		return agentRefreshPeriod;
+	}
+
+	/**
+	 * Sets the agent level refresh period in seconds
+	 * @param agentRefreshPeriod the agent level refresh period in seconds
+	 */
+	@Override
+	public void setAgentRefreshPeriod(long agentRefreshPeriod) {
+		this.agentRefreshPeriod = agentRefreshPeriod;
+	}
+
+	/**
+	 * Returns the agent level collection timeout in seconds
+	 * @return the agent level collection timeout in seconds
+	 */
+	@Override
+	public long getAgentCollectionTimeout() {
+		return agentCollectionTimeout;
+	}
+
+	/**
+	 * Sets the agent level collection timeout in seconds
+	 * @param agentCollectionTimeout the agent level collection timeout in seconds
+	 */
+	@Override
+	public void setAgentCollectionTimeout(long agentCollectionTimeout) {
+		this.agentCollectionTimeout = agentCollectionTimeout;
+	}
+
 }
 
 

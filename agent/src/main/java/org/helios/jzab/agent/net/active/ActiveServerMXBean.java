@@ -81,6 +81,19 @@ public interface ActiveServerMXBean {
 	 */
 	public void requestMarchingOrders();
 	
+	/**
+	 * Returns the frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it 
+	 * @return the refreshPeriod
+	 */
+	public long getRefreshPeriod();
+	
+	/**
+	 * Sets the frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
+	 * @param period the frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
+	 */
+	public void setRefreshPeriod(long period);
+	
+	
 	
 	
 

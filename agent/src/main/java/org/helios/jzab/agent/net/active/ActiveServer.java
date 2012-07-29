@@ -36,6 +36,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.management.ObjectName;
+
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
@@ -74,6 +76,8 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	protected final String address;
 	/** The zabbix server's listening port */
 	protected final int port;
+	/** The JMX ObjectName for this active server */
+	protected final ObjectName objectName;
 	/** The frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it */
 	protected long refreshPeriod;
 	/** The hosts monitored for this server keyed by host name */
@@ -110,7 +114,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	
 	/**
 	 * Creates a new ActiveServer
-	 * @param The parent agent for this server
+	 * @param agent The parent agent for this server
 	 * @param address The ip address or host name of the zabbix server
 	 * @param port The zabbix server's listening port
 	 * @param refreshPeriod The frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
@@ -125,6 +129,12 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 		this.port = port;
 		this.refreshPeriod = refreshPeriod;
 		this.executor = executor;
+		objectName = JMXHelper.objectName(new StringBuilder(
+				ActiveAgent.OBJECT_NAME.toString())
+				.append(",server=").append(address)
+				.append(",port=").append(port)
+		);
+		
 		// ==================  UPDATE ME  ===================		
 		scheduleBucket = new PassiveScheduleBucket<ActiveHost,ActiveServer>(parentScheduler, this);
 		// ==================================================
@@ -148,8 +158,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 		routingNames = new RoutingObjectName[]{RoutingObjectNameFactory.getInstance().getRoute(true, KEY_REQUEST, VALUE_ACTIVE_CHECK_SUBMISSION)};
 		RoutingObjectNameFactory.getInstance().registerJSONResponseHandler(this);
 		log.debug("Added [{}] hosts for active server [{}]", cnt, address + ":" + port);
-		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder("org.helios.jzab.agent.active:service=ActiveServer,server=").append(address).append(",port=").append(port)), this);
-		
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);		
 	}
 	
 	/**
@@ -175,7 +184,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.json.JSONObject)
+	 * @see org.helios.jzab.agent.net.routing.JSONResponseHandler#jsonResponse(org.helios.jzab.agent.net.routing.RoutingObjectName, org.json.JSONObject)
 	 */
 	@Override
 	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
@@ -238,7 +247,8 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	/**
 	 * Returns a map of the number of hosts registered for checks for each delay
 	 * @return a map of the number of hosts registered for checks for each delay
-	 */
+	 */	
+	@Override
 	public Map<Long, Integer> getScheduleCounts() {
 		Map<Long, Integer> map = new HashMap<Long, Integer>(scheduleBucket.size());
 		for(Map.Entry<Long, Set<ActiveHost>> entry: scheduleBucket.entrySet()) {
@@ -267,47 +277,22 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	}
 	
 	
-	protected void fireResponseEvent(final JSONObject json) {
-		final ActiveServer fserver = this;
-		executor.execute(new Runnable(){
-			public void run() {
-				for(ActiveServerResponseListener listener: listeners) {
-					listener.onResponse(fserver, json);
-				}
-			}
-		});
-	}
-	
 //	/**
-//	 * Routes a received JSON response
-//	 * @param hostName the host name that this response is for
-//	 * @param json the received JSON response
+//	 * Sends a JSON event to registered listeners
+//	 * @param json The JSON packet that was processed
 //	 */
-//	protected void handleJson(String hostName, final JSONObject json) {
-//		if(hostName==null) throw new RuntimeException("The correlating host name was null", new Throwable());
-//		log.debug("Host [{}], JSON Keys: {}",hostName,  Arrays.toString(JSONObject.getNames(json)));
-//		try {
-//			String responseStatus = json.getString(RESPONSE_STATUS);
-//			String responseType = json.getString("request");
-//			if(!RESPONSE_STATUS_OK.equalsIgnoreCase(responseStatus)) {
-//				log.warn("Response indicated request failure [{}]", responseStatus);
-//			} else {
-//				if(RESPONSE_DATA_TYPE.equalsIgnoreCase(responseType)) {
-//					updateActiveChecks(hostName, json.getJSONArray(RESPONSE_DATA_VALUE));
-//				} else if(RESPONSE_SUBMISSION.equalsIgnoreCase(responseType)) {
-//					processSubmissionResponse(hostName, json);
-//				} else {
-//					log.warn("Unrecognized Server Response Type [{}]", responseType);
+//	protected void fireResponseEvent(final JSONObject json) {
+//		final ActiveServer fserver = this;
+//		executor.execute(new Runnable(){
+//			@Override
+//			public void run() {
+//				for(ActiveServerResponseListener listener: listeners) {
+//					listener.onResponse(fserver, json);
 //				}
 //			}
-//			
-//		} catch (Exception e) {
-//			log.warn("Failed to handle JSON response: {}", e.getMessage());
-//			log.debug("Failed to handle JSON response: {}", json, e);
-//		} finally {
-//			fireResponseEvent(json);
-//		}
+//		});
 //	}
+	
 	
 	/**
 	 * Parses and processes the active check submission response
@@ -343,15 +328,15 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 			ah.upsertActiveChecks(dataArray);
 		}
 		log.debug(ah.displayScheduleBuckets());
-//		long start = System.currentTimeMillis();
-//		String[] results = ah.executeChecks();
-//		long elapsed = System.currentTimeMillis()-start;
-//		log.info("Executed Checks for [{}] in [{}] ms.", ah.hostName, elapsed);
-//		if(log.isTraceEnabled()) {
-//			for(String result: results) {
-//				log.trace("Refreshed Active Check [{}]", result);
-//			}
-//		}
+	}
+
+	
+	/**
+	 * Returns the JMX ObjectName for this active server
+	 * @return the JMX ObjectName for this active server
+	 */
+	public ObjectName getObjectName() {
+		return objectName;
 	}
 	
 	/**
@@ -433,6 +418,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * Returns this server's address and port based ID.
 	 * @return this server's address and port based ID.
 	 */
+	@Override
 	public String getId() {
 		return address + ":" + port;
 	}
@@ -443,6 +429,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * Returns the frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it 
 	 * @return the refreshPeriod
 	 */
+	@Override
 	public long getRefreshPeriod() {
 		return refreshPeriod;
 	}
@@ -452,6 +439,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * Sets the frequency in seconds that this server should be interrogated for active checks on hosts being monitored for it
 	 * @param refreshPeriod the refreshPeriod to set
 	 */
+	@Override
 	public void setRefreshPeriod(long refreshPeriod) {
 		this.refreshPeriod = refreshPeriod;
 	}
@@ -461,6 +449,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * Returns the ip address or host name of the zabbix server 
 	 * @return the address
 	 */
+	@Override
 	public String getAddress() {
 		return address;
 	}
@@ -470,6 +459,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	 * Returns the zabbix server's listening port
 	 * @return the port
 	 */
+	@Override
 	public int getPort() {
 		return port;
 	}
@@ -533,6 +523,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 				.append(refreshPeriod).append("]");
 		return builder.toString();
 	}
+
 
 
 

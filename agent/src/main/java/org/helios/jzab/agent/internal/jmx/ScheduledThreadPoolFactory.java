@@ -26,13 +26,22 @@ package org.helios.jzab.agent.internal.jmx;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.RunnableScheduledFuture;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.ObjectName;
 
@@ -50,7 +59,7 @@ import org.w3c.dom.Node;
  * <p><code>org.helios.jzab.agent.internal.jmx.ScheduledThreadPoolFactory</code></p>
  */
 
-public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor implements ThreadFactory, SchedulerMXBean, RejectedExecutionHandler, UncaughtExceptionHandler {
+public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor implements ThreadFactory, SchedulerMXBean, RejectedExecutionHandler, UncaughtExceptionHandler, TaskScheduler {
 	/** The ObjectName that will be used to register the scheduled thread pool management interface */
 	protected final ObjectName objectName;
 	/** Serial number factory for thread names */
@@ -61,6 +70,8 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
 	protected final boolean daemonThreads;
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	/** The currently scheduled tasks */
+	protected final Set<TrackedScheduledFuture> activeTasks = new CopyOnWriteArraySet<TrackedScheduledFuture>();
 
 	/** A map of created and started scheduler factories */
 	protected static final Map<String, ScheduledThreadPoolFactory> tpSchedulers = new ConcurrentHashMap<String, ScheduledThreadPoolFactory>();
@@ -68,18 +79,40 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
 	/** The configuration node name */
 	public static final String NODE = "scheduler";
 	
+//	/** Tab type for tasks */
+//	protected static final TabularType TASK_TAB_TYPE ;
+//	
+//	static {
+//		try {
+//			TASK_TAB_TYPE = new TabularType("ScheduledTasks", "All the scheduled tasks for this scheduler",  TrackedScheduledFuture.COMPOSITE_TYPE, new String[]{"Id"});
+//		} catch (Exception e) {
+//			throw new RuntimeException(e);
+//		}
+//	}
+	
 	/**
 	 * Returns the named scheduler
 	 * @param name The name of the scheduler to retrieve
 	 * @return The named scheduler
 	 * @throws  IllegalStateException Thrown if the named scheduler does not exist
 	 */
-	public static ScheduledThreadPoolFactory getInstance(String name) {
+	public static ScheduledThreadPoolFactory getFullInstance(String name) {
 		if(name==null) throw new IllegalArgumentException("The passed name was null", new Throwable());
 		ScheduledThreadPoolFactory tps = tpSchedulers.get(name);
 		if(tps==null) throw new IllegalStateException("The scheduler named  [" + name + "] has not been initialized" , new Throwable());
 		return tps;
-	}	
+	}
+	
+	/**
+	 * Returns the named scheduler
+	 * @param name The name of the scheduler to retrieve
+	 * @return The named scheduler
+	 * @throws  IllegalStateException Thrown if the named scheduler does not exist
+	 */
+	public static TaskScheduler getInstance(String name) {
+		return getFullInstance(name);
+	}
+	
 	
 
 	/**
@@ -125,7 +158,127 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
 			}
 		}
 		return tps;
-	}	
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.util.concurrent.ScheduledThreadPoolExecutor#decorateTask(java.lang.Runnable, java.util.concurrent.RunnableScheduledFuture)
+	 */
+	@Override
+	protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
+		return new ListenerAwareRunnableScheduledFuture<V>(task);
+	}
+	
+//	/**
+//	 * Post execution hook
+//	 * @param r The runnable
+//	 * @param t The throwable
+//	 */
+//	@Override
+//	protected void afterExecute(Runnable r, Throwable t) {
+//		if(r instanceof TrackedScheduledFuture) {
+//			activeTasks.remove(r);
+//		}
+//		super.afterExecute(r, t);
+//	}
+	
+	/**
+	 * Returns the number of pending tasks
+	 * @return the number of pending tasks
+	 */
+	@Override
+	public int getPendingTaskCount() {
+		return activeTasks.size();
+	}
+	
+	/**
+	 * Enlists the tracked task
+	 * @param description The description of the task
+	 * @param delayPeriod The task delay or period in seconds
+	 * @param task The task to enlist
+	 * @return The enlisted task
+	 */	
+	@SuppressWarnings("rawtypes")
+	protected TrackedScheduledFuture enlistTask(String description, long delayPeriod, ScheduledFuture<?> task) {
+		ListenerAwareRunnableScheduledFuture sf = (ListenerAwareRunnableScheduledFuture)task;
+		final TrackedScheduledFuture trackedTask = new TrackedScheduledFuture(sf, description, delayPeriod, activeTasks);
+		sf.addCompletionListener(new Runnable() {
+			@Override
+			public void run() {
+					activeTasks.remove(trackedTask);
+			}
+		});
+		activeTasks.add(trackedTask);
+		return trackedTask;			
+	}
+	
+    /**
+     * Creates and executes a one-shot action that becomes enabled after the given delay.
+     * @param description A description of the command
+     * @param command The runnable to schedule
+     * @param delay The delay time
+     * @param unit The delay unit
+     * @return the scheduled future for the task
+     */
+	@Override
+	public TrackedScheduledFuture schedule(String description, Runnable command, long delay, TimeUnit unit) {    	
+    	return enlistTask(description, TimeUnit.SECONDS.convert(delay, unit), schedule(command, delay, unit)); 
+    }
+    
+    /**
+     * Creates and executes a one-shot action that becomes enabled after the given delay.
+     * @param description A description of the command
+     * @param callable The callable to schedule
+     * @param delay The delay time
+     * @param unit The delay unit
+     * @return the scheduled future for the task
+     */    
+	@Override
+	public TrackedScheduledFuture schedule(String description, Callable<?> callable, long delay, TimeUnit unit) {
+    	return enlistTask(description, TimeUnit.SECONDS.convert(delay, unit), super.schedule(callable, delay, unit));
+    }
+    
+    /**
+     * Creates and executes a periodic action that becomes enabled first after the given initial delay, 
+     * and subsequently with the given period; that is executions will commence after initialDelay 
+     * then initialDelay+period, then initialDelay + 2 * period, and so on.
+     * @param description A description of the command
+     * @param command The command to schedule
+     * @param initialDelay the time to delay first execution
+     * @param period the period between successive executions
+     * @param unit The period unit
+     * @return the scheduled future for the task
+     */
+	@Override
+	public TrackedScheduledFuture scheduleAtFixedRate(String description, Runnable command, long initialDelay, long period, TimeUnit unit) {
+    	return enlistTask(description, TimeUnit.SECONDS.convert(period, unit), super.scheduleAtFixedRate(command, initialDelay, period, unit));
+    }
+    
+    /**
+     * Creates and executes a periodic action that becomes enabled first after the given initial delay, 
+     * and subsequently with the given delay between the termination of one execution and the commencement of the next. 
+     * If any execution of the task encounters an exception, subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the executor. 
+     * @param description A description of the command
+     * @param command The command to schedule
+     * @param initialDelay the time to delay first execution
+     * @param period the period between successive executions
+     * @param unit The period unit
+     * @return the scheduled future for the task
+     */
+    @Override
+	public TrackedScheduledFuture scheduleWithFixedDelay(String description, Runnable command, long initialDelay, long period, TimeUnit unit) {
+    	return enlistTask(description, TimeUnit.SECONDS.convert(period, unit), super.scheduleWithFixedDelay(command, initialDelay, period, unit));
+    }
+    
+    
+	/**
+	 * Returns an array of the scheduled tasks
+	 * @return an array of the scheduled tasks
+	 */
+	@Override
+	public Set<TrackedScheduledFuture> getScheduledTasks() {
+		return  new HashSet<TrackedScheduledFuture>(activeTasks);
+	}
 	
 	/**
 	 * Returns the assigned JMX ObjectName

@@ -27,6 +27,9 @@ package org.helios.jzab.agent.net.active;
 import java.util.Date;
 import java.util.Map;
 
+import org.helios.jzab.agent.internal.jmx.TrackedScheduledFuture;
+import org.helios.jzab.agent.net.active.ActiveHost.LastRefreshChange;
+
 /**
  * <p>Title: ActiveHostMXBean</p>
  * <p>Description: JMX interface for ActiveHost</p> 
@@ -121,7 +124,18 @@ public interface ActiveHostMXBean {
 	 */
 	public void requestMarchingOrders();
 	
+	/**
+	 * Returns the current pending refresh task
+	 * @return the current pending refresh task
+	 */
+	@SuppressWarnings("rawtypes")
+	public TrackedScheduledFuture getRefreshTask();
 	
+	/**
+	 * Returns the changes made in the last refresh 
+	 * @return the changes made in the last refresh
+	 */
+	public LastRefreshChange getLastRefreshChange();	
 	
 
 }

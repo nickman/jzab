@@ -59,17 +59,6 @@ public interface ActiveAgentMXBean {
 	 */
 	public void setCommandThreadPolicy(String commandThreadPolicyName);
 
-	/**
-	 * Indicates if in-memory collation is being used
-	 * @return the inMemoryCollation true if using memory, false if using disk
-	 */
-	public boolean isInMemoryCollation();
-
-	/**
-	 * Sets the in-memory collation 
-	 * @param inMemoryCollation true to use in memory, false to use disk
-	 */
-	public void setInMemoryCollation(boolean inMemoryCollation);
 	
 	/**
 	 * Returns a map of the number of servers registered for checks for each delay
@@ -93,5 +82,41 @@ public interface ActiveAgentMXBean {
 	 * @param hostName The name of the active host to execute checks for
 	 */
 	public void executeChecks(String serverId, String hostName);
+	
+	/**
+	 * Returns the collation type name
+	 * @return the collation type name
+	 */
+	public String getCollationType();
+
+	/**
+	 * Sets the collation type name
+	 * @param collationTypeName the collation type name to set
+	 */
+	public void setCollationType(String collationTypeName);
+	
+	/**
+	 * Returns the agent level refresh period in seconds
+	 * @return the agent level refresh period in seconds
+	 */
+	public long getAgentRefreshPeriod();
+
+	/**
+	 * Sets the agent level refresh period in seconds
+	 * @param agentRefreshPeriod the agent level refresh period in seconds
+	 */
+	public void setAgentRefreshPeriod(long agentRefreshPeriod);
+
+	/**
+	 * Returns the agent level collection timeout in seconds
+	 * @return the agent level collection timeout in seconds
+	 */
+	public long getAgentCollectionTimeout();
+
+	/**
+	 * Sets the agent level collection timeout in seconds
+	 * @param agentCollectionTimeout the agent level collection timeout in seconds
+	 */
+	public void setAgentCollectionTimeout(long agentCollectionTimeout);
 
 }

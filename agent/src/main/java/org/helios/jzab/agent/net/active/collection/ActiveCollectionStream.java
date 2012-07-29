@@ -87,6 +87,18 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	}
 	
 	/**
+	 * Executes a full delay window check submission using the default byte order and buffer size
+	 * @param type The collection stream type
+	 * @param delay The delay to execute and submit checks for
+	 * @param channel The netty channel to send the results on
+	 * @return The collector stream created for the submission
+	 */	
+	public static IActiveCollectionStream execute(ActiveCollectionStreamType type, long delay, Channel channel) {
+		return execute(ByteOrder.nativeOrder(), DEFAULT_COLLECTION_BUFFER_SIZE, type, delay, channel);
+	}
+	
+	
+	/**
 	 * Executes a full ActiveHost check submission.
 	 * @param order The byte order of the buffer
 	 * @param size The size of the buffer
@@ -125,6 +137,47 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		return collector;
 		
 	}
+	
+	/**
+	 * Executes a full delay window check submission.
+	 * @param order The byte order of the buffer
+	 * @param size The size of the buffer
+	 * @param type The collection stream type
+	 * @param delay The delay window to execute and submit checks for
+	 * @param channel The netty channel to send the results on
+	 * @return The collector stream created for the submission
+	 */
+	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, final long delay, final Channel channel) {
+		Map<String, String> route = new HashMap<String, String>(1);
+		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
+		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
+		log.debug("Starting Collection Stream for Delay Window [{}] for send to [{}]", delay, channel);		
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
+		try {
+			collector.writeHeader();
+			collector.collect(delay);
+			collector.trimLastCharacter();
+			collector.writeJSONCloser();
+			collector.rewritePayloadLength();
+			collector.close();			
+			collector.writeToChannel(channel).addListener(new ChannelFutureListener() {
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					if(future.isSuccess()) {
+						log.debug("Collection Stream Completion {}",  collector);
+					} else {
+						log.debug("Collection Stream Failed", future.getCause());
+					}
+					future.getChannel().close();
+				}
+			});			
+		} catch (Exception e) {
+			log.error("Submission Failed", e);
+		}
+		return collector;
+		
+	}
+	
 	
 	/**
 	 * Returns the total size of the request to be sent to the zabbix server

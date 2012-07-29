@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="zabbix_export">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="hosts"/>
+        <xs:element ref="dependencies"/>
+      </xs:sequence>
+      <xs:attribute name="date" use="required" type="xs:NMTOKEN"/>
+      <xs:attribute name="time" use="required" type="xs:decimal"/>
+      <xs:attribute name="version" use="required" type="xs:decimal"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="hosts">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="host"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="host">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="proxy_hostid"/>
+        <xs:element ref="useip"/>
+        <xs:element ref="dns"/>
+        <xs:element ref="ip"/>
+        <xs:element ref="port"/>
+        <xs:element ref="status"/>
+        <xs:element ref="useipmi"/>
+        <xs:element ref="ipmi_ip"/>
+        <xs:element ref="ipmi_port"/>
+        <xs:element ref="ipmi_authtype"/>
+        <xs:element ref="ipmi_privilege"/>
+        <xs:element ref="ipmi_username"/>
+        <xs:element ref="ipmi_password"/>
+        <xs:element ref="groups"/>
+        <xs:element ref="triggers"/>
+        <xs:element ref="items"/>
+        <xs:element ref="templates"/>
+        <xs:element ref="graphs"/>
+        <xs:element ref="macros"/>
+      </xs:sequence>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="proxy_hostid" type="xs:integer"/>
+  <xs:element name="useip" type="xs:integer"/>
+  <xs:element name="dns" type="xs:string"/>
+  <xs:element name="ip" type="xs:string"/>
+  <xs:element name="port" type="xs:integer"/>
+  <xs:element name="useipmi" type="xs:integer"/>
+  <xs:element name="ipmi_ip" type="xs:string"/>
+  <xs:element name="ipmi_port" type="xs:integer"/>
+  <xs:element name="ipmi_authtype" type="xs:integer"/>
+  <xs:element name="ipmi_privilege" type="xs:integer"/>
+  <xs:element name="ipmi_username">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="ipmi_password">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="groups">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="group"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="group" type="xs:NCName"/>
+  <xs:element name="triggers">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="trigger"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="trigger">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="description"/>
+        <xs:element ref="type"/>
+        <xs:element ref="expression"/>
+        <xs:element ref="url"/>
+        <xs:element ref="status"/>
+        <xs:element ref="priority"/>
+        <xs:element ref="comments"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="expression" type="xs:string"/>
+  <xs:element name="url">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="priority" type="xs:integer"/>
+  <xs:element name="comments" type="xs:string"/>
+  <xs:element name="items">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="item"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="item">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="description"/>
+        <xs:element ref="ipmi_sensor"/>
+        <xs:element ref="delay"/>
+        <xs:element ref="history"/>
+        <xs:element ref="trends"/>
+        <xs:element ref="status"/>
+        <xs:element ref="data_type"/>
+        <xs:element ref="units"/>
+        <xs:element ref="multiplier"/>
+        <xs:element ref="delta"/>
+        <xs:element ref="formula"/>
+        <xs:element ref="lastlogsize"/>
+        <xs:element ref="logtimefmt"/>
+        <xs:element ref="delay_flex"/>
+        <xs:element ref="authtype"/>
+        <xs:element ref="username"/>
+        <xs:element ref="password"/>
+        <xs:element ref="publickey"/>
+        <xs:element ref="privatekey"/>
+        <xs:element ref="params"/>
+        <xs:element ref="trapper_hosts"/>
+        <xs:element ref="snmp_community"/>
+        <xs:element ref="snmp_oid"/>
+        <xs:element ref="snmp_port"/>
+        <xs:element ref="snmpv3_securityname"/>
+        <xs:element ref="snmpv3_securitylevel"/>
+        <xs:element ref="snmpv3_authpassphrase"/>
+        <xs:element ref="snmpv3_privpassphrase"/>
+        <xs:element ref="applications"/>
+      </xs:sequence>
+      <xs:attribute name="key" use="required"/>
+      <xs:attribute name="type" use="required" type="xs:integer"/>
+      <xs:attribute name="value_type" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ipmi_sensor" type="xs:string"/>
+  <xs:element name="delay" type="xs:integer"/>
+  <xs:element name="history" type="xs:integer"/>
+  <xs:element name="trends" type="xs:integer"/>
+  <xs:element name="data_type" type="xs:integer"/>
+  <xs:element name="units" type="xs:string"/>
+  <xs:element name="multiplier" type="xs:integer"/>
+  <xs:element name="delta" type="xs:integer"/>
+  <xs:element name="formula" type="xs:string"/>
+  <xs:element name="lastlogsize" type="xs:integer"/>
+  <xs:element name="logtimefmt">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="delay_flex">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="authtype" type="xs:integer"/>
+  <xs:element name="username">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="password">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="publickey">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="privatekey">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="params">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="trapper_hosts">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="snmp_community" type="xs:string"/>
+  <xs:element name="snmp_oid" type="xs:anyURI"/>
+  <xs:element name="snmp_port" type="xs:integer"/>
+  <xs:element name="snmpv3_securityname">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="snmpv3_securitylevel" type="xs:integer"/>
+  <xs:element name="snmpv3_authpassphrase">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="snmpv3_privpassphrase">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="applications">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="application"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="application" type="xs:string"/>
+  <xs:element name="templates">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="graphs">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="graph"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="graph">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ymin_type"/>
+        <xs:element ref="ymax_type"/>
+        <xs:element ref="ymin_item_key"/>
+        <xs:element ref="ymax_item_key"/>
+        <xs:element ref="show_work_period"/>
+        <xs:element ref="show_triggers"/>
+        <xs:element ref="graphtype"/>
+        <xs:element ref="yaxismin"/>
+        <xs:element ref="yaxismax"/>
+        <xs:element ref="show_legend"/>
+        <xs:element ref="show_3d"/>
+        <xs:element ref="percent_left"/>
+        <xs:element ref="percent_right"/>
+        <xs:element ref="graph_elements"/>
+      </xs:sequence>
+      <xs:attribute name="height" use="required" type="xs:integer"/>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="width" use="required" type="xs:integer"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ymin_type" type="xs:integer"/>
+  <xs:element name="ymax_type" type="xs:integer"/>
+  <xs:element name="ymin_item_key">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="ymax_item_key">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="show_work_period" type="xs:integer"/>
+  <xs:element name="show_triggers" type="xs:integer"/>
+  <xs:element name="graphtype" type="xs:integer"/>
+  <xs:element name="yaxismin" type="xs:decimal"/>
+  <xs:element name="yaxismax" type="xs:decimal"/>
+  <xs:element name="show_legend" type="xs:integer"/>
+  <xs:element name="show_3d" type="xs:integer"/>
+  <xs:element name="percent_left" type="xs:decimal"/>
+  <xs:element name="percent_right" type="xs:decimal"/>
+  <xs:element name="graph_elements">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="graph_element"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="graph_element">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="drawtype"/>
+        <xs:element ref="sortorder"/>
+        <xs:element ref="color"/>
+        <xs:element ref="yaxisside"/>
+        <xs:element ref="calc_fnc"/>
+        <xs:element ref="type"/>
+        <xs:element ref="periods_cnt"/>
+      </xs:sequence>
+      <xs:attribute name="item" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="drawtype" type="xs:integer"/>
+  <xs:element name="sortorder" type="xs:integer"/>
+  <xs:element name="color" type="xs:NMTOKEN"/>
+  <xs:element name="yaxisside" type="xs:integer"/>
+  <xs:element name="calc_fnc" type="xs:integer"/>
+  <xs:element name="periods_cnt" type="xs:integer"/>
+  <xs:element name="macros">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="dependencies">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="status" type="xs:integer"/>
+  <xs:element name="description" type="xs:string"/>
+  <xs:element name="type" type="xs:integer"/>
+</xs:schema>
