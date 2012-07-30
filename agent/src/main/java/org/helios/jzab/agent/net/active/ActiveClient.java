@@ -249,13 +249,18 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	 * @param host The host name or ip address to connect to
 	 * @param port The listening port
 	 * @param futureListener The callback executed when the connection is acquired or failed
+	 * @return The ChannelFuture for this connection request
 	 */
-	public void newChannel(String host, int port, ChannelFutureListener futureListener) {
+	public ChannelFuture newChannel(String host, int port, ChannelFutureListener futureListener) {
 		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
 		if(futureListener==null) throw new IllegalArgumentException("The passed callback listener was null", new Throwable());
 		SocketAddress sa = new InetSocketAddress(host, port);
-		bstrap.connect(sa).addListener(futureListener);		
+		ChannelFuture cf = bstrap.connect(sa);
+		cf.addListener(futureListener);
+		return cf;
 	}
+	
+	
 	
 	/**
 	 * Acquires a new channel to the passed socket syncrhonously
@@ -294,6 +299,30 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		channelGroup.add(channel);
 		return channel;
 	}
+	
+	/**
+	 * Acquires a new channel to the passed ActiveServer syncrhonously
+	 * @param server The ActiveServer to connect to
+	 * @return A connected channel
+	 */
+	public Channel newChannel(ActiveServer server) {
+		if(server==null) throw new IllegalArgumentException("The passed server was null", new Throwable());
+		return newChannel(server.getAddress(), server.getPort());
+	}
+	
+	/**
+	 * Acquires a new channel to the passed ActiveServer asyncrhonously.
+	 * The passed future listener should implement the action to be executed when the channel is acquired
+	 * and an error handler in the event that the connection fails.
+	 * @param server The ActiveServer to connect to
+	 * @param futureListener The callback executed when the connection is acquired or failed
+	 * @return The ChannelFuture for this connection request
+	 */
+	public ChannelFuture newChannel(ActiveServer server, ChannelFutureListener futureListener) {	
+		if(server==null) throw new IllegalArgumentException("The passed server was null", new Throwable());
+		return newChannel(server.getAddress(), server.getPort(), futureListener);		
+	}
+	
 	
 	/**
 	 * Returns a map representation of the installed socket options for this client
