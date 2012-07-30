@@ -65,7 +65,7 @@ config version
 	 	 -->
  	</servers>
  </active-agent>
- <!-- 
+ 
  <agent-listener interface="0.0.0.0" port="10050" name="RequestListener" >
  	<boss-pool name="NettyBoss" />
  	<worker-pool  name="NettyWorker" />
@@ -73,8 +73,7 @@ config version
  		<opt name="child.keepAlive" value="true" />
  	</socket-options>
  </agent-listener>
- -->
-
+ 
  <active-client  name="ActiveClient" >
  	<boss-pool name="NettyBoss" />
  	<worker-pool  name="NettyWorker" />
