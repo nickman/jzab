@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,9 +47,9 @@ import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 import org.helios.jzab.agent.net.active.collection.ActiveCollectionStream;
 import org.helios.jzab.agent.net.active.collection.ActiveCollectionStreamType;
+import org.helios.jzab.agent.net.active.collection.CommandThreadPolicy;
 import org.helios.jzab.agent.net.active.collection.IResultCollector;
 import org.helios.jzab.agent.net.active.schedule.ActiveScheduleBucket;
-import org.helios.jzab.agent.net.active.schedule.CommandThreadPolicy;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
@@ -169,6 +170,15 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 	}
 	
 	/**
+	 * Returns the active servers that have hosts with active checks scheduled for the passed delay
+	 * @param delay The active check collection delay
+	 * @return A set of ActiveServers.
+	 */
+	public Set<ActiveServer> getServersForDelay(long delay) {
+		return Collections.unmodifiableSet(scheduleBucket.get(delay));
+	}
+	
+	/**
 	 * Executes all the checks in all this agent's servers for the passed delay
 	 * @param delay The delay window
 	 * @param collector The result collection stream
@@ -233,7 +243,7 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 				scheduler.scheduleAtFixedRate("Delayed Active Checks [" + delay + "]", new Runnable(){
 					@Override
 					public void run() {
-						ActiveCollectionStream.execute(ActiveCollectionStreamType.DIRECTDISK, delay, ActiveClient.getInstance().newChannel("zabbix", 10051));
+						ActiveCollectionStream.execute(collectionStreamType, commandThreadPolicy, delay, agentCollectionTimeout);
 					}
 				}, delay, delay, TimeUnit.SECONDS);
 			}

@@ -30,11 +30,14 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.net.active.ActiveAgent;
 import org.helios.jzab.agent.net.active.ActiveHost;
+import org.helios.jzab.agent.net.active.ActiveServer;
 import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
@@ -61,6 +64,9 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	protected int resultCount = 0;
 	/** The starting position of the ZABX payload length */
 	protected int lengthPosition = 0;
+	
+	/** Indicates if the stream is open for collection. */
+	protected final AtomicBoolean open = new AtomicBoolean(true);
 	
 	/** The elapsed time to execute the checks */
 	protected long checksElapsed = -1L;
@@ -89,12 +95,13 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	/**
 	 * Executes a full delay window check submission using the default byte order and buffer size
 	 * @param type The collection stream type
+	 * @param commandThreadPolicy The threading polcy for this collection
 	 * @param delay The delay to execute and submit checks for
-	 * @param channel The netty channel to send the results on
+	 * @param agentCollectionTimeout The collection timeout in seconds
 	 * @return The collector stream created for the submission
 	 */	
-	public static IActiveCollectionStream execute(ActiveCollectionStreamType type, long delay, Channel channel) {
-		return execute(ByteOrder.nativeOrder(), DEFAULT_COLLECTION_BUFFER_SIZE, type, delay, channel);
+	public static IActiveCollectionStream execute(ActiveCollectionStreamType type, CommandThreadPolicy commandThreadPolicy, long delay, long agentCollectionTimeout) {
+		return execute(ByteOrder.nativeOrder(), DEFAULT_COLLECTION_BUFFER_SIZE, type, commandThreadPolicy, delay, agentCollectionTimeout);
 	}
 	
 	
@@ -143,38 +150,45 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param order The byte order of the buffer
 	 * @param size The size of the buffer
 	 * @param type The collection stream type
+	 * @param commandThreadPolicy The threading policy for this collection
 	 * @param delay The delay window to execute and submit checks for
-	 * @param channel The netty channel to send the results on
+	 * @param agentCollectionTimeout The agent collection timeout in seconds
 	 * @return The collector stream created for the submission
 	 */
-	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, final long delay, final Channel channel) {
-		Map<String, String> route = new HashMap<String, String>(1);
-		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
-		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
-		log.debug("Starting Collection Stream for Delay Window [{}] for send to [{}]", delay, channel);		
+	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, CommandThreadPolicy commandThreadPolicy, final long delay, final long agentCollectionTimeout) {
+		Set<ActiveServer> targetCollectionServers = ActiveAgent.getInstance().getServersForDelay(delay);
 		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
-		try {
-			collector.writeHeader();
-			collector.collect(delay);
-			collector.trimLastCharacter();
-			collector.writeJSONCloser();
-			collector.rewritePayloadLength();
-			collector.close();			
-			collector.writeToChannel(channel).addListener(new ChannelFutureListener() {
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					if(future.isSuccess()) {
-						log.debug("Collection Stream Completion {}",  collector);
-					} else {
-						log.debug("Collection Stream Failed", future.getCause());
-					}
-					future.getChannel().close();
-				}
-			});			
-		} catch (Exception e) {
-			log.error("Submission Failed", e);
-		}
-		return collector;
+		
+		
+//		Map<String, String> route = new HashMap<String, String>(1);
+//		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
+//		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
+//		log.debug("Starting Collection Stream for Delay Window [{}] for send to [{}]", delay, channel);		
+//		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
+//		try {
+//			collector.writeHeader();
+//			collector.collect(delay);
+//			collector.trimLastCharacter();
+//			collector.writeJSONCloser();
+//			collector.rewritePayloadLength();
+//			collector.close();			
+//			collector.writeToChannel(channel).addListener(new ChannelFutureListener() {
+//				@Override
+//				public void operationComplete(ChannelFuture future) throws Exception {
+//					if(future.isSuccess()) {
+//						log.debug("Collection Stream Completion {}",  collector);
+//					} else {
+//						log.debug("Collection Stream Failed", future.getCause());
+//					}
+//					future.getChannel().close();
+//				}
+//			});			
+//		} catch (Exception e) {
+//			log.error("Submission Failed", e);
+//		}
+//		return collector;
+		
+		return null;
 		
 	}
 	
@@ -239,8 +253,11 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#collect(long)
 	 */
 	@Override
-	public void collect(long delay) {
+	public void collect(long delay) {		
+		long start = System.currentTimeMillis();
 		ActiveAgent.getInstance().executeChecks(delay, this);
+		checksElapsed = System.currentTimeMillis()-start;
+
 	}
 	
 	/**
@@ -261,6 +278,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 */
 	@Override
 	public void addResult(CharSequence result)  {
+		if(!open.get()) return;
 		try {
 			byteCount += buffer.write(charSet.encode(CharBuffer.wrap(result)));
 			resultCount++;
@@ -334,6 +352,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 */
 	@Override
 	public boolean close() {
+		open.set(false);
 		return true;
 	}
 

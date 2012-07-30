@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.net.active.schedule;
 
+import org.helios.jzab.agent.net.active.collection.CommandThreadPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
