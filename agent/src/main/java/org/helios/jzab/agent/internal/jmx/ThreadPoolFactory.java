@@ -154,6 +154,23 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 		return q.getClass().getSimpleName() + ":" + q.remainingCapacity();
 	}
 	
+	/**
+	 * Returns the number of pending tasks in the work queue
+	 * @return the number of pending tasks in the work queue
+	 */
+	public int getQueueDepth() {
+		return getQueue().size();
+	}
+	
+	/**
+	 * Returns the remaining capacity for new tasks in the work queue
+	 * @return the remaining capacity for new tasks in the work queue
+	 */
+	public int getQueueCapacity() {
+		return getQueue().remainingCapacity();
+	}
+	
+	
 	
 	/**
 	 * Returns the assigned JMX ObjectName

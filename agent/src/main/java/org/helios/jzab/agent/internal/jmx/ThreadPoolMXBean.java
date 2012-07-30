@@ -96,6 +96,19 @@ public interface ThreadPoolMXBean {
 	 */
 	public boolean isTerminating();
 	
+	/**
+	 * Returns the number of pending tasks in the work queue
+	 * @return the number of pending tasks in the work queue
+	 */
+	public int getQueueDepth();
+	
+	/**
+	 * Returns the remaining capacity for new tasks in the work queue
+	 * @return the remaining capacity for new tasks in the work queue
+	 */
+	public int getQueueCapacity();
+	
+	
 	
 	
 	
