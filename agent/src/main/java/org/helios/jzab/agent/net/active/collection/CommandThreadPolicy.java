@@ -27,7 +27,6 @@ package org.helios.jzab.agent.net.active.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.helios.jzab.agent.net.active.ActiveHost;
@@ -42,15 +41,34 @@ import org.helios.jzab.agent.net.active.ActiveServer;
  * <p><code>org.helios.jzab.agent.net.active.CommandThreadPolicy</code></p>
  */
 
-public enum CommandThreadPolicy {
-	/** One thread is allocated to execute all checks */
-	ALL,
+public enum CommandThreadPolicy implements IExecutionPlan{
 	/** One thread is allocated to execute checks for each configured zabbix server */
-	SERVER,
+	SERVER(new ServerExecutionPlan()),
 	/** One thread is allocated to execute checks for each configured active host. The default.  */
-	HOST,
+	HOST(new HostExecutionPlan()),
 	/** One thread is allocated to execute checks for each configured active check */
-	CHECK;
+	CHECK(new CheckExecutionPlan());
+	
+	/**
+	 * Creates a new CommandThreadPolicy
+	 * @param plan policy's execution plan 
+	 */
+	private CommandThreadPolicy(IExecutionPlan plan) {
+		this.plan = plan;
+	}
+	
+	/** This policy's execution plan  */
+	private final IExecutionPlan plan;
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.IExecutionPlan#createPlan(long, org.helios.jzab.agent.net.active.ActiveServer, org.helios.jzab.agent.net.active.collection.IActiveCollectionStream)
+	 */
+	@Override
+	public Collection<? extends Callable<Void>> createPlan(long delay, ActiveServer activeServer, IActiveCollectionStream collectionStream) {
+		return plan.createPlan(delay, activeServer, collectionStream);
+	}
+	
 	
 	/**
 	 * Decodes the passed string into a CommandThreadPolicy, applying trim and uppercase to the passed value
@@ -66,23 +84,6 @@ public enum CommandThreadPolicy {
 		}
 	}
 	
-	/**
-	 * <p>Title: IExecutionPlan</p>
-	 * <p>Description: Defines an implementation of a CommandThreadPolicy execution plan which manages how check executions are multithreaded</p> 
-	 * <p>Company: Helios Development Group LLC</p>
-	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
-	 * <p><code>org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.IExecutionPlan</code></p>
-	 */
-	public static interface IExecutionPlan {
-		/**
-		 * Returns a collection of check execution task callables. Each member of the array will be allocated to a seperate thread.
-		 * @param delay The scheduling delay to plan executions for
-		 * @param activeServers A set of active servers that manage hosts that have active checks that are scheduled to be executed for the passed delay
-		 * @param collectionStream The collection stream that results are written to 
-		 * @return an collection of check execution task callables
-		 */
-		public Collection<? extends Callable<Void>> createPlan(long delay, Set<ActiveServer> activeServers, IActiveCollectionStream collectionStream); 
-	}
 	
 	/**
 	 * <p>Title: ServerExecutionPlan</p>
@@ -99,56 +100,22 @@ public enum CommandThreadPolicy {
 		 * @see org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.IExecutionPlan#createPlan(long, java.util.Set, org.helios.jzab.agent.net.active.collection.IActiveCollectionStream)
 		 */
 		@Override
-		public Collection<? extends Callable<Void>> createPlan(final long delay, Set<ActiveServer> activeServers, final IActiveCollectionStream collectionStream) {
-			Collection<Callable<Void>> tasks = new ArrayList<Callable<Void>>(activeServers.size()); 
-			for(final ActiveServer server: activeServers) {
-				tasks.add(new Callable<Void>() {
-					public Void call() throws Exception {
-						for(ActiveHost host: server.getHostsForDelay(delay)) {
-							for(ActiveHostCheck check: host.getChecksForDelay(delay)) {
-								check.execute(collectionStream);
-							}
+		public Collection<? extends Callable<Void>> createPlan(final long delay, final ActiveServer activeServer, final IActiveCollectionStream collectionStream) {
+			return Collections.singleton(
+					new Callable<Void>(){
+						public Void call() throws Exception {
+								for(ActiveHost host: activeServer.getHostsForDelay(delay)) {
+									for(ActiveHostCheck check: host.getChecksForDelay(delay)) {
+										check.execute(collectionStream);										
+									}
+								}
+								return null;
 						}
-						return null;
 					}
-				});
-			}
-			return tasks;
+			);
 		}
 	}
 	
-	/**
-	 * <p>Title: OneExecutionPlan</p>
-	 * <p>Description: An execution planner that executes all checks in a single thread</p> 
-	 * <p>Company: Helios Development Group LLC</p>
-	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
-	 * <p><code>org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.OneExecutionPlan.CheckExecutionPlan</code></p>
-	 */
-	public static class OneExecutionPlan implements IExecutionPlan {
-
-		/**
-		 * Creates a plan that executes all checks in one thread
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.IExecutionPlan#createPlan(long, java.util.Set, org.helios.jzab.agent.net.active.collection.IActiveCollectionStream)
-		 */
-		@Override
-		public Collection<? extends Callable<Void>> createPlan(final long delay, final Set<ActiveServer> activeServers, final IActiveCollectionStream collectionStream) {
-			Callable<Void> callable = new Callable<Void>(){
-				public Void call() throws Exception {
-					for(ActiveServer server: activeServers) {
-						for(ActiveHost host: server.getHostsForDelay(delay)) {
-							for(ActiveHostCheck check: host.getChecksForDelay(delay)) {
-								check.execute(collectionStream);
-								return null;
-							}
-						}
-					}
-					return null;
-				}
-			};
-			return Collections.singleton(callable);
-		}
-	}
 	
 	
 	/**
@@ -166,10 +133,9 @@ public enum CommandThreadPolicy {
 		 * @see org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.IExecutionPlan#createPlan(long, java.util.Set, org.helios.jzab.agent.net.active.collection.IActiveCollectionStream)
 		 */
 		@Override
-		public Collection<? extends Callable<Void>> createPlan(final long delay, Set<ActiveServer> activeServers, final IActiveCollectionStream collectionStream) {
-			Collection<Callable<Void>> tasks = new ArrayList<Callable<Void>>(activeServers.size()); 
-			for(ActiveServer server: activeServers) {
-				for(final ActiveHost host: server.getHostsForDelay(delay)) {
+		public Collection<? extends Callable<Void>> createPlan(final long delay, final ActiveServer activeServer, final IActiveCollectionStream collectionStream) {
+			Collection<Callable<Void>> tasks = new ArrayList<Callable<Void>>(); 
+				for(final ActiveHost host: activeServer.getHostsForDelay(delay)) {
 					tasks.add(new Callable<Void>(){
 						public Void call() throws Exception {
 							for(ActiveHostCheck check: host.getChecksForDelay(delay)) {
@@ -179,7 +145,6 @@ public enum CommandThreadPolicy {
 						}
 					});
 				}
-			}
 			return tasks;
 		}
 	}
@@ -199,22 +164,21 @@ public enum CommandThreadPolicy {
 		 * @see org.helios.jzab.agent.net.active.collection.CommandThreadPolicy.IExecutionPlan#createPlan(long, java.util.Set, org.helios.jzab.agent.net.active.collection.IActiveCollectionStream)
 		 */
 		@Override
-		public Collection<? extends Callable<Void>> createPlan(final long delay, Set<ActiveServer> activeServers, final IActiveCollectionStream collectionStream) {
-			Collection<Callable<Void>> tasks = new ArrayList<Callable<Void>>(activeServers.size()); 
-			for(ActiveServer server: activeServers) {
-				for(final ActiveHost host: server.getHostsForDelay(delay)) {
-					for(final ActiveHostCheck check: host.getChecksForDelay(delay)) {
-						tasks.add(new Callable<Void>(){
-							public Void call() throws Exception {
-								check.execute(collectionStream);
-								return null;
-							}
-						});
-					}
+		public Collection<? extends Callable<Void>> createPlan(final long delay, final ActiveServer activeServer, final IActiveCollectionStream collectionStream) {
+			Collection<Callable<Void>> tasks = new ArrayList<Callable<Void>>(); 
+			for(final ActiveHost host: activeServer.getHostsForDelay(delay)) {
+				for(final ActiveHostCheck check: host.getChecksForDelay(delay)) {
+					tasks.add(new Callable<Void>(){
+						public Void call() throws Exception {
+							check.execute(collectionStream);
+							return null;
+						}
+					});
 				}
 			}
 			return tasks;
 		}
 	}
+
 	
 }

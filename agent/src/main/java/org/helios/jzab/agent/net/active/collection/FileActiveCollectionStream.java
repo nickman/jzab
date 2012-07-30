@@ -181,7 +181,7 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#addResult(java.lang.CharSequence)
 	 */
 	@Override
-	public void addResult(CharSequence result)  {
+	public synchronized void addResult(CharSequence result)  {
 		try {
 			int bytesWritten = buffer.write(charSet.encode(CharBuffer.wrap(result)));
 			flushToFile(bytesWritten);

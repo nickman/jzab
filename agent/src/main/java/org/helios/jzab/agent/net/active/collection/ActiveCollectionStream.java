@@ -28,14 +28,22 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.helios.jzab.agent.SystemClock;
+import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.net.active.ActiveAgent;
+import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.net.active.ActiveHost;
 import org.helios.jzab.agent.net.active.ActiveServer;
 import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
@@ -70,6 +78,12 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	
 	/** The elapsed time to execute the checks */
 	protected long checksElapsed = -1L;
+	
+	/** Number of timed out checks */
+	protected long timedOutChecks = 0;
+	/** Number of completed checks */
+	protected long completedChecks = 0;
+	
 	/** The elapsed time to complete the whole collection */
 	protected final AtomicLong completeElapsedTime = new AtomicLong(-1L);
 	/** The start time of this collection stream */
@@ -155,10 +169,55 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param agentCollectionTimeout The agent collection timeout in seconds
 	 * @return The collector stream created for the submission
 	 */
-	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, CommandThreadPolicy commandThreadPolicy, final long delay, final long agentCollectionTimeout) {
-		Set<ActiveServer> targetCollectionServers = ActiveAgent.getInstance().getServersForDelay(delay);
-		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
-		
+	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, final CommandThreadPolicy commandThreadPolicy, final long delay, final long agentCollectionTimeout) {
+		final ActiveAgent agent = ActiveAgent.getInstance();
+		final ActiveClient client = ActiveClient.getInstance();
+		Set<ActiveServer> targetCollectionServers = agent.getServersForDelay(delay);
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);
+		final ExecutorService executorService = ThreadPoolFactory.getInstance("TaskExecutor");
+		for(final ActiveServer activeServer: targetCollectionServers) {
+			executorService.execute(new Runnable(){
+				public void run() {
+					List<Future<Void>> completionFutures = null;
+					try {
+						collector.writeHeader();
+						Collection<? extends Callable<Void>> tasks = commandThreadPolicy.createPlan(delay, activeServer, collector);
+						try {
+							long start = SystemClock.currentTimeMillis();
+							completionFutures = executorService.invokeAll(tasks, agentCollectionTimeout, TimeUnit.SECONDS);
+							collector.updateCheckCollectionTime(SystemClock.currentTimeMillis()-start);
+							collector.close();
+							long completed = 0, timedout = 0;
+							for(Future<Void> f : completionFutures) {
+								if(f.isDone()) completed++;
+								else timedout++;
+							}
+							collector.setCompletedChecks(completed);
+							collector.setTimedOutChecks(timedout);
+						} catch (InterruptedException e) {
+							log.error("Collection for ActiveServer [{}] was interrupted", activeServer, e);
+							return;
+						}
+						collector.trimLastCharacter();
+						collector.writeJSONCloser();
+						collector.rewritePayloadLength();								
+						collector.writeToChannel(client.newChannel(activeServer)).addListener(new ChannelFutureListener() {
+							@Override
+							public void operationComplete(ChannelFuture future) throws Exception {
+								if(future.isSuccess()) {
+									log.debug("Collection Stream Completion {}",  collector);
+								} else {
+									log.debug("Collection Stream Failed", future.getCause());
+								}
+								future.getChannel().close();
+							}
+						});			
+					} catch (Exception e) {
+						log.error("Submission Failed", e);
+					}
+				}
+			});
+		}
 		
 //		Map<String, String> route = new HashMap<String, String>(1);
 //		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
@@ -277,7 +336,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#addResult(java.lang.CharSequence)
 	 */
 	@Override
-	public void addResult(CharSequence result)  {
+	public synchronized void addResult(CharSequence result)  {
 		if(!open.get()) return;
 		try {
 			byteCount += buffer.write(charSet.encode(CharBuffer.wrap(result)));
@@ -393,6 +452,11 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		builder.append(getByteCount());
 		builder.append("\n\tCheck Count:");
 		builder.append(getResultCount());
+		builder.append("\n\tCompleted Check Count:");
+		builder.append(getCompletedChecks());
+		builder.append("\n\tTimedout Check Count:");
+		builder.append(getTimedOutChecks());
+		
 		builder.append("\n]");
 		return builder.toString();
 	}
@@ -422,5 +486,47 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	@Override
 	public int getLengthPosition() {
 		return lengthPosition;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#updateCheckCollectionTime(long)
+	 */
+	@Override
+	public void updateCheckCollectionTime(long elapsed) {
+		checksElapsed = elapsed;
+		
+	}
+
+	/**
+	 * Returns the number of checks that timed out
+	 * @return the timedOutChecks
+	 */
+	public long getTimedOutChecks() {
+		return timedOutChecks;
+	}
+
+	/**
+	 * Sets the number of checks that timed out
+	 * @param timedOutChecks the timedOutChecks to set
+	 */
+	public void setTimedOutChecks(long timedOutChecks) {
+		this.timedOutChecks = timedOutChecks;
+	}
+
+	/**
+	 * Returns the number of checks that completed
+	 * @return the completedChecks
+	 */
+	public long getCompletedChecks() {
+		return completedChecks;
+	}
+
+	/**
+	 * Sets the number of checks that completed
+	 * @param completedChecks the completedChecks to set
+	 */
+	public void setCompletedChecks(long completedChecks) {
+		this.completedChecks = completedChecks;
 	}
 }

@@ -147,5 +147,35 @@ public interface IActiveCollectionStream extends IResultCollector {
 	 * @return the total elapsed time to execute this collection stream in ms.
 	 */
 	public long getTotalElapsedTime();
+	
+	/**
+	 * Sets the elapsed time in ms. of the check execution
+	 * @param elapsed the elapsed time in ms. of the check execution
+	 */
+	public void updateCheckCollectionTime(long elapsed);
+	
+	/**
+	 * Returns the number of checks that timed out
+	 * @return the timedOutChecks
+	 */
+	public long getTimedOutChecks();
 
+	/**
+	 * Sets the number of checks that timed out
+	 * @param timedOutChecks the timedOutChecks to set
+	 */
+	public void setTimedOutChecks(long timedOutChecks);
+
+	/**
+	 * Returns the number of checks that completed
+	 * @return the completedChecks
+	 */
+	public long getCompletedChecks();
+
+	/**
+	 * Sets the number of checks that completed
+	 * @param completedChecks the completedChecks to set
+	 */
+	public void setCompletedChecks(long completedChecks);
+	
 }
