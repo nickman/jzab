@@ -200,28 +200,18 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
-		//pipeline.addLast("logger", loggingHandler);
+//		pipeline.addLast("logger", loggingHandler);
 		if(log.isTraceEnabled()) {
 			pipeline.addLast("logger", loggingHandler);
 		}
-		//pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
 		pipeline.addLast("routingHandler1", sharableHandlers.getHandler("responseRoutingHandler"));
 		pipeline.addLast("responseEncoder", sharableHandlers.getHandler("responseEncoder"));		
-//		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
-//		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
 		pipeline.addLast("responseDecoder", new ZabbixResponseDecoder());
 		pipeline.addLast("routingHandler2", sharableHandlers.getHandler("responseRoutingHandler"));
+		pipeline.addLast("channelCloser", sharableHandlers.getHandler("channelCloser"));
 		return pipeline;
 	}
 	
-	/*
-        addChannelHandler("stringDecoder", new StringDecoder());        
-        addChannelHandler("responseEncoder", new ZabbixRequestEncoder((byte)1));
-        addChannelHandler("stringEncoder", new StringEncoder());
-        addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
-        addChannelHandler("responseDecoder", new ZabbixResponseDecoder());
-
-	 */
 	
 	/**
 	 * Returns the logging level for this active client

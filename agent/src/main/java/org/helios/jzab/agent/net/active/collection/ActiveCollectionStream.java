@@ -65,11 +65,10 @@ import org.slf4j.LoggerFactory;
 public class ActiveCollectionStream implements IActiveCollectionStream {
 	/** The results accumulation buffer */
 	protected final ReadableWritableByteChannelBuffer buffer;
-	
+	/** The collection stream type */
+	protected final ActiveCollectionStreamType type;
 	/** The written byte count, not including the ZABX header, protocol and length */
 	protected long byteCount = 0L;	
-	/** The number of check results written */
-	protected int resultCount = 0;
 	/** The starting position of the ZABX payload length */
 	protected int lengthPosition = 0;
 	
@@ -78,7 +77,9 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	
 	/** The elapsed time to execute the checks */
 	protected long checksElapsed = -1L;
-	
+
+	/** The number of checks scheduled */
+	protected long totalChecks = 0;	
 	/** Number of timed out checks */
 	protected long timedOutChecks = 0;
 	/** Number of completed checks */
@@ -133,7 +134,8 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
 		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
 		log.debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);		
-		final IActiveCollectionStream collector = type.newCollectionStream(order, size);		
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);	
+		collector.setScheduledChecks(host.getActiveCheckCount());
 		try {
 			collector.writeHeader();
 			collector.collect(host);
@@ -141,17 +143,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 			collector.writeJSONCloser();
 			collector.rewritePayloadLength();
 			collector.close();			
-			collector.writeToChannel(channel).addListener(new ChannelFutureListener() {
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					if(future.isSuccess()) {
-						log.debug("Collection Stream Completion {}",  collector);
-					} else {
-						log.debug("Collection Stream Failed", future.getCause());
-					}
-					future.getChannel().close();
-				}
-			});			
+			collector.writeToChannel(channel);
 		} catch (Exception e) {
 			log.error("Submission Failed", e);
 		}
@@ -169,49 +161,35 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 * @param agentCollectionTimeout The agent collection timeout in seconds
 	 * @return The collector stream created for the submission
 	 */
-	public static IActiveCollectionStream execute(ByteOrder order, int size, ActiveCollectionStreamType type, final CommandThreadPolicy commandThreadPolicy, final long delay, final long agentCollectionTimeout) {
+	public static IActiveCollectionStream execute(ByteOrder order, int size, final ActiveCollectionStreamType type, final CommandThreadPolicy commandThreadPolicy, final long delay, final long agentCollectionTimeout) {
 		final ActiveAgent agent = ActiveAgent.getInstance();
 		final ActiveClient client = ActiveClient.getInstance();
-		Set<ActiveServer> targetCollectionServers = agent.getServersForDelay(delay);
-		final IActiveCollectionStream collector = type.newCollectionStream(order, size);
+		Set<ActiveServer> targetCollectionServers = agent.getServersForDelay(delay);				
 		final ExecutorService executorService = ThreadPoolFactory.getInstance("TaskExecutor");
 		for(final ActiveServer activeServer: targetCollectionServers) {
+			final IActiveCollectionStream collector = type.newCollectionStream(order, size);
+			collector.setScheduledChecks(activeServer.getChecksForDelay(delay).size());
 			executorService.execute(new Runnable(){
-				public void run() {
-					List<Future<Void>> completionFutures = null;
+				public void run() {					
 					try {
 						collector.writeHeader();
 						Collection<? extends Callable<Void>> tasks = commandThreadPolicy.createPlan(delay, activeServer, collector);
 						try {
 							long start = SystemClock.currentTimeMillis();
-							completionFutures = executorService.invokeAll(tasks, agentCollectionTimeout, TimeUnit.SECONDS);
+							executorService.invokeAll(tasks, agentCollectionTimeout, TimeUnit.SECONDS);
 							collector.updateCheckCollectionTime(SystemClock.currentTimeMillis()-start);
-							collector.close();
-							long completed = 0, timedout = 0;
-							for(Future<Void> f : completionFutures) {
-								if(f.isDone()) completed++;
-								else timedout++;
-							}
-							collector.setCompletedChecks(completed);
-							collector.setTimedOutChecks(timedout);
+							collector.close();							
+							collector.setTimedOutChecks(collector.getScheduledChecks()-collector.getCompletedChecks());
 						} catch (InterruptedException e) {
 							log.error("Collection for ActiveServer [{}] was interrupted", activeServer, e);
 							return;
 						}
 						collector.trimLastCharacter();
 						collector.writeJSONCloser();
-						collector.rewritePayloadLength();								
-						collector.writeToChannel(client.newChannel(activeServer)).addListener(new ChannelFutureListener() {
-							@Override
-							public void operationComplete(ChannelFuture future) throws Exception {
-								if(future.isSuccess()) {
-									log.debug("Collection Stream Completion {}",  collector);
-								} else {
-									log.debug("Collection Stream Failed", future.getCause());
-								}
-								future.getChannel().close();
-							}
-						});			
+						collector.rewritePayloadLength();
+						collector.close();
+						Channel channel = client.newChannel(activeServer);
+						collector.writeToChannel(channel);		
 					} catch (Exception e) {
 						log.error("Submission Failed", e);
 					}
@@ -283,10 +261,13 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	/**
 	 * Creates a new ActiveCollectionStream
 	 * @param buffer The accumulation buffer
+	 * @param type The collection stream type
 	 */
-	public ActiveCollectionStream(ReadableWritableByteChannelBuffer buffer) {
+	public ActiveCollectionStream(ReadableWritableByteChannelBuffer buffer, ActiveCollectionStreamType type) {
 		this.buffer = buffer;
+		this.type = type;
 		startTime = System.currentTimeMillis();
+		
 	}
 
 	/**
@@ -340,7 +321,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		if(!open.get()) return;
 		try {
 			byteCount += buffer.write(charSet.encode(CharBuffer.wrap(result)));
-			resultCount++;
+			completedChecks++;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to add result to collection stream [" + result + "]", e);
 		}
@@ -353,13 +334,18 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	@Override
 	public ChannelFuture writeToChannel(Channel channel) {
 			ChannelFuture cf = channel.write(buffer);
+			final ActiveCollectionStream collector = this;
 			cf.addListener(new ChannelFutureListener() {
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
-					if(future.isSuccess()) {					
-						long elapsed = SystemClock.currentTimeMillis()-startTime;
-						completeElapsedTime.set(elapsed);
-						log.debug("Collection Stream of size [{}] bytes Completed in [{}] ms.",  getTotalSize(), elapsed);
+					if(future.isSuccess()) {
+						future.getChannel().getCloseFuture().addListener(new ChannelFutureListener() {							
+							@Override
+							public void operationComplete(ChannelFuture future) throws Exception {
+								completeElapsedTime.set(SystemClock.currentTimeMillis()-startTime);
+								log.debug("Collection Stream Write Completed {}",  collector);
+							}
+						});
 					}
 				}
 		});
@@ -372,7 +358,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	 */
 	@Override
 	public void trimLastCharacter() {
-		if(resultCount>0) {
+		if(completedChecks>0) {
 			buffer.writerIndex(buffer.writerIndex()-1);
 			byteCount--;
 		}		
@@ -442,7 +428,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	public String toString() {
 		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
 		builder.append(" [");
-		builder.append("\n\tTotalSize:");
+		builder.append("\n\tTotalSize (bytes):");
 		builder.append(getTotalSize());
 		builder.append("\n\tCheck Time (ms):");
 		builder.append(getCheckExecutionElapsedTime());
@@ -450,8 +436,8 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		builder.append(getTotalElapsedTime());
 		builder.append("\n\tMessage Size (bytes):");
 		builder.append(getByteCount());
-		builder.append("\n\tCheck Count:");
-		builder.append(getResultCount());
+		builder.append("\n\tScheduled Check Count:");
+		builder.append(getScheduledChecks());
 		builder.append("\n\tCompleted Check Count:");
 		builder.append(getCompletedChecks());
 		builder.append("\n\tTimedout Check Count:");
@@ -470,14 +456,6 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		return byteCount;
 	}
 
-	/**
-	 * Returns the number of results collected
-	 * @return the number of results collected
-	 */
-	@Override
-	public int getResultCount() {
-		return resultCount;
-	}
 
 	/**
 	 * Returns the current buffer write position
@@ -529,4 +507,21 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	public void setCompletedChecks(long completedChecks) {
 		this.completedChecks = completedChecks;
 	}
+	
+	/**
+	 * Returns the number of checks that were scheduled
+	 * @return the number of checks that were scheduled
+	 */
+	public long getScheduledChecks() {
+		return totalChecks;
+	}
+
+	/**
+	 * Sets the number of checks that were scheduled
+	 * @param scheuduledChecks the number of checks that were scheduled
+	 */
+	public void setScheduledChecks(long scheduledChecks) {
+		totalChecks = scheduledChecks;
+	}
+	
 }

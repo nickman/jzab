@@ -32,7 +32,12 @@ import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
 import org.helios.jzab.agent.net.codecs.ZabbixRequestEncoder;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
 import org.helios.jzab.agent.net.passive.PassiveRequestInvoker;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.string.StringDecoder;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.slf4j.Logger;
@@ -80,7 +85,8 @@ public class SharableHandlers {
         addChannelHandler("stringEncoder", new StringEncoder());
         addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
         addChannelHandler("responseDecoder", new ZabbixResponseDecoder());
-        addChannelHandler("responseRoutingHandler", new ResponseRoutingHandler(ThreadPoolFactory.getInstance("TaskExecutor"), "host", "request"));        
+        addChannelHandler("responseRoutingHandler", new ResponseRoutingHandler(ThreadPoolFactory.getInstance("TaskExecutor"), "host", "request"));
+        addChannelHandler("channelCloser", new ChannelCloser());
     }
    
     /**
@@ -110,6 +116,29 @@ public class SharableHandlers {
         ChannelHandler handler = sharedHandlers.get(name.trim().toUpperCase());
         if(handler==null) throw new IllegalStateException("The handler named [" + name + "] has not been registered", new Throwable());
         return handler;
+    }
+    
+    protected static class ChannelCloser extends SimpleChannelUpstreamHandler {
+    	/** Instance logger */
+    	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+    	/**
+    	 * {@inheritDoc}
+    	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
+    	 */
+    	@Override
+    	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+			e.getChannel().close().addListener(new ChannelFutureListener() {				
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					if(future.isSuccess()) {
+						log.debug("======>  CLOSED AFTER RESPONSE");
+					} else {
+						log.debug("======>  CLOSED AFTER RESPONSE FAILED");
+					}					
+				}
+			});
+    	}
     }
 }
 

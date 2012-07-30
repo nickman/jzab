@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -90,6 +91,9 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	protected long refreshPeriod;
 	/** The changes in the last refresh */
 	protected final LastRefreshChange lastRefreshChange = new LastRefreshChange();
+	/** Checks that have been removed */
+	protected final Set<String> removedCheckNames = new CopyOnWriteArraySet<String>();
+	
 	/** The command manager to execute checks */
 	protected final CommandManager commandManager = CommandManager.getInstance();
 	/** The notification manager */
@@ -419,6 +423,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 						ahc = new ActiveHostCheck(hostName, key, delay, mtime);
 						hostChecks.put(key, ahc);					
 						log.trace("New ActiveHostCheck [{}]", ahc);
+						sendNotification(new Notification("host.activecheck.added", objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("Removed Active Check [%s]", ahc.itemKey)));
 						adds++;
 					} catch (Exception e) {
 						log.error("Failed to create active host check for host/key [{}]: [{}]", hostName + "/" + key, e.getMessage());
@@ -428,6 +433,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 					if(ahc.update(delay, mtime)) {
 						// updated ActiveHostCheck
 						log.debug("Updated ActiveHostCheck [{}]", ahc);
+						sendNotification(new Notification("host.activecheck.updated", objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("Removed Active Check [%s]", ahc.itemKey)));
 						updates++;
 					} else {
 						// no change ActiveHostCheck
@@ -474,7 +480,9 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		}
 		for(ActiveHostCheck ac: checksToRemove) {
 			hostChecks.remove(ac.itemKey);
-			scheduleBucket.removeItem(ac.delay, ac);			
+			scheduleBucket.removeItem(ac.delay, ac);	
+			if(log.isDebugEnabled()) removedCheckNames.add(ac.itemKey);
+			sendNotification(new Notification("host.activecheck.removed", objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("Removed Active Check [%s]", ac.itemKey)));
 		}
 		return checksToRemove.size();
 	}
@@ -541,6 +549,21 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		return Collections.unmodifiableCollection(hostChecks.values()).iterator();
 	}
 	
+	/**
+	 * Returns a set of the names of removed checks. 
+	 * Only populated when the logger is in DEBUG.
+	 * @return the removed Check Names
+	 */
+	public Set<String> getRemovedCheckNames() {
+		return Collections.unmodifiableSet(removedCheckNames);
+	}
+	
+	/**
+	 * Clears the removed check names
+	 */
+	public void clearRemovedCheckNames() {
+		removedCheckNames.clear();
+	}
 	
 	
 	/**
@@ -898,7 +921,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			updated = values[2];
 			noChange = values[3];
 			time = SystemClock.currentTimeMillis();
-			elapsed = elapsed;
+			this.elapsed = elapsed;
 		}
 		
 		public long getElapsedTime() {
@@ -944,5 +967,8 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		
 		
 	}
+
+
+
 
 }

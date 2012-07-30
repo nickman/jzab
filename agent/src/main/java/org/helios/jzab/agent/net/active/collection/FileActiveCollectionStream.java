@@ -27,6 +27,7 @@ package org.helios.jzab.agent.net.active.collection;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -35,6 +36,7 @@ import java.nio.channels.FileChannel.MapMode;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
+import org.helios.jzab.agent.util.UnsafeMemory;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -58,9 +60,10 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	/**
 	 * Creates a new FileActiveCollectionStream
 	 * @param buffer the underlying buffer
+	 * @param type The collection stream type
 	 */
-	public FileActiveCollectionStream(ReadableWritableByteChannelBuffer buffer) {
-		super(buffer);
+	public FileActiveCollectionStream(ReadableWritableByteChannelBuffer buffer, ActiveCollectionStreamType type) {
+		super(buffer, type);
 		try {
 			tmpFile = File.createTempFile("jzab-coll", ".tmp");
 			FileDeletor.deleteOnExit(tmpFile);
@@ -78,29 +81,80 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	 */
 	@Override
 	public ChannelFuture writeToChannel(Channel channel) {
-		try {
-			//ChannelFuture cf = channel.write(ChannelBuffers.wrappedBuffer(fileChannel.map(MapMode.READ_ONLY, 0, tmpFile.length())));
-			ChannelFuture cf = channel.write(new DefaultFileRegion(fileChannel, 0, tmpFile.length(), true));
-			final FileChannel fChannel = fileChannel;
-			cf.addListener(new ChannelFutureListener() {
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					try { fChannel.close(); } catch (Exception e) {}
-					tmpFile.delete();
-					log.debug("Closed FileChannel for [{}]", tmpFile);					
-					if(future.isSuccess()) {					
-						long elapsed = SystemClock.currentTimeMillis()-startTime;
-						completeElapsedTime.set(elapsed);
-						log.debug("Collection Stream of size [{}] bytes Completed in [{}] ms.",  getTotalSize(), elapsed);
-					}
+		ChannelFuture cf = writeFile(channel);
+		//ChannelFuture cf = channel.write(buffer);
+		final FileChannel fChannel = fileChannel;
+		final ActiveCollectionStream collector = this;
+		cf.addListener(new ChannelFutureListener() {
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+//				try { fChannel.truncate(0); } catch (Exception e) {}
+//				try { fChannel.close(); } catch (Exception e) {}
+//				File newName = new File(tmpFile.getAbsolutePath() + ".deleteMe");
+//				if(!tmpFile.renameTo(newName)) {
+//					log.warn("Failed to rename tmp file [{}]", tmpFile);
+//				} else {
+//					if(!newName.delete()) {
+//						log.warn("Failed to delete tmp file [{}]", newName);
+//					}					
+//				}
+				if(future.isSuccess()) {
+					future.getChannel().getCloseFuture().addListener(new ChannelFutureListener() {							
+						@Override
+						public void operationComplete(ChannelFuture future) throws Exception {
+							completeElapsedTime.set(SystemClock.currentTimeMillis()-startTime);
+							log.debug("Collection Stream Write Completed {}",  collector);
+						}
+					});
+				} else {
+					log.error("Submission Failed", future.getCause());
 				}
-			});
-			return cf;
-		} catch (Exception e) {
-			log.error("Failed to write buffered file to channel [{}]", channel, e);
-			throw new RuntimeException("Failed to write buffered file to channel", e);
+			}
+		});
+		return cf;
+	}
+	
+	/**Writes the file to the channel
+	 * @param channel The channel to write to 
+	 * @return the channel future
+	 */
+	protected ChannelFuture writeFile(Channel channel) {
+		if(this.type==ActiveCollectionStreamType.DIRECTDISK) {
+			return writeFileDirect(channel);
+		} else {
+			return writeFileUserSpace(channel);
 		}
-		
+	}
+	
+	/**
+	 * Executes a direct write to the channel
+	 * @param channel The channel to write to
+	 * @return the write future
+	 */
+	protected ChannelFuture writeFileDirect(Channel channel) {
+		return channel.write(new DefaultFileRegion(fileChannel, 0, tmpFile.length(), true));
+	}
+	
+	/**
+	 * Reads the contents of the file into a byte buffer, wraps it and writes it to the channel
+	 * @param channel The channel to write to
+	 * @return the write future
+	 * @throws IOException
+	 */
+	protected ChannelFuture writeFileUserSpace(Channel channel)  {
+		try {
+			int fileSize = (int) fileChannel.size();
+			log.debug("Allocated[{}] Byte Buffer During writeFileUserSpace", fileSize);
+			ByteBuffer buff = ByteBuffer.allocate(fileSize);
+			long bytes = fileChannel.read(buff, 0);
+			log.debug("Read [{}] Bytes From File During writeFileUserSpace", bytes);
+			buff.flip();
+			
+			//return channel.write(ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buff), ChannelBuffers.wrappedBuffer(new byte[]{1})));
+			return channel.write(ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buff)));
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to user space write file to channel", e);
+		}
 	}
 	
 	/**
@@ -109,10 +163,10 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	 */
 	@Override
 	public boolean close() {
-		try {
+		try {			
 			fileChannel.force(true);
 			//fileChannel.close();
-			return true;
+			return super.close();
 		} catch (Exception e) {			
 			return false;
 		}		
@@ -153,9 +207,10 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	
 	@Override
 	public void trimLastCharacter() {
-		if(resultCount>0) {
+		if(completedChecks>0) {
 			try {
 				fileChannel.position(fileChannel.size()-1);
+				byteCount--;
 			} catch (Exception e) {
 				throw new RuntimeException("Failed to trimLastCharacter", e);
 			}
@@ -186,7 +241,7 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 			int bytesWritten = buffer.write(charSet.encode(CharBuffer.wrap(result)));
 			flushToFile(bytesWritten);
 			byteCount += bytesWritten;
-			resultCount++;
+			completedChecks++;
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to add result to collection stream [" + result + "]", e);
 		}

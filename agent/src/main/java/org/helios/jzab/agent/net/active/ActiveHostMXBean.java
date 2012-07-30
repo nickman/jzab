@@ -26,6 +26,7 @@ package org.helios.jzab.agent.net.active;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 import org.helios.jzab.agent.internal.jmx.TrackedScheduledFuture;
 import org.helios.jzab.agent.net.active.ActiveHost.LastRefreshChange;
@@ -128,7 +129,6 @@ public interface ActiveHostMXBean {
 	 * Returns the current pending refresh task
 	 * @return the current pending refresh task
 	 */
-	@SuppressWarnings("rawtypes")
 	public TrackedScheduledFuture getRefreshTask();
 	
 	/**
@@ -136,6 +136,17 @@ public interface ActiveHostMXBean {
 	 * @return the changes made in the last refresh
 	 */
 	public LastRefreshChange getLastRefreshChange();	
+	
+	/**
+	 * Returns a set of the names of removed checks
+	 * @return the removed Check Names
+	 */
+	public Set<String> getRemovedCheckNames();
+	
+	/**
+	 * Clears the removed check names
+	 */
+	public void clearRemovedCheckNames();	
 	
 
 }

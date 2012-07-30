@@ -121,9 +121,9 @@ public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBu
 	 */
 	public IActiveCollectionStream newCollectionStream(ByteOrder order, int size) {
 		if(isDiskBased()) {
-			return new FileActiveCollectionStream(factory.newInstance(order, size));
+			return new FileActiveCollectionStream(factory.newInstance(order, size), this);
 		}
-		return new ActiveCollectionStream(factory.newInstance(order, size));
+		return new ActiveCollectionStream(factory.newInstance(order, size), this);
 	}
 	
 	/**

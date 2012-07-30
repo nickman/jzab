@@ -117,11 +117,7 @@ public interface IActiveCollectionStream extends IResultCollector {
 	 */
 	public long getByteCount();
 
-	/**
-	 * Returns the number of results collected
-	 * @return the number of results collected
-	 */
-	public int getResultCount();
+	
 
 	/**
 	 * Returns the current buffer write position
@@ -177,5 +173,20 @@ public interface IActiveCollectionStream extends IResultCollector {
 	 * @param completedChecks the completedChecks to set
 	 */
 	public void setCompletedChecks(long completedChecks);
+	
+	/**
+	 * Returns the number of checks that were scheduled
+	 * @return the number of checks that were scheduled
+	 */
+	public long getScheduledChecks();
+
+	/**
+	 * Sets the number of checks that were scheduled
+	 * @param scheuduledChecks the number of checks that were scheduled
+	 */
+	public void setScheduledChecks(long scheduledChecks);
+	
+	
+	
 	
 }

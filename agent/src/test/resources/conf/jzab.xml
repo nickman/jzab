@@ -18,7 +18,7 @@ config version
  -->
  
  <logging-factory type="" /> 	
- <active-agent refresh="10"  collection-timeout="2"  threading-policy="SERVER" collation-type="DIRECTMEMORY" >
+ <active-agent refresh="10"  collection-timeout="2"  threading-policy="CHECK" collation-type="DIRECTDISK" >
  	<scheduler-pool name="Scheduler" />
  	<task-pool  name="TaskExecutor" />
  	

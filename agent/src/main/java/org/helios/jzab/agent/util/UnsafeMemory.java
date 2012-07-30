@@ -25,7 +25,8 @@
 package org.helios.jzab.agent.util;
 
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
+import java.lang.reflect.Method;
+import java.nio.Buffer;
 
 import sun.misc.Unsafe;
 
@@ -40,6 +41,13 @@ public class UnsafeMemory {
 	/** The JVM's unsafe instance */
 	private static final Unsafe unsafe;
 	
+	/** The direct byte buffer class */
+	private static final Class<?> directByteBuffClass;
+	/** The direct byte buffer's cleaner access method */
+	private static final Method cleanerMethod;
+	/** The direct byte buffer's cleaner clean method */
+	private static final Method clean;
+	
 	
 	static
     {
@@ -53,6 +61,27 @@ public class UnsafeMemory {
         {
             throw new RuntimeException(e);
         }
+        
+        
+        
+        try {
+        	directByteBuffClass = Class.forName("java.nio.DirectByteBuffer");
+        }  catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
+        try {
+        	cleanerMethod = directByteBuffClass.getDeclaredMethod("cleaner");
+        }  catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
+        try {
+        	clean = cleanerMethod.getDeclaringClass().getDeclaredMethod("clean");
+        }  catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
     }
 	
 	/** The array base offset for a byte array */
@@ -73,6 +102,17 @@ public class UnsafeMemory {
     private int pos = 0;
     /** The unsafe allocated byte array */
     private final byte[] buffer;
+    
+    
+    public static void unsafeDelete(Buffer buff) {
+    	try {
+	    	if(directByteBuffClass.isAssignableFrom(buff.getClass())) {
+	    		clean.invoke(cleanerMethod.invoke(buff));
+	    	}
+    	} catch (Exception e) {
+    		throw new RuntimeException(e);
+    	}
+    }
  	
     /**
      * Creates a new UnsafeMemory
