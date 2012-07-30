@@ -67,9 +67,16 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
 	 */	
 	protected Object doExecute(String... args) throws Exception {
-		if(args==null || args.length < 2) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
-		ObjectName on = JMXHelper.objectName(args[0]);
-		Map<String, String> tokens = extractTokens(on);
+		if(args==null || args.length < 1) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
+		
+		Map<String, String> tokens = new HashMap<String, String> ();
+		ObjectName objectName = null;
+		try {
+			objectName = extractTokens(args[0].trim(), tokens);
+		} catch (Exception e) {
+			log.error("Invalid ObjectName Requested [{}], Error:[{}]", args[0], e.getMessage());
+			return COMMAND_ERROR;
+		}
 		String domain = null;
 		if(args.length>3) {
 			domain = args[3];
@@ -78,17 +85,46 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 		try {
 			server = getServerForDomain(domain);
 			//return JMXHelper.getAttribute(server, compoundDelimiter, on, attrName);
-			for(ObjectName objectName: server.queryNames(on, null)) {
-				
+			StringBuilder result = new StringBuilder();
+			for(ObjectName on: server.queryNames(objectName, null)) {
+				for(Map.Entry<String, String> entry: tokens.entrySet()) {					
+					String resolvedValue = resolveValue(on.toString(), entry.getKey(), args[0].trim());
+					log.debug("Resolved Value [{}] for Token [{}]", resolvedValue, entry.getKey());
+					result.append("\n").append(entry.getValue()).append("--->").append(resolvedValue);
+				}
 			}
+			return result.toString();
 		} catch (Exception e) {
 			log.debug("Failed to get MBeanServerConnection for domain [{}]", domain, e);
 			log.error("Failed to get MBeanServerConnection for domain [{}]", domain);
 			return COMMAND_NOT_SUPPORTED;			
 		}		
-		
-		
-		return null;
+	}
+	
+	protected String resolveValue(String objectName, String token, String original) {
+		StringBuilder b = new StringBuilder(original);
+		int tokLen = token.length();
+		int startIndex = original.indexOf(token);
+		b.delete(startIndex, startIndex + tokLen);
+		String sPart = b.toString().substring(0, startIndex);
+		String ePart = b.toString().substring(startIndex);
+		String replacement = null;
+		if(ePart.isEmpty()) {
+		    replacement = objectName.substring(startIndex);
+		} else {
+		    replacement = objectName.substring(startIndex, objectName.indexOf(ePart));
+		}
+		return replacement;
+	}
+	
+	public static void main(String[] args) {
+		log("JMX Discovery Test");
+		JMXDiscoveryCommandProcessor processor = new JMXDiscoveryCommandProcessor();
+		log(processor.execute("java.lang:type=GarbageCollector,name={#GCName}"));
+	}
+	
+	public static void log(Object msg) {
+		System.out.println(msg);
 	}
 	
 	/**
@@ -96,13 +132,15 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	 * @param on The ObjectName to extract from
 	 * @return a map of tokens
 	 */
-	protected Map<String, String> extractTokens(ObjectName on) {
-		Map<String, String> map = new HashMap<String, String>();
+	protected ObjectName extractTokens(String on, final Map<String, String> tokenMap) {		
 		Matcher m = TOKEN.matcher(on.toString());
+		String str = on.toString();
 		while(m.find()) {
-			map.put(m.group(1), m.group(2));
+			String key = m.group(1);
+			tokenMap.put(key, m.group(2));
+			str = str.replace(key, "*");
 		}
-		return map;
+		return JMXHelper.objectName(str);
 	}
 
 }
