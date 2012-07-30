@@ -24,16 +24,21 @@ config version
  	
  	<servers>
 
-	 	<server address="zabbix" port="10051" refresh="30">
+        <server address="10.230.12.145" port="10051" refresh="30">
 	 		<hosts>
-	 			<host name="mulder" refresh="20" />
-	 			<host name="GroovyActive" refresh="1200" />
+	 			<host name="NicholasActive" refresh="120" />
 	 		</hosts>
 	 	</server>
  	 	
 	 	
  	
  	<!--
+	 	<server address="zabbix" port="10051" refresh="30">
+	 		<hosts>
+	 			<host name="mulder" refresh="20" />
+	 			<host name="GroovyActive" refresh="1200" />
+	 		</hosts>
+	 	</server>
  	
         <server address="10.230.12.145" port="10051" refresh="30">
 	 		<hosts>
@@ -60,7 +65,7 @@ config version
 	 	 -->
  	</servers>
  </active-agent>
- 
+ <!-- 
  <agent-listener interface="0.0.0.0" port="10050" name="RequestListener" >
  	<boss-pool name="NettyBoss" />
  	<worker-pool  name="NettyWorker" />
@@ -68,7 +73,7 @@ config version
  		<opt name="child.keepAlive" value="true" />
  	</socket-options>
  </agent-listener>
-
+ -->
 
  <active-client  name="ActiveClient" >
  	<boss-pool name="NettyBoss" />
