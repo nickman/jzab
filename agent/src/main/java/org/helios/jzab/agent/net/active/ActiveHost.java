@@ -25,6 +25,7 @@
 package org.helios.jzab.agent.net.active;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -527,6 +528,14 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	public String getHostName() {
 		return hostName;
 	}
+	
+	/**
+	 * Returns a collection of the currently active host checks
+	 * @return a collection of the currently active host checks
+	 */
+	public Set<ActiveHostCheck> getHostChecks() {
+		return Collections.unmodifiableSet(new HashSet<ActiveHostCheck>(hostChecks.values()));
+	}
 
 
 
@@ -566,6 +575,18 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	}
 	
 	
+	public interface ActiveHostCheckMBean {
+		public String getItemKey();
+		public long getDelay();
+		public long getMTime();
+		public String getArguments();
+		public long getLastExecuteTime();
+		public Date getLastExecuteDate();
+		public long getLastRefreshTime();
+		public Date getLastRefreshDate();
+		public String call();
+	}
+	
 	/**
 	 * <p>Title: ActiveHostCheck</p>
 	 * <p>Description: Represents an active check on host item being performed on behalf of the zabbix server</p> 
@@ -573,7 +594,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
 	 * <p><code>org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck</code></p>
 	 */
-	public class ActiveHostCheck implements Callable<String> {
+	public class ActiveHostCheck implements Callable<String>, ActiveHostCheckMBean {
 		/** The host name the item being checked  is for */
 		protected final String hostName;		
 		/** The key of the item being checked */
@@ -585,6 +606,11 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		protected long delay;
 		/** The last mtime of the check (whatever that is)  */
 		protected long mtime;
+		/** The last time this check was refreshed */
+		protected long lastRefreshTime;
+		/** The last time this check was executed */
+		protected long lastExecuteTime;
+		
 		/** The update mark, set when upsert starts, cleared on match, deletes this check if still marked on upsert end */
 		protected boolean marked = false;
 		/** The command processor for this check */
@@ -604,6 +630,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			this.itemKey = itemKey;
 			this.delay = delay;
 			this.mtime = mtime;
+			lastRefreshTime = System.currentTimeMillis();
 			itemKeyEsc = StringHelper.escapeQuotes(this.itemKey);
 			String[] ops = commandManager.parseCommandString(itemKey);
 			if(ops==null) {
@@ -644,6 +671,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		 * @param collector The collector stream to write the results to
 		 */
 		public void execute(IResultCollector collector) {
+			lastExecuteTime = collector.getCollectTime();
 			collector.addResult(call());
 		}
 		
@@ -655,6 +683,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		 * @return true if either value changed, false otherwise
 		 */
 		public boolean update(long delay, long mtime) {
+			lastRefreshTime = System.currentTimeMillis();
 			boolean updated = false;
 			if(this.delay!=delay) {
 				// removes this check from it's current bucket
@@ -681,6 +710,13 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			return delay;
 		}
 
+		/**
+		 * Returns the mtime of the check (whatever that is)
+		 * @return the mtime
+		 */
+		public long getMTime() {
+			return mtime;
+		}
 
 		/**
 		 * Sets the period of the check in seconds
@@ -771,6 +807,53 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 				return false;
 			}
 			return true;
+		}
+
+
+		/**
+		 * The last date this check was refreshed 
+		 * @return the last Refresh date
+		 */
+		public Date getLastRefreshDate() {
+			return new Date(lastRefreshTime);
+		}
+
+
+		/**
+		 * The last time this check was refreshed in long UTC ms.
+		 * @return the last Refresh Time
+		 */
+		public long getLastRefreshTime() {
+			return lastRefreshTime;
+		}
+
+
+		/**
+		 * The last time this check was executed 
+		 * @return the last Execute date
+		 */
+		public Date getLastExecuteDate() {
+			return new Date(lastExecuteTime);
+		}
+
+
+		/**
+		 * The last time this check was executed in long UTC ms.
+		 * @return the last Execute Time
+		 */
+		public long getLastExecuteTime() {
+			return lastExecuteTime;
+		}
+
+
+
+
+		/**
+		 * Returns the processor arguments flattened out to a string
+		 * @return the processor arguments 
+		 */
+		public String getArguments() {
+			return Arrays.toString(processorArguments);
 		}
 		
 	}

@@ -311,6 +311,14 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		checksElapsed = System.currentTimeMillis()-start;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.IResultCollector#getCollectTime()
+	 */
+	public long getCollectTime() {
+		return startTime;
+	}
+	
 
 	/**
 	 * {@inheritDoc}

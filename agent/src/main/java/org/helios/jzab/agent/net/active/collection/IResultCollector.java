@@ -38,4 +38,10 @@ public interface IResultCollector {
 	 * @param result The active check result
 	 */
 	public void addResult(CharSequence result);
+	
+	/**
+	 * Returns the base time at which the collection was executed
+	 * @return the base time at which the collection was executed
+	 */
+	public long getCollectTime();
 }

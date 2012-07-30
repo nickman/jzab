@@ -24,11 +24,13 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
 import org.helios.jzab.agent.internal.jmx.TrackedScheduledFuture;
+import org.helios.jzab.agent.net.active.ActiveHost.ActiveHostCheck;
 import org.helios.jzab.agent.net.active.ActiveHost.LastRefreshChange;
 
 /**
@@ -146,7 +148,15 @@ public interface ActiveHostMXBean {
 	/**
 	 * Clears the removed check names
 	 */
-	public void clearRemovedCheckNames();	
+	public void clearRemovedCheckNames();
+	
+	/**
+	 * Returns a collection of the currently active host checks
+	 * @return a collection of the currently active host checks
+	 */
+	public Set<ActiveHostCheck> getHostChecks();	
+	
+	
 	
 
 }
