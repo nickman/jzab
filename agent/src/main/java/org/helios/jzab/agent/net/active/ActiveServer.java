@@ -396,6 +396,15 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 		return set;
 	}
 	
+	/**
+	 * Returns the active hosts with active checks scheduled for the passed delay
+	 * @param delay The active check collection delay
+	 * @return A set of ActiveHosts.
+	 */
+	public Set<ActiveHost> getHostsForDelay(long delay) {
+		return Collections.unmodifiableSet(scheduleBucket.get(delay));
+	}
+
 
 	/**
 	 * Adds a new host to be monitored
