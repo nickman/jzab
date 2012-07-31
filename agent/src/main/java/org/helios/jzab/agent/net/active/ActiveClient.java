@@ -32,14 +32,17 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
+import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
 import org.helios.jzab.agent.net.SharableHandlers;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
+import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -47,14 +50,19 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -200,7 +208,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
-//		pipeline.addLast("logger", loggingHandler);
+		pipeline.addLast("logger", loggingHandler);
 		if(log.isTraceEnabled()) {
 			pipeline.addLast("logger", loggingHandler);
 		}
@@ -249,6 +257,143 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		cf.addListener(futureListener);
 		return cf;
 	}
+	
+	/**
+	 * Issues a request/response operation against the specified server
+	 * @param host The host of the target server
+	 * @param port The port of the target server
+	 * @param request The request object
+	 * @param responseHandler The JSON response handlr
+	 * @param timeout The operation timeout
+	 * @param unit The timeout unit
+	 */
+	public void newReqRespChannel(String host, int port, Object request, JSONResponseHandler responseHandler, long timeout, TimeUnit unit) {
+		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
+		if(responseHandler==null) throw new IllegalArgumentException("The passed response handler was null", new Throwable());
+		SocketAddress sa = new InetSocketAddress(host, port);
+		bstrap.connect(sa).addListener(wrapHandler(request, responseHandler, timeout, unit));
+	}
+	
+	
+	/**
+	 * Executes a synchronous request response operation against the passed server
+	 * @param request The request object
+	 * @param responseType The expected response type
+	 * @param server The active server to issue the request to
+	 * @param timeout The operation timeout
+	 * @param unit The operation timeout unit
+	 * @return the returned result
+	 */
+	public <T> T requestResponse(final Object request, Class<T> responseType, ActiveServer server, long timeout, TimeUnit unit) {
+		final long startTime = SystemClock.currentTimeMillis();
+		ChannelFuture cf = bstrap.connect(server.getSocketAddress());
+		if(!cf.awaitUninterruptibly(timeout, unit)) {
+			log.error("Connection to [{}] timed out", server);
+			throw new RuntimeException("Connection to [" + server + "] timed out", new Throwable());
+		}
+		if(!cf.isSuccess()) {
+			log.error("Failure Connecting to [{}] timed out: [{}]", server, cf.getCause());
+			throw new RuntimeException("Failure Connecting to [" + server + "]", new Throwable());			
+		}
+		final Channel channel = cf.getChannel();
+		final AtomicReference<T> result = new AtomicReference<T>(null);
+		final AtomicReference<Throwable> exception = new AtomicReference<Throwable>(null);
+		long remaining = computeNextTimeout(timeout, startTime);
+		log.debug("Connected to [{}]. Time remaining to complete [{}] ms.", server, remaining);
+		if(!modfyRequestResponseChannel(channel, responseType, result, exception).write(request).awaitUninterruptibly(remaining, TimeUnit.MILLISECONDS)) {
+			log.error("Timed out waiting for response from [{}]", server);
+			throw new RuntimeException("Timed out waiting for response from [" + server + "]", new Throwable());			
+		}
+		Throwable throwable = exception.get();
+		if(throwable != null) {
+			log.error("Failed to get response from [{}] : [{}]", server, throwable);
+			throw new RuntimeException("Failed to get response from [" + server + "]", throwable);						
+		}
+		return result.get();		
+	}
+	
+	/**
+	 * Computes the remaining time to completion
+	 * @param originalTimeout The original timeout specified
+	 * @param startTime The start time of the root operation in ms.
+	 * @return The remaining time before timeout
+	 */
+	protected long computeNextTimeout(long originalTimeout, long startTime) {
+		return originalTimeout - (SystemClock.currentTimeMillis() - startTime);
+	}
+	
+	/**
+	 * Modifies the passed channel's pipeline to handle a request response
+	 * @param channel The channel to modify the pipeline for
+	 * @param result A reference container for the result
+	 * @param exception A reference container for any thrown exception
+	 * @return the modified channel
+	 */
+	protected <T> Channel modfyRequestResponseChannel(Channel channel, final Class<T> responseType, final AtomicReference<T> result, final AtomicReference<Throwable> exception) {
+		channel.getPipeline().remove("routingHandler1");
+		channel.getPipeline().remove("routingHandler2");
+		channel.getPipeline().addAfter("responseDecoder", "requestResponseHandler", new SimpleChannelUpstreamHandler() {
+			@Override
+			public void messageReceived(ChannelHandlerContext ctx, final MessageEvent e) throws Exception {
+				final Object response = e.getMessage();
+				try {
+					result.set(responseType.cast(response));
+				} catch (Exception ex) {
+					exception.set(new Exception("Incompatible Result Type [" + response==null ? "<null>" :  response.getClass().getName() + "] but was expecting [" + responseType.getClass().getName() + "]", ex));
+				}
+				super.messageReceived(ctx, e);
+			}
+			
+			@Override
+			public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+				exception.set(e.getCause());
+			}
+		});		
+		return channel;
+	}
+	
+	
+	/**
+	 * Creates a request response channel future listener
+	 * @param request The request to send
+	 * @param responseHandler The JSON response handler
+	 * @return the request response channel future listener
+	 */
+	protected ChannelFutureListener wrapHandler(final Object request, final JSONResponseHandler responseHandler, long timeout, TimeUnit unit) {
+			final long startTime = SystemClock.currentTimeMillis();
+			return new ChannelFutureListener() {
+				// Handles the connect completion
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					future.getChannel().getPipeline().remove("routingHandler1");
+					future.getChannel().getPipeline().remove("routingHandler2");
+					future.getChannel().getPipeline().addAfter("responseDecoder", "requestResponseHandler", new SimpleChannelUpstreamHandler() {
+						@Override
+						public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+							responseHandler.jsonResponse(null, (JSONObject)e.getMessage());
+							super.messageReceived(ctx, e);
+						}					
+					});
+					if(future.isSuccess()) {
+						future.getChannel().write(request).addListener(new ChannelFutureListener(){
+							// Handles the request write
+							@Override
+							public void operationComplete(ChannelFuture future) throws Exception {
+								if(future.isSuccess()) {
+									log.debug("Sent ReqResp Request [{}]", request);
+								} else {
+									log.error("Failed to write request [{}]:[{}]", request, future.getCause());
+								}
+							}
+						});
+					} else {
+						log.error("Failed to connect [{}]", future.getCause());
+					}
+					
+				}
+			};
+	}
+	
 	
 	
 	

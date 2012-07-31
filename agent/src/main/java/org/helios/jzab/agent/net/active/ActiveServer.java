@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,9 +87,9 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	/** The asynch task executor */
 	protected final ThreadPoolExecutor executor;
 	/** The routing object names for this host */
-	protected final RoutingObjectName[] routingNames; 
-	
-	
+	protected final RoutingObjectName[] routingNames; 	
+	/** The socket address to connect to this ActiveServer's Zabbix server */
+	protected final SocketAddress socketAddress;
 	/** The configuration node name */
 	public static final String NODE = "hosts";
 	/** The JSON item key for the response status */
@@ -127,6 +129,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 		this.address = address;
 		this.agent = agent;
 		this.port = port;
+		socketAddress = new InetSocketAddress(this.address, this.port);
 		this.refreshPeriod = refreshPeriod;
 		this.executor = executor;
 		objectName = JMXHelper.objectName(new StringBuilder(
@@ -432,6 +435,14 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 		return address + ":" + port;
 	}
 	
+	/**
+	 * Returns the socket address for this ActiveServer's Zabbix server 
+	 * @return the socket address for this ActiveServer's Zabbix server
+	 */
+	public SocketAddress getSocketAddress() {
+		return socketAddress;
+	}
+
 
 
 	/**
@@ -528,8 +539,7 @@ public class ActiveServer implements JSONResponseHandler, ActiveServerMXBean, It
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("ActiveServer [address=").append(address)
-				.append(", port=").append(port).append(", refreshPeriod=")
-				.append(refreshPeriod).append("]");
+				.append(", port=").append(port).append("]");
 		return builder.toString();
 	}
 

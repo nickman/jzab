@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.net.SocketAddress;
 import java.util.Map;
 
 /**
@@ -45,6 +46,12 @@ public interface ActiveServerMXBean {
 	 * @param level The level to set this logger to
 	 */
 	public void setLevel(String level);
+	
+	/**
+	 * Returns the socket address for this ActiveServer's Zabbix server 
+	 * @return the socket address for this ActiveServer's Zabbix server
+	 */
+	public SocketAddress getSocketAddress();	
 	
 	/**
 	 * Returns a map of the number of hosts registered for checks for each delay

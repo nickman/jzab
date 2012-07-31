@@ -56,6 +56,12 @@ public interface ICommandProcessor {
     public String getLocatorKey();
     
     /**
+     * Indicates if this is a discovery processor
+     * @return true if this is a discovery processor, false otherwise
+     */
+    public boolean isDiscovery();
+    
+    /**
      * Sets the optional command processor properties
      * @param props The properties to set on a new command processor
      */

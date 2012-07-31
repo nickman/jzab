@@ -54,8 +54,7 @@ import org.helios.jzab.agent.net.routing.JSONResponseHandler;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -490,10 +489,33 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 		if ( notif instanceof AttributeChangeNotification) {
 			AttributeChangeNotification acn = (AttributeChangeNotification)notif;
 			log.debug("Handling Attribute Change Notification [{}]", acn);
+			
 			if(handback instanceof ActiveHost) {
-				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
-					executeChecks((ActiveHost)handback);
+				ActiveHost host = (ActiveHost)handback;
+				JSONObject results = new JSONObject();
+				JSONArray array = new JSONArray();
+				
+				for(ActiveHostCheck check: host.getDiscoveryChecks()) {
+					try {
+						array.put((JSONObject)check.discover());
+					} catch (Exception e) {}
 				}
+				try {
+					results.put("discovery data", array);
+				} catch (Exception e) {
+					log.error("JSON Error", e);
+				}
+				try {
+				
+					JSONObject result = ActiveClient.getInstance().requestResponse(results, JSONObject.class, host.getServer(), 2, TimeUnit.MILLISECONDS);
+					log.info("Discovery Check Result \n[{}]", result);
+				} catch (Exception e) {
+					log.error("Failed to execute discovery check submission for [{}]", host, e);
+				}
+				
+//				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
+//					executeChecks((ActiveHost)handback);
+//				}
 			}
 		}
 	}

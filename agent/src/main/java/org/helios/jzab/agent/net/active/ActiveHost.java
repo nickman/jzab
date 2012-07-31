@@ -24,13 +24,14 @@
  */
 package org.helios.jzab.agent.net.active;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -114,6 +115,9 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	protected long stateTimestamp = System.currentTimeMillis();
 	/** The configured active host checked keyed by item name */
 	protected final Map<String, ActiveHostCheck> hostChecks = new ConcurrentHashMap<String, ActiveHostCheck>();
+	/** The configured discovery active host checked keyed by item name */
+	protected final Map<String, ActiveHostCheck> hostDiscoveryChecks = new ConcurrentHashMap<String, ActiveHostCheck>();
+	
 	/** The schedule bucket map for this active host */
 	protected final PassiveScheduleBucket<ActiveHostCheck, ActiveHost> scheduleBucket; 
 	/** The routing object names for this host */
@@ -192,6 +196,15 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	}
 	
 	/**
+	 * Returns the discovery checks for this host
+	 * @return A set of discovery checks 
+	 */
+	public List<ActiveHostCheck> getDiscoveryChecks() {
+		return Collections.unmodifiableList(new ArrayList<ActiveHostCheck>(hostDiscoveryChecks.values()));
+	}
+	
+	
+	/**
 	 * Determines if this active host requires a marching orders refresh
 	 * @param currentTime The current time in ms.
 	 * @return true if this active host requires a marching orders refresh
@@ -244,6 +257,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	 */
 	@Override
 	public void jsonResponse(RoutingObjectName routing, JSONObject response) throws JSONException {
+		log.debug("Handling JSON Response [{}]", response);
 		String requestType = routing.getKeyProperty(KEY_REQUEST);
 		if(VALUE_ACTIVE_CHECK_REQUEST.equals(requestType)) {
 			int[] results = upsertActiveChecks(response.getJSONArray(KEY_DATA));
@@ -422,7 +436,12 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 					// new ActiveHostCheck
 					try {
 						ahc = new ActiveHostCheck(hostName, key, delay, mtime);
-						hostChecks.put(key, ahc);					
+						if(ahc.isDiscovery()) {
+							hostDiscoveryChecks.put(key, ahc);					
+						} else {
+							hostChecks.put(key, ahc);					
+						}
+						
 						log.trace("New ActiveHostCheck [{}]", ahc);
 						sendNotification(new Notification("host.activecheck.added", objectName, notificationSequence.incrementAndGet(), this.stateTimestamp, String.format("Removed Active Check [%s]", ahc.itemKey)));
 						adds++;
@@ -585,6 +604,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		public long getLastRefreshTime();
 		public Date getLastRefreshDate();
 		public String call();
+		public boolean isDiscovery();
 	}
 	
 	/**
@@ -601,6 +621,8 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		protected final String itemKey;
 		/** The key of the item being checked escaped */
 		protected final String itemKeyEsc;
+		/** Indicates if this is a discovery command */
+		protected final boolean discovery;
 		
 		/** The period of the check in seconds */
 		protected long delay;
@@ -640,6 +662,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			if(commandProcessor==null) {
 				throw new RuntimeException("Command Manager Failed to get command processor for name [" + ops[0] + "]", new Throwable());
 			}
+			discovery = commandProcessor.isDiscovery();
 			if(ops.length>1) {
 				processorArguments = new String[ops.length-1];
 				System.arraycopy(ops, 1, processorArguments, 0, ops.length-1);
@@ -652,6 +675,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		/** The JSON response template */
 		public static final String RESPONSE_TEMPLATE = "{ \"host\": \"%s\", \"key\": \"%s\", \"value\": \"%s\", \"clock\": %s },"; 
 		
+		
 		/**
 		 * Executes this check and returns the formated string result
 		 * {@inheritDoc}
@@ -662,9 +686,23 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			Object result = commandProcessor.execute(processorArguments);
 			return String.format(RESPONSE_TEMPLATE, hostName, itemKeyEsc, StringHelper.escapeQuotes(result.toString()), SystemClock.currentTimeSecs() );
 		}
-		
 
-		
+		/**
+		 * Executes a discovery check
+		 * @return the discovery check result
+		 */
+		public Object discover() {
+			return commandProcessor.execute(processorArguments);
+		}
+
+		/**
+		 * Indicates if this is a discovery command
+		 * @return true if this is a discovery command
+		 */
+		@Override
+		public boolean isDiscovery() {
+			return discovery;
+		}
 		
 		/**
 		 * Executes this check and writes the result to the passed byte buffer

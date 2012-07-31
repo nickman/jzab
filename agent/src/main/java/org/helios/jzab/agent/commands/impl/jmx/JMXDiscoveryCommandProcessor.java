@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.agent.commands.impl.jmx;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,6 +35,8 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXServiceURL;
 
 import org.helios.jzab.util.JMXHelper;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * <p>Title: JMXDiscoveryCommandProcessor</p>
@@ -66,7 +69,8 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
 	 */	
-	protected Object doExecute(String... args) throws Exception {
+	@Override
+	protected JSONArray doExecute(String... args) throws Exception {
 		if(args==null || args.length < 1) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
 		
 		Map<String, String> tokens = new HashMap<String, String> ();
@@ -75,7 +79,7 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 			objectName = extractTokens(args[0].trim(), tokens);
 		} catch (Exception e) {
 			log.error("Invalid ObjectName Requested [{}], Error:[{}]", args[0], e.getMessage());
-			return COMMAND_ERROR;
+			throw new RuntimeException(e);
 		}
 		String domain = null;
 		if(args.length>3) {
@@ -85,21 +89,48 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 		try {
 			server = getServerForDomain(domain);
 			//return JMXHelper.getAttribute(server, compoundDelimiter, on, attrName);
-			StringBuilder result = new StringBuilder();
+			JSONArray array = new JSONArray();
 			for(ObjectName on: server.queryNames(objectName, null)) {
 				for(Map.Entry<String, String> entry: tokens.entrySet()) {					
 					String resolvedValue = resolveValue(on.toString(), entry.getKey(), args[0].trim());
 					log.debug("Resolved Value [{}] for Token [{}]", resolvedValue, entry.getKey());
-					result.append("\n").append(entry.getValue()).append("--->").append(resolvedValue);
+					//result.append("\n").append(entry.getValue()).append("--->").append(resolvedValue);
+					array.put(Collections.singletonMap(entry.getKey(), resolvedValue));
 				}
 			}
-			return result.toString();
+			return array;
 		} catch (Exception e) {
 			log.debug("Failed to get MBeanServerConnection for domain [{}]", domain, e);
 			log.error("Failed to get MBeanServerConnection for domain [{}]", domain);
 			return COMMAND_NOT_SUPPORTED;			
 		}		
 	}
+	
+	/*
+{
+  "data":[
+  
+  { "{#FSNAME}":"\/",                           "{#FSTYPE}":"rootfs"   },
+  { "{#FSNAME}":"\/sys",                        "{#FSTYPE}":"sysfs"    },
+  { "{#FSNAME}":"\/proc",                       "{#FSTYPE}":"proc"     },
+  { "{#FSNAME}":"\/dev",                        "{#FSTYPE}":"devtmpfs" },
+  { "{#FSNAME}":"\/dev\/pts",                   "{#FSTYPE}":"devpts"   },
+  { "{#FSNAME}":"\/",                           "{#FSTYPE}":"ext3"     },
+  { "{#FSNAME}":"\/lib\/init\/rw",              "{#FSTYPE}":"tmpfs"    },
+  { "{#FSNAME}":"\/dev\/shm",                   "{#FSTYPE}":"tmpfs"    },
+  { "{#FSNAME}":"\/home",                       "{#FSTYPE}":"ext3"     },
+  { "{#FSNAME}":"\/tmp",                        "{#FSTYPE}":"ext3"     },
+  { "{#FSNAME}":"\/usr",                        "{#FSTYPE}":"ext3"     },
+  { "{#FSNAME}":"\/var",                        "{#FSTYPE}":"ext3"     },
+  { "{#FSNAME}":"\/sys\/fs\/fuse\/connections", "{#FSTYPE}":"fusectl"  }
+  
+  ]
+}
+
+
+	 */
+	
+	
 	
 	protected String resolveValue(String objectName, String token, String original) {
 		StringBuilder b = new StringBuilder(original);
@@ -115,6 +146,15 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 		    replacement = objectName.substring(startIndex, objectName.indexOf(ePart));
 		}
 		return replacement;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#isDiscovery()
+	 */
+	@Override
+	public boolean isDiscovery() {
+		return true;
 	}
 	
 	public static void main(String[] args) {

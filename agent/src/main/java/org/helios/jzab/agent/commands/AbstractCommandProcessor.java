@@ -71,6 +71,15 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 		}		
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.ICommandProcessor#isDiscovery()
+	 */
+	@Override
+	public boolean isDiscovery() {
+		return false;
+	}
+	
     /**
      * {@inheritDoc}
      * @see org.helios.jzab.agent.commands.ICommandProcessor#init()
