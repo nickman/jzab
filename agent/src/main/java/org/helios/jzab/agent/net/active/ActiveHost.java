@@ -199,8 +199,8 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	 * Returns the discovery checks for this host
 	 * @return A set of discovery checks 
 	 */
-	public List<ActiveHostCheck> getDiscoveryChecks() {
-		return Collections.unmodifiableList(new ArrayList<ActiveHostCheck>(hostDiscoveryChecks.values()));
+	public Set<ActiveHostCheck> getDiscoveryChecks() {
+		return Collections.unmodifiableSet(new HashSet<ActiveHostCheck>(hostDiscoveryChecks.values()));
 	}
 	
 	

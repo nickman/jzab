@@ -492,30 +492,36 @@ public class ActiveAgent implements ActiveAgentMXBean, NotificationListener  {
 			
 			if(handback instanceof ActiveHost) {
 				ActiveHost host = (ActiveHost)handback;
+				
+				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
+					executeChecks(host);
+					return;
+				}
+				
+				
 				JSONObject results = new JSONObject();
 				JSONArray array = new JSONArray();
 				
 				for(ActiveHostCheck check: host.getDiscoveryChecks()) {
 					try {
-						array.put((JSONObject)check.discover());
+						JSONObject[] checkResults = (JSONObject[])check.discover();
+						for(JSONObject disc: checkResults) {
+							array.put(disc);
+						}						
 					} catch (Exception e) {}
 				}
 				try {
-					results.put("discovery data", array);
+					results.put("data", array);
 				} catch (Exception e) {
 					log.error("JSON Error", e);
 				}
-				try {
-				
-					JSONObject result = ActiveClient.getInstance().requestResponse(results, JSONObject.class, host.getServer(), 2, TimeUnit.MILLISECONDS);
+				try {				
+					log.debug("Sending Discovery Check Results\n[{}]", results);
+					JSONObject result = ActiveClient.getInstance().requestResponse(results, JSONObject.class, host.getServer(), 2, TimeUnit.SECONDS);
 					log.info("Discovery Check Result \n[{}]", result);
 				} catch (Exception e) {
 					log.error("Failed to execute discovery check submission for [{}]", host, e);
-				}
-				
-//				if(ActiveHostState.ACTIVE.name().equals(acn.getNewValue())) {
-//					executeChecks((ActiveHost)handback);
-//				}
+				}				
 			}
 		}
 	}

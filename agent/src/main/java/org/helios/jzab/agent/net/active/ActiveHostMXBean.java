@@ -154,7 +154,14 @@ public interface ActiveHostMXBean {
 	 * Returns a collection of the currently active host checks
 	 * @return a collection of the currently active host checks
 	 */
-	public Set<ActiveHostCheck> getHostChecks();	
+	public Set<ActiveHostCheck> getHostChecks();
+	
+	/**
+	 * Returns a collection of the host discovery checks
+	 * @return a collection of the host discovery checks
+	 */
+	public Set<ActiveHostCheck> getDiscoveryChecks();	
+	
 	
 	
 	

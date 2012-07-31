@@ -82,8 +82,7 @@ public class SharableHandlers {
     protected SharableHandlers() {
         addChannelHandler("stringDecoder", new StringDecoder());        
         addChannelHandler("responseEncoder", new ZabbixRequestEncoder((byte)1));
-        addChannelHandler("stringEncoder", new StringEncoder());
-        addChannelHandler("passiveRequestInvoker", new PassiveRequestInvoker());
+        addChannelHandler("stringEncoder", new StringEncoder());        
         addChannelHandler("responseDecoder", new ZabbixResponseDecoder());
         addChannelHandler("responseRoutingHandler", new ResponseRoutingHandler(ThreadPoolFactory.getInstance("TaskExecutor"), "host", "request"));
         addChannelHandler("channelCloser", new ChannelCloser());

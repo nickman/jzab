@@ -298,7 +298,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		final Channel channel = cf.getChannel();
 		final AtomicReference<T> result = new AtomicReference<T>(null);
 		final AtomicReference<Throwable> exception = new AtomicReference<Throwable>(null);
-		long remaining = computeNextTimeout(timeout, startTime);
+		long remaining = computeNextTimeout(TimeUnit.MILLISECONDS.convert(timeout, unit), startTime);
 		log.debug("Connected to [{}]. Time remaining to complete [{}] ms.", server, remaining);
 		if(!modfyRequestResponseChannel(channel, responseType, result, exception).write(request).awaitUninterruptibly(remaining, TimeUnit.MILLISECONDS)) {
 			log.error("Timed out waiting for response from [{}]", server);

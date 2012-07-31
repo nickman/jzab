@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net;
+package org.helios.jzab.agent.net.passive;
 
 import java.util.Map;
 
@@ -85,4 +85,11 @@ public interface AgentListenerMXBean {
 	 * @param level The level to set this logger to
 	 */
 	public void setLevel(String level);
+	
+	/**
+	 * Returns the tally of command executions
+	 * @return the tally of command executions
+	 */
+	public Map<String, Long> getCommandCounts();
+	
 }

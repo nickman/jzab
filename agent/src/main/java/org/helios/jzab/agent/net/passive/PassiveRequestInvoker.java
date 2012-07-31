@@ -47,6 +47,16 @@ import org.slf4j.LoggerFactory;
 public class PassiveRequestInvoker extends SimpleChannelUpstreamHandler {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	
+	protected final IListenerStats stats;
+
+	/**
+	 * Creates a new PassiveRequestInvoker
+	 * @param stats the command stats callback
+	 */
+	public PassiveRequestInvoker(IListenerStats stats) {
+		this.stats = stats;
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -57,6 +67,7 @@ public class PassiveRequestInvoker extends SimpleChannelUpstreamHandler {
 		Object msg = e.getMessage();
 		if(msg instanceof CharSequence) {
 			log.debug("Processing Passive Request [{}]", msg);
+			stats.addCommandReceived(msg.toString());
 			String value = CommandManager.getInstance().processCommand(msg.toString());
 			if(!ICommandProcessor.COMMAND_NOT_SUPPORTED.equals(value)) {
 				log.info("Passive Request Result for [{}] was [{}]", msg, value);

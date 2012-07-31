@@ -26,7 +26,9 @@ package org.helios.jzab.agent.commands.impl.jmx;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +37,6 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXServiceURL;
 
 import org.helios.jzab.util.JMXHelper;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -50,6 +51,7 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	public static final String COMMAND_KEY  = "jmxd"; 
 	
 	/** The regex pattern to extract tokens */
+	// public static final Pattern TOKEN = Pattern.compile("(\\[\\{\\$(.*?)\\}\\])");
 	public static final Pattern TOKEN = Pattern.compile("(\\{#(.*?)\\})");
 	
 	/**
@@ -70,7 +72,7 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
 	 */	
 	@Override
-	protected JSONArray doExecute(String... args) throws Exception {
+	protected Object doExecute(String... args) throws Exception {
 		if(args==null || args.length < 1) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
 		
 		Map<String, String> tokens = new HashMap<String, String> ();
@@ -86,23 +88,24 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 			domain = args[3];
 		}
 		MBeanServerConnection server = null;
+		Set<JSONObject> results = new HashSet<JSONObject>();		
 		try {
 			server = getServerForDomain(domain);
 			//return JMXHelper.getAttribute(server, compoundDelimiter, on, attrName);
-			JSONArray array = new JSONArray();
+			
 			for(ObjectName on: server.queryNames(objectName, null)) {
 				for(Map.Entry<String, String> entry: tokens.entrySet()) {					
 					String resolvedValue = resolveValue(on.toString(), entry.getKey(), args[0].trim());
 					log.debug("Resolved Value [{}] for Token [{}]", resolvedValue, entry.getKey());
 					//result.append("\n").append(entry.getValue()).append("--->").append(resolvedValue);
-					array.put(Collections.singletonMap(entry.getKey(), resolvedValue));
+					results.add(new JSONObject(Collections.singletonMap(entry.getKey(), resolvedValue)));					
 				}
 			}
-			return array;
+			return results.toArray(new JSONObject[results.size()]);
 		} catch (Exception e) {
 			log.debug("Failed to get MBeanServerConnection for domain [{}]", domain, e);
 			log.error("Failed to get MBeanServerConnection for domain [{}]", domain);
-			return COMMAND_NOT_SUPPORTED;			
+			throw new RuntimeException(e);			
 		}		
 	}
 	

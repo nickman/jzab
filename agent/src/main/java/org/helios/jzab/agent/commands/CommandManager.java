@@ -26,6 +26,7 @@ package org.helios.jzab.agent.commands;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -174,6 +175,9 @@ public class CommandManager implements CommandManagerMXBean {
 			commandName = cstring.substring(0, paramOpener).toLowerCase();
 			try {
 				strArgs = new CSVParser(',', '"').parseLine(cstring.substring(paramOpener+1, length-1).trim());
+				log.debug("Command [{}] with arguments {}", commandName, Arrays.toString(strArgs));
+				//strArgs = cstring.substring(paramOpener+1, length-1).trim().split("\\|");
+			//} catch (Exception e) {
 			} catch (IOException e) {
 				log.error("Failed to parse arguments in command string [{}]", commandString, e);
 				return ICommandProcessor.COMMAND_ERROR;

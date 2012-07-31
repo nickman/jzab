@@ -26,7 +26,7 @@ config version
 
 	 	<server address="zabbix" port="10051" refresh="30">
 	 		<hosts>
-	 			<host name="mulderd" refresh="20" />
+	 			<host name="mulderd" refresh="300" />
 	 			<!-- 
 	 			<host name="mulder" refresh="20" />
 	 			<host name="GroovyActive" refresh="1200" />
@@ -129,6 +129,9 @@ config version
  		<property name="compound-delimiter" value="." />
  	</command-processor>
  	<command-processor class="org.helios.jzab.agent.commands.impl.jmx.JMXDiscoveryCommandProcessor" />
+ 	<command-processor class="org.helios.jzab.agent.commands.impl.jmx.JMXPassiveDiscoveryCommandProcessor" />
+ 	<command-processor class="org.helios.jzab.agent.commands.impl.system.SystemNameCommandProcessor" />
+ 	
  	
  	
  	

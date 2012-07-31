@@ -22,11 +22,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net;
+package org.helios.jzab.agent.net.passive;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,6 +38,7 @@ import javax.management.ObjectName;
 
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.net.SharableHandlers;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -67,7 +70,7 @@ import org.w3c.dom.Node;
  * <p><code>org.helios.jzab.agent.net.AgentListener</code></p>
  */
 
-public class AgentListener extends NotificationBroadcasterSupport implements ChannelPipelineFactory, AgentListenerMXBean {
+public class AgentListener extends NotificationBroadcasterSupport implements ChannelPipelineFactory, AgentListenerMXBean, IListenerStats {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The name of this agent listener */
@@ -82,6 +85,9 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	protected final AtomicLong notificationSequence = new AtomicLong(0);
 	/** The sharable handlers repository */
 	protected final SharableHandlers sharableHandlers = SharableHandlers.getInstance();
+	
+	/** A map of the number of command exections received, keyed by the command name */
+	protected final Map<String, Long> commandExecutions = new ConcurrentHashMap<String, Long>();
 	
 	/** The netty server boss pool */
 	protected final Executor bossPool;
@@ -224,9 +230,9 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		//pipeline.addLast("logger", loggingHandler);
 		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
 		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
-		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));
+		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));		
 		pipeline.addLast("passiveResponseEncoder", sharableHandlers.getHandler("responseEncoder"));
-		pipeline.addLast("passiveRequestInvoker", sharableHandlers.getHandler("passiveRequestInvoker"));
+		pipeline.addLast("passiveRequestInvoker", new PassiveRequestInvoker(this));
 		
 		return pipeline;
 	}
@@ -235,7 +241,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getConnectionCount()
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#getConnectionCount()
 	 */
 	@Override
 	public int getConnectionCount() {
@@ -244,7 +250,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getListenerName()
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#getListenerName()
 	 */
 	@Override
 	public String getListenerName() {
@@ -274,7 +280,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getLevel()
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#getLevel()
 	 */
 	@Override
 	public String getLevel() {
@@ -283,7 +289,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#setLevel(java.lang.String)
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#setLevel(java.lang.String)
 	 */
 	@Override
 	public void setLevel(String level) {
@@ -302,7 +308,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getListenerPort()
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#getListenerPort()
 	 */
 	@Override
 	public int getListenerPort() {
@@ -314,7 +320,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.AgentListenerMXBean#getListenerInterface()
+	 * @see org.helios.jzab.agent.net.passive.AgentListenerMXBean#getListenerInterface()
 	 */
 	@Override
 	public String getListenerInterface() {
@@ -322,6 +328,30 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 			return isock.getAddress().getHostAddress();
 		}
 		return null;
+	}
+	
+	/**
+	 * Returns the tally of command executions
+	 * @return the tally of command executions
+	 */
+	public Map<String, Long> getCommandCounts() {
+		return Collections.unmodifiableMap(commandExecutions);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.passive.IListenerStats#addCommandReceived(java.lang.String)
+	 */
+	@Override
+	public synchronized void addCommandReceived(String command) {
+		Long cnt = commandExecutions.get(command);
+		if(cnt==null) {
+			cnt = 0L;
+		}
+		cnt++;
+		commandExecutions.put(command, cnt);
+		
+		
 	}
 
 }	
