@@ -41,6 +41,7 @@ import org.helios.jzab.agent.net.active.ActiveAgent;
 import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.net.passive.AgentListener;
 import org.helios.jzab.agent.plugin.PluginLoader;
+import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
@@ -244,7 +245,7 @@ public class JZabAgentMain {
 			activeServers = ActiveAgent.getInstance(activeAgentNode).getActiveServerCount();
 		}
 		log.info("ActiveAgent Loaded with [{}] active Zabbix Servers", activeServers );
-		
+		FileDeletor.closeOnExit();
 	}
 	
 	

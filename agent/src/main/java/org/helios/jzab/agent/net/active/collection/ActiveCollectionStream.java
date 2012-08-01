@@ -46,7 +46,6 @@ import org.helios.jzab.agent.net.active.ActiveHost;
 import org.helios.jzab.agent.net.active.ActiveServer;
 import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
-import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -92,8 +91,12 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	/** The UTF-8 charset */
 	protected final Charset charSet = Charset.forName("UTF-8");
 	
-	/** static logger */
-	protected static final Logger log = LoggerFactory.getLogger(ActiveCollectionStream.class);
+	/** Instance logger */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+	/** Static class logger */
+	protected static final Logger LOG = LoggerFactory.getLogger(ActiveCollectionStream.class);
+	
+
 
 	/**
 	 * Executes a full ActiveHost check submission using the default byte order and buffer size
@@ -119,6 +122,14 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 	}
 	
 	
+	// ===========================================================================
+	/*
+	 * TODO: Need to unify the static calls for collections by host and by delay. 
+	 * The command sequencing should not be exposed as in these static methods,
+	 * rather, they should be controlled internally and fired up with an execute.
+	 */
+	// ===========================================================================
+	
 	/**
 	 * Executes a full ActiveHost check submission.
 	 * @param order The byte order of the buffer
@@ -132,8 +143,9 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		Map<String, String> route = new HashMap<String, String>(1);
 		route.put(JSONResponseHandler.KEY_REQUEST, JSONResponseHandler.VALUE_ACTIVE_CHECK_SUBMISSION);
 		ResponseRoutingHandler.ROUTING_OVERRIDE.set(channel, route);
-		log.debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);		
-		final IActiveCollectionStream collector = type.newCollectionStream(order, size);	
+				
+		final IActiveCollectionStream collector = type.newCollectionStream(order, size);
+		collector.getLogger().debug("Starting Collection Stream for Active Host [{}] for send to [{}]", host, channel);
 		collector.setScheduledChecks(host.getActiveCheckCount());
 		try {
 			collector.writeHeader();
@@ -144,12 +156,21 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 			collector.close();			
 			collector.writeToChannel(channel);
 		} catch (Exception e) {
-			log.error("Submission Failed", e);
+			LOG.error("Submission Failed", e);
 		} finally {
 			collector.cleanup();
 		}
 		return collector;
 		
+	}
+	
+	/**
+	 * Returns this collection stream's logger
+	 * @return this collection stream's logger
+	 */
+	@Override
+	public Logger getLogger() {
+		return log;
 	}
 	
 	/**
@@ -182,7 +203,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 							collector.close();							
 							collector.setTimedOutChecks(collector.getScheduledChecks()-collector.getCompletedChecks());
 						} catch (InterruptedException e) {
-							log.error("Collection for ActiveServer [{}] was interrupted", activeServer, e);
+							LOG.error("Collection for ActiveServer [{}] was interrupted", activeServer, e);
 							return;
 						}
 						collector.trimLastCharacter();
@@ -192,7 +213,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 						Channel channel = client.newChannel(activeServer);
 						collector.writeToChannel(channel);		
 					} catch (Exception e) {
-						log.error("Submission Failed", e);
+						LOG.error("Submission Failed", e);
 					} finally {
 						collector.cleanup();
 					}
@@ -349,6 +370,7 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 			throw new RuntimeException("Failed to add result to collection stream [" + result + "]", e);
 		}
 	}
+	
 
 	/**
 	 * {@inheritDoc}

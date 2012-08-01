@@ -72,12 +72,14 @@ public class UnsafeMemory {
         
         try {
         	cleanerMethod = directByteBuffClass.getDeclaredMethod("cleaner");
+        	cleanerMethod.setAccessible(true);
         }  catch (Exception e) {
             throw new RuntimeException(e);
         }
         
         try {
-        	clean = cleanerMethod.getDeclaringClass().getDeclaredMethod("clean");
+        	clean = cleanerMethod.getReturnType().getDeclaredMethod("clean");
+        	clean.setAccessible(true);
         }  catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -107,9 +109,13 @@ public class UnsafeMemory {
     public static void unsafeDelete(Buffer buff) {
     	try {
 	    	if(directByteBuffClass.isAssignableFrom(buff.getClass())) {
-	    		clean.invoke(cleanerMethod.invoke(buff));
+	    		Object cleaner = cleanerMethod.invoke(buff);
+	    		if(cleaner!=null) {
+	    			clean.invoke(cleaner);
+	    		}
 	    	}
     	} catch (Exception e) {
+    		e.printStackTrace(System.err);
     		throw new RuntimeException(e);
     	}
     }

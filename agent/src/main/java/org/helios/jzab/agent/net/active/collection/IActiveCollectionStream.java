@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import org.helios.jzab.agent.net.active.ActiveHost;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
+import org.slf4j.Logger;
 
 /**
  * <p>Title: IActiveCollectionStream</p>
@@ -190,6 +191,12 @@ public interface IActiveCollectionStream extends IResultCollector {
 	 * Cleans up any resources allocated for the collection.
 	 */
 	public void cleanup();
+	
+	/**
+	 * Returns this collection stream's logger
+	 * @return this collection stream's logger
+	 */
+	public Logger getLogger();	
 	
 	
 	

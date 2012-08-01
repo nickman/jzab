@@ -29,10 +29,9 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.DownstreamMessageEvent;
 import org.jboss.netty.channel.FileRegion;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import org.jboss.netty.handler.stream.ChunkedFile;
 import org.json.JSONObject;
 
 /**
@@ -75,17 +74,8 @@ public class ZabbixRequestEncoder extends OneToOneEncoder {
 			payload = msg.toString().getBytes();
 		} else if(msg instanceof byte[]) {
 			payload = (byte[])msg;
-		} else if(msg instanceof FileRegion) {
-			FileRegion fr = (FileRegion)msg;
-			int size = (ZabbixConstants.BASELINE_SIZE);
-			ChannelBuffer buffer = ChannelBuffers.buffer(size);
-			buffer.writeBytes(ZabbixConstants.ZABBIX_HEADER);
-			buffer.writeByte(protocolVersion);
-			buffer.writeBytes(ZabbixConstants.encodeLittleEndianLongBytes(fr.getCount()));
-			//ctx.sendDownstream(new DownstreamMessageEvent(channel, Channels.future(channel), buffer, channel.getRemoteAddress()));
-			
-			//ctx.sendDownstream(new DownstreamMessageEvent(channel, Channels.future(channel), fr, channel.getRemoteAddress()));
-			return fr;
+		} else if(msg instanceof FileRegion || msg instanceof ChunkedFile) {
+			return msg;
 			
 		} else  {
 			throw new RuntimeException("Unrecognized payload type [" + msg.getClass().getName() + "]", new Throwable());

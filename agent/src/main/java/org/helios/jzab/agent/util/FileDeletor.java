@@ -30,7 +30,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.helios.jzab.util.JMXHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +43,16 @@ import org.slf4j.LoggerFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.util.FileDeletor</code></p>
  */
-public class FileDeletor extends Thread {
+public class FileDeletor extends Thread implements FileDeletorMXBean {
 	/** A set of files to be deleted */
 	private static final Set<File> toBeDeleted = new CopyOnWriteArraySet<File>();
 	/** A set of file channels to be closed */
 	private static final Set<Closeable> toBeClosed = new CopyOnWriteArraySet<Closeable>();
 	/** Static class logger */
 	protected final static Logger log = LoggerFactory.getLogger(FileDeletor.class);
+	
+	/** A counter for successful deletes  */
+	private static final AtomicLong delCounter = new AtomicLong(0L);
 	
 	
 	
@@ -62,12 +67,17 @@ public class FileDeletor extends Thread {
 		final FileDeletor FD = this;
 		Thread t = new Thread("FileDelReaperThread"){
 			public void run() {
-				try { Thread.currentThread().join(60000); } catch (Exception e) {}
-				FD.run();
+				while(true) {
+					try { Thread.currentThread().join(60000); } catch (Exception e) {}
+					FD.run();
+				}
 			}
 		};
 		t.setDaemon(true);		
 		t.start();
+		JMXHelper.registerMBean(
+				JMXHelper.getHeliosMBeanServer(), 
+				JMXHelper.objectName("org.helios.jzab.agent.util:service=FileDeletor"), FD);
 	}
 	
 	/**
@@ -78,7 +88,15 @@ public class FileDeletor extends Thread {
 		if(files!=null) {
 			for(File file: files) {
 				if(file!=null && file.exists()) {
-					toBeDeleted.add(file);
+					try {
+						if(!file.delete()) {
+							toBeDeleted.add(file);
+						} else {
+							delCounter.incrementAndGet();
+						}
+					} catch (Exception e) {
+						toBeDeleted.add(file);
+					}				
 				}
 			}
 		}
@@ -91,7 +109,12 @@ public class FileDeletor extends Thread {
 	public static void closeOnExit(Closeable...closeables) {
 		if(closeables!=null) {
 			for(Closeable closeable: closeables) {
+				if(closeable==null) continue;
+				try {
+					closeable.close();
+				} catch (Exception e) {
 					toBeClosed.add(closeable);
+				}				
 			}
 		}
 	}
@@ -102,9 +125,7 @@ public class FileDeletor extends Thread {
 	 * {@inheritDoc}
 	 * @see java.lang.Thread#run()
 	 */
-	public void run() {
-		try { System.gc(); } catch (Throwable t) {}
-		
+	public void run() {				
 		for(Iterator<Closeable> iter = toBeClosed.iterator(); iter.hasNext();) {
 			Closeable closeable = iter.next();
 			try { closeable.close(); } catch (Exception e) {}			
@@ -114,11 +135,49 @@ public class FileDeletor extends Thread {
 		Set<File> deletedOk = new HashSet<File>();
 		for(Iterator<File> iter = toBeDeleted.iterator(); iter.hasNext();) {
 			File file = iter.next();
-			if(!file.exists() || file.delete()) {
-				log.debug("Successfully deleted file [{}]", file);
+			if(file.exists()) {
+				if(file.delete()) {
+					deletedOk.add(file);
+					delCounter.incrementAndGet();
+					log.debug("Successfully deleted file [{}]", file);
+				}
+			} else {
 				deletedOk.add(file);
-			}			
+			}
 		}
 		toBeDeleted.removeAll(deletedOk);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.util.FileDeletorMXBean#getPendingCloseables()
+	 */
+	@Override
+	public int getPendingCloseables() {
+		return toBeClosed.size();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.util.FileDeletorMXBean#getFileDeletes()
+	 */
+	@Override
+	public int getFileDeletes() {
+		return toBeDeleted.size();
+	}
+
+	/**
+	 * Returns the cummulative number of successful file deletions
+	 * @return the cummulative number of successful file deletions
+	 */
+	public long getDeletionCount() {
+		return delCounter.get();
+	}
+	
+	/**
+	 * @return the delcounter
+	 */
+	public static AtomicLong getDelcounter() {
+		return delCounter;
 	}
 }

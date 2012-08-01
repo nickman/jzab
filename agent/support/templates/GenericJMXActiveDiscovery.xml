@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2012-07-31T20:42:54Z</date>
+    <date>2012-07-30T20:16:23Z</date>
     <groups>
+        <group>
+            <name>Java Services</name>
+        </group>
+        <group>
+            <name>jZab Agents</name>
+        </group>
         <group>
             <name>Templates</name>
         </group>
@@ -12,6 +18,12 @@
             <template>Template JMX Generic Active Discovery</template>
             <name>Template JMX Generic Active Discovery</name>
             <groups>
+                <group>
+                    <name>Java Services</name>
+                </group>
+                <group>
+                    <name>jZab Agents</name>
+                </group>
                 <group>
                     <name>Templates</name>
                 </group>
@@ -32,6 +44,9 @@
                 <application>
                     <name>NIO Buffer Pools</name>
                 </application>
+                <application>
+                    <name>Threading</name>
+                </application>
             </applications>
             <items>
                 <item>
@@ -40,7 +55,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,TotalLoadedClassCount&quot;]</key>
+                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,TotalLoadedClassCount]</key>
                     <delay>30</delay>
                     <history>90</history>
                     <trends>365</trends>
@@ -118,7 +133,7 @@
                     <snmp_community></snmp_community>
                     <multiplier>0</multiplier>
                     <snmp_oid></snmp_oid>
-                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,LoadedClassCount&quot;]</key>
+                    <key>jmx[&quot;java.lang:type=ClassLoading&quot;,LoadedClassCount]</key>
                     <delay>30</delay>
                     <history>90</history>
                     <trends>365</trends>
@@ -151,6 +166,45 @@
                     </applications>
                     <valuemap/>
                 </item>
+                <item>
+                    <name>Deadlocked Thread Detection</name>
+                    <type>7</type>
+                    <snmp_community></snmp_community>
+                    <multiplier>0</multiplier>
+                    <snmp_oid></snmp_oid>
+                    <key>jmxop[&quot;java.lang:type=Threading&quot;, findDeadlockedThreads,COUNT]</key>
+                    <delay>30</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <status>0</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts></allowed_hosts>
+                    <units>Deadlocked Threads</units>
+                    <delta>0</delta>
+                    <snmpv3_securityname></snmpv3_securityname>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase></snmpv3_authpassphrase>
+                    <snmpv3_privpassphrase></snmpv3_privpassphrase>
+                    <formula>1</formula>
+                    <delay_flex></delay_flex>
+                    <params></params>
+                    <ipmi_sensor></ipmi_sensor>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username></username>
+                    <password></password>
+                    <publickey></publickey>
+                    <privatekey></privatekey>
+                    <port></port>
+                    <description>The number of deadlocked threads</description>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Threading</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
             </items>
             <discovery_rules>
                 <discovery_rule>
@@ -159,7 +213,7 @@
                     <snmp_community></snmp_community>
                     <snmp_oid></snmp_oid>
                     <key>jmxdp[&quot;java.lang:type=GarbageCollector,name={#GCNAME}&quot;]</key>
-                    <delay>300</delay>
+                    <delay>10</delay>
                     <status>0</status>
                     <allowed_hosts></allowed_hosts>
                     <snmpv3_securityname></snmpv3_securityname>
@@ -228,7 +282,7 @@
                     <snmp_community></snmp_community>
                     <snmp_oid></snmp_oid>
                     <key>jmxdp[&quot;java.lang:type=MemoryPool,name={#MEMPOOLNAME}&quot;]</key>
-                    <delay>300</delay>
+                    <delay>10</delay>
                     <status>0</status>
                     <allowed_hosts></allowed_hosts>
                     <snmpv3_securityname></snmpv3_securityname>
@@ -414,7 +468,7 @@
                     <snmp_community></snmp_community>
                     <snmp_oid></snmp_oid>
                     <key>jmxdp[&quot;java.nio:type=BufferPool,name={#POOLNAME}&quot;]</key>
-                    <delay>300</delay>
+                    <delay>10</delay>
                     <status>0</status>
                     <allowed_hosts></allowed_hosts>
                     <snmpv3_securityname></snmpv3_securityname>

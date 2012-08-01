@@ -39,25 +39,25 @@ import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
  */
 public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBufferFactory {
 	/** Uses a dynamic heap buffer to accumulate results */
-	MEMORY(false, new AbstractReadableWritableByteChannelBufferFactory(){
+	MEMORY(false, false, new AbstractReadableWritableByteChannelBufferFactory(){
 	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDynamic(order, size);
 	}}),
 	/** Uses a dynamic direct (non-heap) buffer to accumulate results */
-	DIRECTMEMORY(false, new AbstractReadableWritableByteChannelBufferFactory(){
+	DIRECTMEMORY(false, true, new AbstractReadableWritableByteChannelBufferFactory(){
 	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDirectDynamic(order, size);
 	}}),
 	/** Uses a temporary file buffer to accumulate results */
-	DISK(true, new AbstractReadableWritableByteChannelBufferFactory(){
+	DISK(true, false, new AbstractReadableWritableByteChannelBufferFactory(){
 	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDynamic(order, size);
 	}}),
 	/** Uses a temporary memory mapped file buffer to accumulate results */
-	DIRECTDISK(true, new AbstractReadableWritableByteChannelBufferFactory(){
+	DIRECTDISK(true, true, new AbstractReadableWritableByteChannelBufferFactory(){
 	@Override
 	public ReadableWritableByteChannelBuffer newInstance(ByteOrder order, int size) {
 		return ReadableWritableByteChannelBuffer.newDirectDynamic(order, size);
@@ -82,18 +82,22 @@ public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBu
 	
 	/**
 	 * Creates a new ActiveCollectionStreamType
-	 * @param diskBased true if the streamer is disk based, false if it is memory based 
+	 * @param diskBased true if the streamer is disk based, false if it is memory based
+	 * @param direct true if the buffer uses direct memory 
 	 * @param factory The buffer factory
 	 */
-	private ActiveCollectionStreamType(boolean diskBased, IReadableWritableByteChannelBufferFactory factory) {
+	private ActiveCollectionStreamType(boolean diskBased, boolean direct, IReadableWritableByteChannelBufferFactory factory) {
 		this.factory = factory;
 		this.diskBased = diskBased;
+		this.direct  =direct;
 	}
 	
 	/** The factory used to create {@link ReadableWritableByteChannelBuffer} instances */
 	private final IReadableWritableByteChannelBufferFactory factory;
 	/** Indicates if the streamer is disk based */
 	private final boolean diskBased;
+	/** Indicates if the streamer uses direct memory */
+	private final boolean direct;
 
 	/**
 	 * {@inheritDoc}
@@ -121,6 +125,9 @@ public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBu
 	 */
 	public IActiveCollectionStream newCollectionStream(ByteOrder order, int size) {
 		if(isDiskBased()) {
+			if(isDirect()) {				
+				return new DirectFileActiveCollectionStream(factory.newInstance(order, size), this);
+			} 
 			return new FileActiveCollectionStream(factory.newInstance(order, size), this);
 		}
 		return new ActiveCollectionStream(factory.newInstance(order, size), this);
@@ -151,5 +158,14 @@ public enum ActiveCollectionStreamType implements IReadableWritableByteChannelBu
 	public boolean isDiskBased() {
 		return diskBased;
 	}
+
+	/**
+	 * Indicates if this type uses direct memory
+	 * @return true if this type uses direct memory, false if it only uses heap
+	 */
+	public boolean isDirect() {
+		return direct;
+	}
+	
 
 }
