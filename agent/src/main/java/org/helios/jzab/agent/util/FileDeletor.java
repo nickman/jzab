@@ -26,8 +26,13 @@ package org.helios.jzab.agent.util;
 
 import java.io.Closeable;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Title: FileDeletor</p>
@@ -41,10 +46,28 @@ public class FileDeletor extends Thread {
 	private static final Set<File> toBeDeleted = new CopyOnWriteArraySet<File>();
 	/** A set of file channels to be closed */
 	private static final Set<Closeable> toBeClosed = new CopyOnWriteArraySet<Closeable>();
+	/** Static class logger */
+	protected final static Logger log = LoggerFactory.getLogger(FileDeletor.class);
+	
 	
 	
 	static {
 		Runtime.getRuntime().addShutdownHook(new FileDeletor());
+	}
+	
+	/**
+	 * Creates a new FileDeletor and starts the reaper thread
+	 */
+	private FileDeletor() {
+		final FileDeletor FD = this;
+		Thread t = new Thread("FileDelReaperThread"){
+			public void run() {
+				try { Thread.currentThread().join(60000); } catch (Exception e) {}
+				FD.run();
+			}
+		};
+		t.setDaemon(true);		
+		t.start();
 	}
 	
 	/**
@@ -80,12 +103,22 @@ public class FileDeletor extends Thread {
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
-		for(Closeable closeable: toBeClosed) {
-			try { closeable.close(); } catch (Exception e) {}
+		try { System.gc(); } catch (Throwable t) {}
+		
+		for(Iterator<Closeable> iter = toBeClosed.iterator(); iter.hasNext();) {
+			Closeable closeable = iter.next();
+			try { closeable.close(); } catch (Exception e) {}			
 		}
+		toBeClosed.clear();
 		if(toBeDeleted.isEmpty()) return;
-		for(File file: toBeDeleted) {
-			file.delete();
+		Set<File> deletedOk = new HashSet<File>();
+		for(Iterator<File> iter = toBeDeleted.iterator(); iter.hasNext();) {
+			File file = iter.next();
+			if(!file.exists() || file.delete()) {
+				log.debug("Successfully deleted file [{}]", file);
+				deletedOk.add(file);
+			}			
 		}
+		toBeDeleted.removeAll(deletedOk);
 	}
 }
