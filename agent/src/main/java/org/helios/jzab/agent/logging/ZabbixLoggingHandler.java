@@ -116,23 +116,29 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	*/
 	@Override
 	public void log(ChannelEvent e) {
+		
+		
         if (getLogger().isEnabled(getLevel())) {
-            String msg = e.toString();
-
-            // Append hex dump if necessary.
-            if (hexDump && e instanceof MessageEvent) {
-                MessageEvent me = (MessageEvent) e;
-                if (me.getMessage() instanceof ChannelBuffer) {
-                    msg += formatBuffer((ChannelBuffer) me.getMessage());
-                }
+            
+        	String msg = e.toString();
+            if(e instanceof MessageEvent) {
+            	MessageEvent me = (MessageEvent)e;
+            	if(me.getMessage() instanceof ChannelBuffer) {
+	            	ChannelBuffer buf = (ChannelBuffer)me.getMessage();
+		            StringBuilder zbxHeader = new StringBuilder(60);
+		            int length = buf.readableBytes();
+		            if(!isLittleEndian && length >= BASELINE_SIZE) {
+		            	byte[] hdrbuff = new byte[ZABBIX_HEADER.length];
+		            	buf.getBytes(0, hdrbuff, 0, ZABBIX_HEADER.length);
+		            	if(Arrays.equals(hdrbuff, ZABBIX_HEADER)) {
+		            		byte[] messageSizeBytes = new byte[8];
+		            		buf.getBytes(5, messageSizeBytes, 0, 8);
+		            		long messageSize = decodeLittleEndianLongBytes(messageSizeBytes);
+		            	} 
+		            }
+            	}
             }
-
-            // Log the message (and exception if available.)
-            if (e instanceof ExceptionEvent) {
-                getLogger().log(getLevel(), msg, ((ExceptionEvent) e).getCause());
-            } else {
-                getLogger().log(getLevel(), msg);
-            }
+            
         }
 		
 	}
@@ -153,70 +159,6 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 
 	
 	
-    private static String formatBuffer(ChannelBuffer buf) {
-        int length = buf.readableBytes();
-        int rows = length / 16 + (length % 15 == 0? 0 : 1) + 4;
-        StringBuilder zbxHeader = new StringBuilder(60);
-        int extraChars = 0;
-        if(!isLittleEndian && length >= BASELINE_SIZE) {
-        	byte[] hdrbuff = new byte[ZABBIX_HEADER.length];
-        	buf.getBytes(0, hdrbuff, 0, ZABBIX_HEADER.length);
-        	if(Arrays.equals(hdrbuff, ZABBIX_HEADER)) {
-        		byte[] messageSizeBytes = new byte[8];
-        		buf.getBytes(5, messageSizeBytes, 0, 8);
-        		long messageSize = decodeLittleEndianLongBytes(messageSizeBytes);
-        		zbxHeader.append(
-                        NEWLINE + "         +-------------------------------------------------+" + 
-                        NEWLINE + "         |"
-        	} 
-        }
-
-        StringBuilder dump = new StringBuilder((rows * 80)+extraChars);
-        
-        dump.append(
-                NEWLINE + "         +-------------------------------------------------+" +
-                NEWLINE + "         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" +
-                NEWLINE + "+--------+-------------------------------------------------+----------------+");
-
-        final int startIndex = buf.readerIndex();
-        final int endIndex = buf.writerIndex();
-
-        int i;
-        for (i = startIndex; i < endIndex; i ++) {
-            int relIdx = i - startIndex;
-            int relIdxMod16 = relIdx & 15;
-            if (relIdxMod16 == 0) {
-                dump.append(NEWLINE);
-                dump.append(Long.toHexString(relIdx & 0xFFFFFFFFL | 0x100000000L));
-                dump.setCharAt(dump.length() - 9, '|');
-                dump.append('|');
-            }
-            dump.append(BYTE2HEX[buf.getUnsignedByte(i)]);
-            if (relIdxMod16 == 15) {
-                dump.append(" |");
-                for (int j = i - 15; j <= i; j ++) {
-                    dump.append(BYTE2CHAR[buf.getUnsignedByte(j)]);
-                }
-                dump.append('|');
-            }
-        }
-
-        if ((i - startIndex & 15) != 0) {
-            int remainder = length & 15;
-            dump.append(HEXPADDING[remainder]);
-            dump.append(" |");
-            for (int j = i - remainder; j < i; j ++) {
-                dump.append(BYTE2CHAR[buf.getUnsignedByte(j)]);
-            }
-            dump.append(BYTEPADDING[remainder]);
-            dump.append('|');
-        }
-
-        dump.append(
-                NEWLINE + "+--------+-------------------------------------------------+----------------+");
-
-        return dump.toString();
-    }
 	
 	/**
 	 * {@inheritDoc}
