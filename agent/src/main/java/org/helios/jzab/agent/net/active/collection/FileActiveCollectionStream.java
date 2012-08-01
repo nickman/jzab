@@ -36,7 +36,6 @@ import java.nio.channels.FileChannel.MapMode;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
-import org.helios.jzab.agent.util.UnsafeMemory;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -66,10 +65,9 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 		super(buffer, type);
 		try {
 			tmpFile = File.createTempFile("jzab-coll", ".tmp");
-			FileDeletor.deleteOnExit(tmpFile);
 			raf = new RandomAccessFile(tmpFile, "rw");
 			fileChannel = raf.getChannel();
-			FileDeletor.closeOnExit(fileChannel);
+			
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to create FileActiveCollectionStream instance", e);
 		}
@@ -81,23 +79,11 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 	 */
 	@Override
 	public ChannelFuture writeToChannel(Channel channel) {
-		ChannelFuture cf = writeFile(channel);
-		//ChannelFuture cf = channel.write(buffer);
-		final FileChannel fChannel = fileChannel;
+		ChannelFuture cf = writeFile(channel);		
 		final ActiveCollectionStream collector = this;
 		cf.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-//				try { fChannel.truncate(0); } catch (Exception e) {}
-//				try { fChannel.close(); } catch (Exception e) {}
-//				File newName = new File(tmpFile.getAbsolutePath() + ".deleteMe");
-//				if(!tmpFile.renameTo(newName)) {
-//					log.warn("Failed to rename tmp file [{}]", tmpFile);
-//				} else {
-//					if(!newName.delete()) {
-//						log.warn("Failed to delete tmp file [{}]", newName);
-//					}					
-//				}
 				if(future.isSuccess()) {
 					future.getChannel().getCloseFuture().addListener(new ChannelFutureListener() {							
 						@Override
@@ -113,6 +99,18 @@ public class FileActiveCollectionStream extends ActiveCollectionStream {
 		});
 		return cf;
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#cleanup()
+	 */
+	@Override
+	public void cleanup() {
+		super.cleanup();
+		FileDeletor.deleteOnExit(tmpFile);
+		FileDeletor.closeOnExit(fileChannel);
+	}
+	
 	
 	/**Writes the file to the channel
 	 * @param channel The channel to write to 

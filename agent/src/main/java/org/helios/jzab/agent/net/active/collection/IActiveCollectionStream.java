@@ -186,6 +186,11 @@ public interface IActiveCollectionStream extends IResultCollector {
 	 */
 	public void setScheduledChecks(long scheduledChecks);
 	
+	/**
+	 * Cleans up any resources allocated for the collection.
+	 */
+	public void cleanup();
+	
 	
 	
 	

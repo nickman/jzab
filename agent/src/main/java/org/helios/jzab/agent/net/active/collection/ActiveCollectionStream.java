@@ -46,6 +46,7 @@ import org.helios.jzab.agent.net.active.ActiveHost;
 import org.helios.jzab.agent.net.active.ActiveServer;
 import org.helios.jzab.agent.net.codecs.ResponseRoutingHandler;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
+import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -144,6 +145,8 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 			collector.writeToChannel(channel);
 		} catch (Exception e) {
 			log.error("Submission Failed", e);
+		} finally {
+			collector.cleanup();
 		}
 		return collector;
 		
@@ -190,6 +193,8 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 						collector.writeToChannel(channel);		
 					} catch (Exception e) {
 						log.error("Submission Failed", e);
+					} finally {
+						collector.cleanup();
 					}
 				}
 			});
@@ -226,6 +231,18 @@ public class ActiveCollectionStream implements IActiveCollectionStream {
 		return null;
 		
 	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.IActiveCollectionStream#cleanup()
+	 */
+	@Override
+	public void cleanup() {
+		// No Op
+		
+	}
+	
 	
 	
 	/**
