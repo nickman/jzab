@@ -40,6 +40,7 @@ import javax.management.ObjectName;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.agent.logging.ZabbixLoggingHandler;
 import org.helios.jzab.agent.net.SharableHandlers;
 import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
 import org.helios.jzab.agent.net.routing.JSONResponseHandler;
@@ -172,7 +173,7 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 			throw new RuntimeException("Configuration Node expected to have node name [" + NODE + "] but was [" + nodeName + "]", new Throwable());
 		}
 		agentName = XMLHelper.getAttributeByName(configNode, "name", "ActiveClient@" + System.identityHashCode(this));
-		loggingHandler = new LoggingHandler(agentName, InternalLogLevel.DEBUG, true);
+		loggingHandler = new ZabbixLoggingHandler(agentName, InternalLogLevel.DEBUG, true);
 		objectName = JMXHelper.objectName("org.helios.jzab.agent.net", "service", "ActiveClient", "name", agentName);
 		bossPool = ThreadPoolFactory.getInstance(XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, BOSS_POOL_TYPE, false), "name", null));
 		workerPool = ThreadPoolFactory.getInstance(XMLHelper.getAttributeByName(XMLHelper.getChildNodeByName(configNode, WORKER_POOL_TYPE, false), "name", null));

@@ -24,8 +24,9 @@
  */
 package org.helios.jzab.agent.commands.impl.aggregate;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -136,15 +137,41 @@ public enum AggregateFunction implements IAggregator {
 	}
 	
 	/**
-	 * Computes and returns the aggregate for the named aggregator and array of input items
+	 * Computes and returns the aggregate for the named aggregator and object of nput items.
+	 * The object is introspected to determine if it is:<ul>
+	 *  <li>Null</li>
+	 * 	<li>{@link java.util.Map}</li>
+	 * 	<li>{@link java.util.Collection}</li>
+	 * 	<li>An array</li>
+	 * </ul>.
+	 * If it is none of the above, a runtime exception is thrown.
+	 * If it is a map or an array, it is converted to a list for aggregate computation.
 	 * @param name The name of the aggregator function
-	 * @param items The array of items to aggregate
+	 * @param item The object of items to aggregate
 	 * @return the aggregate value
+	 * TODO:  Do we need to support multi dimmensional arrays ?
 	 */
-	public static Object aggregate(CharSequence name, Object...items) {
-		return AggregateFunction.forName(name).aggr.aggregate(
-				items==null ? Collections.emptyList() : Arrays.asList(items)
-		);
+	@SuppressWarnings("unchecked")
+	public static Object aggregate(CharSequence name, Object item) {				
+		final List<Object> items;		
+		final AggregateFunction function = AggregateFunction.forName(name);
+		if(item==null) {
+			items = Collections.EMPTY_LIST;
+		} else if(item instanceof Map) {
+			Map<Object, Object> map = (Map<Object, Object>)item;
+			items = new ArrayList<Object>(map.keySet());
+		} else if(item instanceof Collection) {
+			items = new ArrayList<Object>((Collection<Object>)item);
+		} else if(item.getClass().isArray())  {			
+			int length = Array.getLength(item);
+			items = new ArrayList<Object>(length);
+			for(int i = 0; i < length; i++) {
+				items.add(i, Array.get(item, i));
+			}
+		} else {
+			throw new IllegalArgumentException("Aggregate object of type [" + item.getClass().getName() + "] was not a Map, Collection or Array", new Throwable());
+		}
+		return function.aggregate(items);					
 	}
 	
 	

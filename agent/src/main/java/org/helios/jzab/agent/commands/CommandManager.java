@@ -149,7 +149,7 @@ public class CommandManager implements CommandManagerMXBean {
 			try {
 				Collections.addAll(ops, new CSVParser(',', '"').parseLine(cstring.substring(paramOpener+1, length-1).trim()));
 			} catch (IOException e) {
-				log.error("Failed to parse arguments in command string [{}]", commandString, e);
+				log.error("Failed to parse arguments in command string \n\t-->{}<--", commandString, e);
 				return null;
 			}
 			return ops.toArray(new String[ops.size()]);
