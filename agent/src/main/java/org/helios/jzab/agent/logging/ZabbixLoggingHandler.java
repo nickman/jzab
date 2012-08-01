@@ -26,12 +26,10 @@ package org.helios.jzab.agent.logging;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
@@ -39,73 +37,32 @@ import org.jboss.netty.logging.InternalLogger;
 
 /**
  * <p>Title: ZabbixLoggingHandler</p>
- * <p>Description: Netty logging handler extension to reformat the <b>ZBXD</b> header so messages are hex dumped in a more readable way.</p> 
+ * <p>Description: Netty logging handler extension to reformat the <b>ZBXD</b> header so messages are hex dumped in a more readable way.</p>
+ * <p>Prints a header like this before the full dump occurs:<pre>
+ * +--------+-------------------------------------------------+----------------+
+ *          |  ZABBIX HEADER DETECTED. Protocol:1  Size:89    |
+ * +--------+-------------------------------------------------+----------------+
+ * </pre></p>
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.logging.ZabbixLoggingHandler</code></p>
  */
 
-public class ZabbixLoggingHandler extends LoggingHandler {
-    private static final String NEWLINE = String.format("%n");
+public class ZabbixLoggingHandler extends LoggingHandler  {
+    
     /** True if the native byte order is littleendian */
     public static final boolean isLittleEndian = ByteOrder.nativeOrder().getClass().equals(ByteOrder.LITTLE_ENDIAN);
-    private static final String[] BYTE2HEX = new String[256];
-    private static final String[] HEXPADDING = new String[16];
-    private static final String[] BYTEPADDING = new String[16];
-    private static final char[] BYTE2CHAR = new char[256];
-    private final boolean hexDump;
-    static {
-        int i;
-
-        // Generate the lookup table for byte-to-hex-dump conversion
-        for (i = 0; i < 10; i ++) {
-            StringBuilder buf = new StringBuilder(3);
-            buf.append(" 0");
-            buf.append(i);
-            BYTE2HEX[i] = buf.toString();
-        }
-        for (; i < 16; i ++) {
-            StringBuilder buf = new StringBuilder(3);
-            buf.append(" 0");
-            buf.append((char) ('a' + i - 10));
-            BYTE2HEX[i] = buf.toString();
-        }
-        for (; i < BYTE2HEX.length; i ++) {
-            StringBuilder buf = new StringBuilder(3);
-            buf.append(' ');
-            buf.append(Integer.toHexString(i));
-            BYTE2HEX[i] = buf.toString();
-        }
-
-        // Generate the lookup table for hex dump paddings
-        for (i = 0; i < HEXPADDING.length; i ++) {
-            int padding = HEXPADDING.length - i;
-            StringBuilder buf = new StringBuilder(padding * 3);
-            for (int j = 0; j < padding; j ++) {
-                buf.append("   ");
-            }
-            HEXPADDING[i] = buf.toString();
-        }
-
-        // Generate the lookup table for byte dump paddings
-        for (i = 0; i < BYTEPADDING.length; i ++) {
-            int padding = BYTEPADDING.length - i;
-            StringBuilder buf = new StringBuilder(padding);
-            for (int j = 0; j < padding; j ++) {
-                buf.append(' ');
-            }
-            BYTEPADDING[i] = buf.toString();
-        }
-
-        // Generate the lookup table for byte-to-char conversion
-        for (i = 0; i < BYTE2CHAR.length; i ++) {
-            if (i <= 0x1f || i >= 0x7f) {
-                BYTE2CHAR[i] = '.';
-            } else {
-                BYTE2CHAR[i] = (char) i;
-            }
-        }
-    }
+	/** The Zabbix Header */
+	private static final byte[] ZABBIX_HEADER =  "ZBXD".getBytes();
+	/** The Zabbix Header as a ChannelBuffer */
+	private static final ChannelBuffer ZABBIX_HEADER_CB = ChannelBuffers.wrappedBuffer(ZABBIX_HEADER); 
+	/** The zabbix response baseline size for creating the downstream channel buffer */
+	public static final int BASELINE_SIZE = ZABBIX_HEADER.length + 9;  // one byte for protocol, 8 bytes for length
+	/** Logging new line char */
+	public static final String NEWLINE = String.format("%n");	
+	/** Formatting */
+	public static final int LINE_LENGTH = 60;
+    
 	
    /**
 	* Logs the specified event to the {@link InternalLogger} returned by
@@ -119,34 +76,110 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 		
 		
         if (getLogger().isEnabled(getLevel())) {
-            
-        	String msg = e.toString();
-            if(e instanceof MessageEvent) {
-            	MessageEvent me = (MessageEvent)e;
-            	if(me.getMessage() instanceof ChannelBuffer) {
-	            	ChannelBuffer buf = (ChannelBuffer)me.getMessage();
-		            StringBuilder zbxHeader = new StringBuilder(60);
-		            int length = buf.readableBytes();
-		            if(!isLittleEndian && length >= BASELINE_SIZE) {
-		            	byte[] hdrbuff = new byte[ZABBIX_HEADER.length];
-		            	buf.getBytes(0, hdrbuff, 0, ZABBIX_HEADER.length);
-		            	if(Arrays.equals(hdrbuff, ZABBIX_HEADER)) {
-		            		byte[] messageSizeBytes = new byte[8];
-		            		buf.getBytes(5, messageSizeBytes, 0, 8);
-		            		long messageSize = decodeLittleEndianLongBytes(messageSizeBytes);
-		            	} 
-		            }
-            	}
+            try {	        	
+	            if(e instanceof MessageEvent) {
+	            	MessageEvent me = (MessageEvent)e;
+	            	if(me.getMessage() instanceof ChannelBuffer) {
+		            	ChannelBuffer buf = (ChannelBuffer)me.getMessage();
+		            	int length = buf.readableBytes();
+			            if(length >= BASELINE_SIZE) {
+			            	ChannelBuffer header = findZabbixHeader(buf, length);
+			            	if(header!=null) {
+			            		byte protocol = header.getByte(0);
+			            		long messageSize = -1L;
+			            		if(isLittleEndian) {
+			            			messageSize = header.getLong(1);
+			            		} else {
+				            		byte[] messageSizeBytes = new byte[8];
+				            		header.getBytes(1, messageSizeBytes, 0, 8);
+				            		messageSize = decodeLittleEndianLongBytes(messageSizeBytes);			            			
+			            		}
+			            		String message = padRight(String.format("         |  ZABBIX HEADER DETECTED. Protocol:%s  Size:%s", protocol, messageSize), LINE_LENGTH-1);
+				            	StringBuilder zbxHeader = new StringBuilder(240)				            	
+				            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+")
+				            	.append(NEWLINE).append(message).append("|")
+				            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+");
+				            	getLogger().log(getLevel(), zbxHeader.toString());
+			            	}
+			            }
+	            	}
+	            }
+            } finally {
+            	super.log(e);
             }
-            
-        }
-		
+        }		
 	}
 	
-	/** The Zabbix Header */
-	private static final byte[] ZABBIX_HEADER =  "ZBXD".getBytes();
-	/** The zabbix response baseline size for creating the downstream channel buffer */
-	public static final int BASELINE_SIZE = ZABBIX_HEADER.length + 9;  // one byte for protocol, 8 bytes for length
+	/**
+	 * Right pads the passed string
+	 * @param s The string to pad
+	 * @param n The number of characters to pad out to
+	 * @return The padded string
+	 */
+	public static String padRight(String s, int n) {
+	    return String.format("%1$-" + n + "s", s);
+	}
+
+	
+	/**
+	 * Left pads the passed string
+	 * @param s The string to pad
+	 * @param n The number of characters to pad out to
+	 * @return The padded string
+	 */
+	public static String padLeft(String s, int n) {
+	    return String.format("%1$#" + n + "s", s);
+	}	
+	
+	
+	/**
+	 * Attempts to locate the Zabbix Header in the passed buffer. 
+	 * Currently cannot handle a partial header, which might happen if <b>ZBXD</b> is at the end of the buffer, 
+	 * and the next buffer contains the remainder.
+	 * Assumes only one header per buffer. 
+	 * @param buf The ChannelBuffer to search
+	 * @param length The length of the ChannelBuffer
+	 * @return The protocol and message size portion of the header in a sliced ChannelBuffer, or null if the header was not found. 
+	 */
+	public static ChannelBuffer findZabbixHeader(ChannelBuffer buf, int length) {
+		int index = indexOf(buf, ZABBIX_HEADER_CB);
+		if(index==-1) return null;
+		if(length-index >= BASELINE_SIZE) {
+			return buf.slice(index+4, BASELINE_SIZE);
+		} else {
+			// partial header .....
+		}
+		return null;
+	}
+	
+    /**
+     * Returns the number of bytes between the readerIndex of the haystack and
+     * the first needle found in the haystack.  -1 is returned if no needle is
+     * found in the haystack.
+     */
+    private static int indexOf(ChannelBuffer haystack, ChannelBuffer needle) {
+        for (int i = haystack.readerIndex(); i < haystack.writerIndex(); i ++) {
+            int haystackIndex = i;
+            int needleIndex;
+            for (needleIndex = 0; needleIndex < needle.capacity(); needleIndex ++) {
+                if (haystack.getByte(haystackIndex) != needle.getByte(needleIndex)) {
+                    break;
+                } else {
+                    haystackIndex ++;
+                    if (haystackIndex == haystack.writerIndex() &&
+                        needleIndex != needle.capacity() - 1) {
+                        return -1;
+                    }
+                }
+            }
+
+            if (needleIndex == needle.capacity()) {
+                // Found the needle from the haystack!
+                return i - haystack.readerIndex();
+            }
+        }
+        return -1;
+    }	
 	
 	/**
 	 * Decodes the little endian encoded bytes to a long
@@ -160,20 +193,11 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	
 	
 	
-	/**
-	 * {@inheritDoc}
-	 * @see org.jboss.netty.handler.logging.LoggingHandler#handleUpstream(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelEvent)
-	 */
-	@Override
-	public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		super.handleUpstream(ctx, e);
-	}
 
 	/**
 	 * Creates a new ZabbixLoggingHandler
 	 */
 	public ZabbixLoggingHandler() {
-		hexDump = true;
 	}
 
 	/**
@@ -182,7 +206,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(InternalLogLevel level) {
 		super(level);
-		hexDump = true;
+		
 	}
 
 	/**
@@ -191,7 +215,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(boolean hexDump) {
 		super(hexDump);
-		this.hexDump = hexDump;
+		
 	}
 
 	/**
@@ -200,7 +224,6 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(Class<?> clazz) {
 		super(clazz);
-		this.hexDump = true;
 	}
 
 	/**
@@ -209,7 +232,6 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(String name) {
 		super(name);
-		this.hexDump = true;
 	}
 
 	/**
@@ -219,7 +241,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(InternalLogLevel level, boolean hexDump) {
 		super(level, hexDump);
-		this.hexDump = hexDump;
+		
 	}
 
 	/**
@@ -229,7 +251,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(Class<?> clazz, boolean hexDump) {
 		super(clazz, hexDump);
-		this.hexDump = hexDump;
+		
 	}
 
 	/**
@@ -239,7 +261,6 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(Class<?> clazz, InternalLogLevel level) {
 		super(clazz, level);
-		this.hexDump = true;
 	}
 
 	/**
@@ -249,7 +270,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	 */
 	public ZabbixLoggingHandler(String name, boolean hexDump) {
 		super(name, hexDump);
-		this.hexDump = hexDump;
+		
 	}
 
 	/**
@@ -261,7 +282,7 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	public ZabbixLoggingHandler(Class<?> clazz, InternalLogLevel level,
 			boolean hexDump) {
 		super(clazz, level, hexDump);
-		this.hexDump = hexDump;
+		
 	}
 
 	/**
@@ -273,7 +294,8 @@ public class ZabbixLoggingHandler extends LoggingHandler {
 	public ZabbixLoggingHandler(String name, InternalLogLevel level,
 			boolean hexDump) {
 		super(name, level, hexDump);
-		this.hexDump = hexDump;
+		
 	}
+
 
 }
