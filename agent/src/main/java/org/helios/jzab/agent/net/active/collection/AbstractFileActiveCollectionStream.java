@@ -121,7 +121,14 @@ public abstract class AbstractFileActiveCollectionStream extends ActiveCollectio
 	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#close()
 	 */
 	@Override
-	public abstract boolean close();	
+	public boolean close() {
+		try {			
+			return super.close();
+		} catch (Exception e) {			
+			return false;
+		}		
+	}
+
 	
 	/**
 	 * @param bytesWritten

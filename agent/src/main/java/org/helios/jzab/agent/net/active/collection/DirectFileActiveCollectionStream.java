@@ -28,12 +28,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 
-import org.helios.jzab.agent.SystemClock;
+import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.agent.util.ReadableWritableByteChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -41,27 +40,34 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.DefaultFileRegion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Title: DirectFileActiveCollectionStream</p>
- * <p>Description: A collection stream that buffers check results to disk</p> 
+ * <p>Description: A collection stream that buffers check results to disk and implements direct memory usage</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.active.collection.DirectFileActiveCollectionStream</code></p>
  */
-public class DirectFileActiveCollectionStream extends ActiveCollectionStream {
+public class DirectFileActiveCollectionStream extends AbstractFileActiveCollectionStream {
 	/** The temp file to stream results through */
 	protected final File tmpFile;
 	/** The random access file wrapper around the temp file*/ 
 	protected final RandomAccessFile raf;
 	/** The temp file's NIO file channel */
 	protected final FileChannel fileChannel;
+	/** The logger for ActiveClient so we know what it's level is */
+	protected static final Logger activeClientLogger = LoggerFactory.getLogger(ActiveClient.class);
+
 	/**
 	 * Creates a new DirectFileActiveCollectionStream
-	 * @param buffer the underlying buffer
-	 * @param type The collection stream type
+	 * @param buffer
+	 * @param type
 	 */
-	public DirectFileActiveCollectionStream(ReadableWritableByteChannelBuffer buffer, ActiveCollectionStreamType type) {
+	public DirectFileActiveCollectionStream(
+			ReadableWritableByteChannelBuffer buffer,
+			ActiveCollectionStreamType type) {
 		super(buffer, type);
 		try {
 			tmpFile = File.createTempFile("jzab-coll", ".tmp");
@@ -69,39 +75,55 @@ public class DirectFileActiveCollectionStream extends ActiveCollectionStream {
 			fileChannel = raf.getChannel();
 			
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to create DirectFileActiveCollectionStream instance", e);
+			throw new RuntimeException("Failed to create DirectFileActiveCollectionStreamOLD instance", e);
 		}
+		
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#writeToChannel(org.jboss.netty.channel.Channel)
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#close()
 	 */
 	@Override
-	public ChannelFuture writeToChannel(Channel channel) {
-		channel.getCloseFuture().addListener(getCleanUpListener());
-		ChannelFuture cf = writeFile(channel);		
-		final ActiveCollectionStream collector = this;
-		cf.addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				if(future.isSuccess()) {
-					future.getChannel().getCloseFuture().addListener(new ChannelFutureListener() {							
-						@Override
-						public void operationComplete(ChannelFuture future) throws Exception {
-							completeElapsedTime.set(SystemClock.currentTimeMillis()-startTime);
-							log.debug("Collection Stream Write Completed {}",  collector);
-						}
-					});
-				} else {
-					log.error("Submission Failed", future.getCause());
-				}
-			}
-		});
-		return cf;
+	public boolean close() {
+		try {			
+			fileChannel.force(true);
+			return super.close();
+		} catch (Exception e) {			
+			return false;
+		}		
 	}
-	
-	protected ChannelFutureListener getCleanUpListener() {		
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#flushToFile(int)
+	 */
+	@Override
+	protected int flushToFile(int bytesWritten) {
+		try {
+			long bytesTransferred = 0L; 
+			if(this.type.isDirect()) {
+				bytesTransferred = fileChannel.transferFrom(buffer, fileChannel.position(), bytesWritten);
+				fileChannel.position(fileChannel.position()+bytesTransferred);				
+			} else {
+				bytesTransferred = fileChannel.write(buffer.toByteBuffer());				
+			}
+			buffer.reset();
+			if(bytesTransferred!=bytesWritten) {
+				log.warn("\n\t!!!!!!!!!!!!!!!!!!!!!!!!!!\n\tOi! bytesTransferred!=bytesWritten !  [{}] != [{}]\n\t!!!!!!!!!!!!!!!!!!!!!!!!!!\n", bytesTransferred, bytesWritten);
+			}
+			return bytesWritten;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to flush buffer to file", e);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#getCleanUpListener()
+	 */
+	@Override
+	protected ChannelFutureListener getCleanUpListener() {
 		return new ChannelFutureListener() {
 			/**
 			 * {@inheritDoc}
@@ -115,20 +137,23 @@ public class DirectFileActiveCollectionStream extends ActiveCollectionStream {
 			}
 		};
 	}
-	
-	
-	
-	/**Writes the file to the channel
-	 * @param channel The channel to write to 
-	 * @return the channel future
+
+	/**
+	 * If the logger for {@link ActiveClient} is debug enabled, will use a non-direct write of the file to the channel
+	 * so that the logging handler will display the payload sent. If it is not debug enabled, will use a zero-copy direct transfer
+	 * which bypasses the payload dump in the logging handler.
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#writeFile(org.jboss.netty.channel.Channel)
 	 */
+	@Override
 	protected ChannelFuture writeFile(Channel channel) {
-		if(this.type.isDirect()) {
-			return writeFileDirect(channel);
-		} else {
+		if(activeClientLogger.isDebugEnabled()) {			
 			return writeFileUserSpace(channel);
+		} else {
+			return writeFileDirect(channel);
 		}
 	}
+	
 	
 	/**
 	 * Executes a direct write to the channel
@@ -149,39 +174,25 @@ public class DirectFileActiveCollectionStream extends ActiveCollectionStream {
 		try {
 			int fileSize = (int) fileChannel.size();
 			log.debug("Allocated[{}] Byte Buffer During writeFileUserSpace", fileSize);
-			ByteBuffer buff = ByteBuffer.allocate(fileSize);
+			ByteBuffer buff = ByteBuffer.allocateDirect(fileSize);
 			long bytes = fileChannel.read(buff, 0);
 			log.debug("Read [{}] Bytes From File During writeFileUserSpace", bytes);
 			buff.flip();
-			
-			//return channel.write(ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buff), ChannelBuffers.wrappedBuffer(new byte[]{1})));
 			return channel.write(ChannelBuffers.wrappedBuffer(ChannelBuffers.wrappedBuffer(buff)));
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to user space write file to channel", e);
 		}
 	}
 	
+
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#close()
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#rewritePayloadLength()
 	 */
 	@Override
-	public boolean close() {
-		try {			
-			fileChannel.force(true);
-			//fileChannel.close();
-			return super.close();
-		} catch (Exception e) {			
-			return false;
-		}		
-	}	
-	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#rewritePayloadLength()
-	 */
 	public void rewritePayloadLength() {
 		try {
+			log.debug("Rewriting Payload Length in file [{}] to [{}]", tmpFile, byteCount);
 			MappedByteBuffer mbb = fileChannel.map(MapMode.READ_WRITE, lengthPosition, 8).load();
 			mbb.put(encodeLittleEndianLongBytes(byteCount));
 			mbb.force();
@@ -189,55 +200,26 @@ public class DirectFileActiveCollectionStream extends ActiveCollectionStream {
 			throw new RuntimeException("Failed to rewritePayloadLength", e);
 		}		
 	}
-	
-	
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.net.active.collection.AbstractFileActiveCollectionStream#trimLastCharacter()
+	 */
 	@Override
 	public void trimLastCharacter() {
 		if(completedChecks>0) {
 			try {
-				fileChannel.position(fileChannel.size()-1);
+				log.debug("Trimming File Size [{}]", tmpFile);
+				long prevSize = fileChannel.size(), postSize = 0L;
+				fileChannel.position(prevSize-1);
 				byteCount--;
+				fileChannel.force(true);
+				postSize = fileChannel.size();
+				log.debug("Trimmed file size from [{}] to [{}]", prevSize, postSize);
 			} catch (Exception e) {
 				throw new RuntimeException("Failed to trimLastCharacter", e);
 			}
 		}		
-	}	
-	
-	protected int flushToFile(int bytesWritten) {
-		try {
-			long bytesTransferred = 0L; 
-			if(this.type.isDirect()) {
-				bytesTransferred = fileChannel.transferFrom(buffer, fileChannel.position(), bytesWritten);
-				fileChannel.position(fileChannel.position()+bytesTransferred);				
-			} else {
-				bytesTransferred = fileChannel.write(buffer.toByteBuffer());				
-			}
-			buffer.reset();
-			if(bytesTransferred!=bytesWritten) {
-				log.warn("Oi! bytesTransferred!=bytesWritten !  [{}] != [{}]", bytesTransferred, bytesWritten);
-			}
-			return bytesWritten;
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to flush buffer to file", e);
-		}
 	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.net.active.collection.ActiveCollectionStream#addResult(java.lang.CharSequence)
-	 */
-	@Override
-	public synchronized void addResult(CharSequence result)  {
-		if(!open.get()) return;
-		try {
-			int bytesWritten = buffer.write(charSet.encode(CharBuffer.wrap(result)));
-			flushToFile(bytesWritten);
-			byteCount += bytesWritten;
-			completedChecks++;
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to add result to collection stream [" + result + "]", e);
-		}
-	}
-	
 
 }

@@ -63,7 +63,7 @@ public class FileActiveCollectionStream extends AbstractFileActiveCollectionStre
 			tmpFile = File.createTempFile("jzab-coll", ".tmp");
 			os = new BufferedOutputStream(new FileOutputStream(tmpFile));
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to create DirectFileActiveCollectionStream instance", e);
+			throw new RuntimeException("Failed to create DirectFileActiveCollectionStreamOLD instance", e);
 		}
 		
 	}
