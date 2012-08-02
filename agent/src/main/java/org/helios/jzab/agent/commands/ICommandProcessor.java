@@ -71,5 +71,6 @@ public interface ICommandProcessor {
      * Callback to initialize the command processor after properties have been set
      */
     public void init();
+    
 
 }

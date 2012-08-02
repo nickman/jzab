@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.MBeanServerNotification;
+import javax.management.Notification;
 import javax.management.ObjectName;
 
 import org.helios.jzab.util.JMXHelper;
@@ -51,10 +54,15 @@ import au.com.bytecode.opencsv.CSVParser;
  */
 
 public class CommandManager implements CommandManagerMXBean {
+	/**  */
+	private static final long serialVersionUID = -3028399370725973533L;
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The map of command processors keyed by command name */
 	protected final Map<String, ICommandProcessor> commandProcessors = new ConcurrentHashMap<String, ICommandProcessor>();
+	/** The map of plugin command processor locator keys keyed by ObjectName */
+	protected final Map<ObjectName, String> pluginRegistry = new ConcurrentHashMap<ObjectName, String>();
+	
 
 	/** The singleton instance */
 	protected static volatile CommandManager instance = null;
@@ -63,6 +71,9 @@ public class CommandManager implements CommandManagerMXBean {
 	
 	/** The CommandManager object name */
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.command:service=CommandManager");
+	/** The ObjectName pattern for plugins that may register themselves with the CommandManager */
+	public static final ObjectName PLUGIN_OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.plugin:type=Plugin,*");
+	
 	
 	/** Empty string array */
 	public static final String[] EMPTY_ARGS = {};
@@ -87,6 +98,7 @@ public class CommandManager implements CommandManagerMXBean {
 	 */
 	protected CommandManager() {
 		log.info("Created CommandManager");
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
 	}
 	
 	/**
@@ -199,6 +211,96 @@ public class CommandManager implements CommandManagerMXBean {
 			log.warn("Failed to execute command [{}]", commandString, e);
 			return ICommandProcessor.COMMAND_ERROR;
 		}
+	}
+	
+	/**
+	 * Registers a new command processor
+	 * @param objectName The JMX ObjectName of the new command processor
+	 */
+	protected void registerPlugin(ObjectName objectName) {
+		if(objectName==null) throw new IllegalArgumentException("The passed objectName was null", new Throwable());
+		log.debug("Registering plugin at [{}]", objectName);
+		if(!JMXHelper.getHeliosMBeanServer().isRegistered(objectName)) {
+			throw new IllegalStateException("The plugin ObjectName [" + objectName + "] is not registered", new Throwable());
+		}
+		try {
+			boolean isPluginCommandProcessor = JMXHelper.getHeliosMBeanServer().isInstanceOf(objectName, IPluginCommandProcessor.class.getName());
+			log.debug("Plugin at [{}] is command processor:{}", objectName, isPluginCommandProcessor);
+			if(isPluginCommandProcessor) {
+				try {
+					IPluginCommandProcessor pluginProcessor = (IPluginCommandProcessor)JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), objectName, "Instance");
+					registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
+					pluginRegistry.put(objectName, pluginProcessor.getLocatorKey());
+					log.info("Registered Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey());
+					return;
+				} catch (Exception e) {
+					log.warn("Failed to retrieve instance of IPluginCommandProcessor for [{}]. Will attempt proxy", objectName);					
+				}
+			}
+			try {
+				ICommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, ICommandProcessor.class, false);
+				registerCommandProcessor(processor, processor.getLocatorKey());
+				pluginRegistry.put(objectName, processor.getLocatorKey());
+				log.info("Registered Proxy Command Processor [{}]", processor.getLocatorKey());
+				return;
+			} catch (Exception e) {
+				log.warn("Failed to register Proxy CommandProcessor for [{}]", objectName);					
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to register plugin at ObjectName [" + objectName + "]");
+		}
+	}
+	
+	/**
+	 * Unregisters a command processor
+	 * @param objectName The JMX ObjectName of the command processor that was unregistered
+	 */
+	protected void unRegisterPlugin(ObjectName objectName) {
+		if(objectName==null) throw new IllegalArgumentException("The passed objectName was null", new Throwable());
+		log.debug("Unregistering plugin at [{}]", objectName);
+		String key = pluginRegistry.remove(objectName);
+		if(key==null || commandProcessors.remove(key)==null) {
+			log.warn("No command processor found to unregister for key [{}] for ObjectName [{}]", key, objectName);
+		} else {
+			log.info("Unregistered command processor [{}] for ObjectName [{}]", key, objectName);
+		}
+	}
+	
+
+	/**
+	 * {@inheritDoc}
+	 * @see javax.management.NotificationListener#handleNotification(javax.management.Notification, java.lang.Object)
+	 */
+	@Override
+	public void handleNotification(Notification notification, Object handback) {
+		if(notification instanceof MBeanServerNotification) {
+			MBeanServerNotification msn = (MBeanServerNotification)notification;
+			if(MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(msn.getType())) {
+				registerPlugin(msn.getMBeanName());
+			} else if(MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(msn.getType())) {
+				unRegisterPlugin(msn.getMBeanName());
+			}
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see javax.management.NotificationFilter#isNotificationEnabled(javax.management.Notification)
+	 */
+	@Override
+	public boolean isNotificationEnabled(Notification notification) {
+		if(notification instanceof MBeanServerNotification) {
+			MBeanServerNotification msn = (MBeanServerNotification)notification;
+			if(PLUGIN_OBJECT_NAME.apply(msn.getMBeanName())) {
+				if(MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(msn.getType())) {
+					return true;
+				} else if(MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(msn.getType())) {
+					return true;
+				}
+				return false;
+			}
+		}
+		return false;
 	}
 	
 	

@@ -24,18 +24,20 @@
  */
 package org.helios.jzab.agent.commands;
 
-import javax.management.MXBean;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
-
 /**
- * <p>Title: CommandManagerMXBean</p>
- * <p>Description: The CommandManager JMX management interface</p> 
+ * <p>Title: IPluginCommandProcessor</p>
+ * <p>Description: An extension of {@link ICommandProcessor} that returns the instance of the processor itself.
+ * This is so the command executor can execute directly against the plugged in processor rather than invoking 
+ * through JMX.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.commands.CommandManagerMXBean</code></p>
+ * <p><code>org.helios.jzab.agent.commands.IPluginCommandProcessor</code></p>
  */
-@MXBean
-public interface CommandManagerMXBean extends NotificationListener, NotificationFilter {
+public interface IPluginCommandProcessor extends ICommandProcessor {
+    /**
+     * Returns the actual instance of the processor
+     * @return the actual instance of the processor
+     */
+    public ICommandProcessor getInstance();
 
 }
