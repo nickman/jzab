@@ -53,4 +53,10 @@ public interface FileDeletorMXBean {
 	 * @return the cummulative number of successful file deletions
 	 */
 	public long getDeletionCount();
+	
+	/**
+	 * Returns the number of times the reaper thread has run
+	 * @return the number of times the reaper thread has run
+	 */
+	public long getReaperCount();
 }

@@ -53,6 +53,8 @@ public class FileDeletor extends Thread implements FileDeletorMXBean {
 	
 	/** A counter for successful deletes  */
 	private static final AtomicLong delCounter = new AtomicLong(0L);
+	/** A counter for reaper runs  */
+	private static final AtomicLong reaperRun = new AtomicLong(0L);
 	
 	
 	
@@ -69,7 +71,7 @@ public class FileDeletor extends Thread implements FileDeletorMXBean {
 			public void run() {
 				while(true) {
 					try { Thread.currentThread().join(60000); } catch (Exception e) {}
-					FD.run();
+					try { FD.run();	} catch (Exception e) {}
 				}
 			}
 		};
@@ -125,7 +127,8 @@ public class FileDeletor extends Thread implements FileDeletorMXBean {
 	 * {@inheritDoc}
 	 * @see java.lang.Thread#run()
 	 */
-	public void run() {				
+	public void run() {		
+		reaperRun.incrementAndGet();
 		for(Iterator<Closeable> iter = toBeClosed.iterator(); iter.hasNext();) {
 			Closeable closeable = iter.next();
 			try { closeable.close(); } catch (Exception e) {}			
@@ -172,6 +175,14 @@ public class FileDeletor extends Thread implements FileDeletorMXBean {
 	 */
 	public long getDeletionCount() {
 		return delCounter.get();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.util.FileDeletorMXBean#getReaperCount()
+	 */
+	public long getReaperCount() {
+		return reaperRun.get();
 	}
 	
 	/**
