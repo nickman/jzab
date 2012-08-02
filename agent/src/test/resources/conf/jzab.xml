@@ -143,7 +143,7 @@ config version
  		<java-agent-args>agentContext=/jzab,host=0.0.0.0,port=13509,backlog=10,executor=cached</java-agent-args>
  	</plugin>
  	
- 	<plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native-jar-with-dependencies.jar" />
+ 	<plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native.jar" />
  	
  	
  	

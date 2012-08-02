@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.helios.jzab.agent.commands.CommandManager;
-import org.helios.jzab.plugin.nativex.jzab.plugin.system.AgentCommandPlugin;
 import org.hyperic.sigar.Cpu;
 import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
@@ -151,16 +149,22 @@ public class HeliosSigar implements SigarProxy {
 	 * Loads the agent lnative library and prints version info.
 	 * @param args None
 	 */
-	public static void main(String[] args) {
-		Logger log = LoggerFactory.getLogger(HeliosSigar.class);
-		log.info("{}", HeliosSigar.getInstance());
+	public static void main(String[] args) {		
 		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
+			Logger log = LoggerFactory.getLogger(HeliosSigar.class);
+			log.info("{}", HeliosSigar.getInstance());
 			bootPlugin();
-		}
+		} else {
+			System.out.println(HeliosSigar.getInstance());
+		}		
 	}
 	
 	private static void bootPlugin() {
-		CommandManager.getInstance().registerCommandProcessor(new AgentCommandPlugin());
+		try {
+			Class.forName("org.helios.jzab.plugin.nativex.JZabAgentBoot").getDeclaredMethod("bootPlugin").invoke(null);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to boot plugin", e);
+		}
 	}
 	
 	
