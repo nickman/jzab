@@ -139,6 +139,10 @@ config version
  </command-processors>
  
  <plugins>
+ 	<plugin  name="jolokia-agent" type="java-agent" isolated="false" url="file:/c:/libs/java/jolokia/jolokia-1.0.1/agents/jolokia-jvm6.jar">
+ 		<java-agent-args>agentContext=/jzab,host=0.0.0.0,port=13509,backlog=10,executor=cached</java-agent-args>
+ 	</plugin>
+ 
  	<!-- 
  		<plugin  name="jmx-native-agent" type="java-agent" url="file:/home/nwhitehead/.m2/repository/org/helios/helios-native/helios-native-jmx/1.0-SNAPSHOT/helios-native-jmx-1.0-SNAPSHOT-launcher.jar" />
  	 -->
