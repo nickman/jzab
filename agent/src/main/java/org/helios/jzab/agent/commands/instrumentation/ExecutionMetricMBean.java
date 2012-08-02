@@ -22,43 +22,51 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.commands;
+package org.helios.jzab.agent.commands.instrumentation;
 
-import java.util.Map;
-import java.util.Set;
-
-import javax.management.MXBean;
-
-import org.helios.jzab.agent.commands.instrumentation.ExecutionMetricMBean;
+import java.util.Date;
 
 /**
- * <p>Title: CommandManagerMXBean</p>
- * <p>Description: The CommandManager JMX management interface</p> 
+ * <p>Title: ExecutionMetricMBean</p>
+ * <p>Description: Defines an execution metric for command processors </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.commands.CommandManagerMXBean</code></p>
+ * <p><code>org.helios.jzab.agent.commands.instrumentation.ExecutionMetricMBean</code></p>
  */
-@MXBean
-public interface CommandManagerMXBean {
+public interface ExecutionMetricMBean {
 	/**
-	 * Returns true if execution instrumentation is enabled, false if it is not
-	 * @return true if execution instrumentation is enabled, false if it is not
+	 * Returns the name of the metric
+	 * @return the name of the metric
 	 */
-	public boolean isInstrumentationEnabled();
-	/**
-	 * Sets the enabled state of execution instrumentation 
-	 * @param state true to enable, false to disable and clear any existing metrics
-	 */
-	public void setInstrumentationEnabled(boolean state);
-	/**
-	 * Returns a set of current exection metrics
-	 * @return a set of current exection metrics
-	 */
-	public Set<ExecutionMetricMBean> getExecutionMetrics();
+	public String getName();
 	
 	/**
-	 * Returns the command name and implementation class name for all registered command processors
-	 * @return the command name and implementation class name for all registered command processors
+	 * Returns the last date/time this metric was executed
+	 * @return the last date/time this metric was executed
 	 */
-	public Map<String, String> getProcessors();
+	public Date getLastExecutionDate();
+	
+	/**
+	 * Returns the elapsed time of the last execution in ms.
+	 * @return the elapsed time of the last execution in ms.
+	 */
+	public long getLastExecutionElapsed();
+	
+	/**
+	 * Returns the total cummulative number of executions
+	 * @return the total cummulative number of executions
+	 */
+	public long getExecutionCount();
+	
+	/**
+	 * Returns the elapsed time of the last <i>n</i> execution in ms.
+	 * @return the elapsed time of the last <i>n</i> execution in ms.
+	 */
+	public long getAvgExecutionElapsed();
+	
+	/**
+	 * Returns the last <i>n</i> execution times
+	 * @return the last <i>n</i> execution times
+	 */
+	public long[] getLastNElapsed();
 }
