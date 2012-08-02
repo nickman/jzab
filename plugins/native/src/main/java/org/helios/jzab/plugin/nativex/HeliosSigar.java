@@ -24,14 +24,7 @@
  */
 package org.helios.jzab.plugin.nativex;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.helios.jzab.agent.commands.CommandManager;
+import org.helios.jzab.plugin.nativex.jzab.plugin.system.AgentCommandPlugin;
 import org.hyperic.sigar.Cpu;
 import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
@@ -159,6 +154,13 @@ public class HeliosSigar implements SigarProxy {
 	public static void main(String[] args) {
 		Logger log = LoggerFactory.getLogger(HeliosSigar.class);
 		log.info("{}", HeliosSigar.getInstance());
+		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
+			bootPlugin();
+		}
+	}
+	
+	private static void bootPlugin() {
+		CommandManager.getInstance().registerCommandProcessor(new AgentCommandPlugin());
 	}
 	
 	
@@ -320,12 +322,18 @@ public class HeliosSigar implements SigarProxy {
 	}
 
 	/**
-	 * @return
-	 * @throws SigarException
+	 * Returns the fully qualified host name
+	 * @return the fully qualified host name
 	 * @see org.hyperic.sigar.Sigar#getFQDN()
 	 */
-	public String getFQDN() throws SigarException {
-		return sigar.getFQDN();
+	public String getFQDN() {
+		try {
+			return sigar.getFQDN();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invokeinternal Sigar call", se);
+		}
+
+		
 	}
 
 	/**

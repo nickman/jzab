@@ -16,6 +16,32 @@
 	<build>
 		<finalName>helios-jzab-plugin-native</finalName>
 		<plugins>
+            	<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.3.1</version>
+					<configuration>						
+					    <archive>			    	
+					        <manifest>
+					            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+					            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+					            <addClasspath>false</addClasspath>
+					            <mainClass>org.helios.jzab.plugin.nativex.HeliosSigar</mainClass> 
+					        </manifest>
+					        <manifestEntries>
+					        </manifestEntries>
+					    </archive>
+					</configuration>
+            	</plugin>	            
+	            <plugin>
+	            <artifactId>maven-assembly-plugin</artifactId>
+	            <configuration>	               
+	              <descriptorRefs>
+	                    <descriptorRef>jar-with-dependencies</descriptorRef>
+	              </descriptorRefs>
+	            </configuration>
+	            </plugin>            	
+		
 			<plugin>
 	            <artifactId>maven-assembly-plugin</artifactId>
 	            <configuration>
@@ -23,7 +49,8 @@
 	                    <manifest>
 	                      <addClasspath>true</addClasspath>
 				          <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-				          <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>	                      
+				          <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+				          <addClasspath>false</addClasspath>	                      
 	                      <mainClass>org.helios.jzab.plugin.nativex.HeliosSigar</mainClass> 
 	                    </manifest>
 						<manifestEntries>
@@ -53,11 +80,13 @@
 				<dependency>
 			  <groupId>org.helios.jzab</groupId>
 			  <artifactId>zabbix-api</artifactId>
+			  <scope>compile</scope>
 				</dependency>
 				
 				<dependency>
 			  <groupId>org.helios.jzab</groupId>
 			  <artifactId>agent</artifactId>
+			  <scope>compile</scope>
 				</dependency>
 			      
       

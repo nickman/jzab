@@ -125,7 +125,7 @@ public class PluginLoader {
 				Thread.currentThread().setContextClassLoader(pluginClassLoader);
 				String manifestUrl =  "jar:" + jarUrl.toExternalForm() + "!/META-INF/MANIFEST.MF";
 				log.debug("Hoping to find the manifest at [{}]", manifestUrl);
-				invokeJar(pluginClassLoader, manifestUrl, "Main-Class", "main", new Class[]{String.class, String.class});
+				invokeJar(pluginClassLoader, manifestUrl, "Main-Class", "main", new Class[]{new String[0].getClass()}, new Object[]{new String[0]});
 				log.info("Started Plugin [{}]", name);
 			} finally {
 				Thread.currentThread().setContextClassLoader(cl);
