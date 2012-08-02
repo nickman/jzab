@@ -39,5 +39,11 @@ public interface IPluginCommandProcessor extends ICommandProcessor {
      * @return the actual instance of the processor
      */
     public ICommandProcessor getInstance();
+    
+    /**
+     * Returns additional aliases for this plugin
+     * @return additional aliases for this plugin
+     */
+    public String[] getAliases();
 
 }

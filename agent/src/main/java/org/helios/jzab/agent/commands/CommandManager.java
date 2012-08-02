@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MBeanServerNotification;
@@ -46,6 +47,7 @@ import javax.management.ObjectName;
 import org.helios.jzab.agent.SystemClock;
 import org.helios.jzab.agent.commands.instrumentation.ExecutionMetric;
 import org.helios.jzab.agent.commands.instrumentation.ExecutionMetricMBean;
+import org.helios.jzab.agent.internal.jmx.ThreadPoolFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +70,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	/** The map of command processors keyed by command name */
 	protected final Map<String, ICommandProcessor> commandProcessors = new ConcurrentHashMap<String, ICommandProcessor>();
 	/** The map of plugin command processor locator keys keyed by ObjectName */
-	protected final Map<ObjectName, String> pluginRegistry = new ConcurrentHashMap<ObjectName, String>();
+	protected final Map<ObjectName, Set<String>> pluginRegistry = new ConcurrentHashMap<ObjectName, Set<String>>();
 	/** Indicates if execution instrumentation is enabled */
 	protected final boolean[] instrumentation = new boolean[]{true};
 
@@ -76,6 +78,9 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	protected static volatile CommandManager instance = null;
 	/** The singleton instance ctor lock */
 	protected static final Object lock = new Object();
+	
+	/** Executor for processing plugin registrations */
+	protected final Executor executor;
 	
 	/** The CommandManager object name */
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.command:service=CommandManager");
@@ -105,6 +110,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * Creates a new CommandManager and registers its management interface.
 	 */
 	protected CommandManager() {
+		executor = ThreadPoolFactory.getInstance("TaskExecutor");
 		log.info("Created CommandManager");
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
 	}
@@ -180,6 +186,12 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		return wrap(commandProcessors.get(processorName), processorName);
 	}
 	
+	/**
+	 * Creates an instrumented command processor wrapper
+	 * @param cp The actual command processor to wrap
+	 * @param processorName The locator key for this command processor
+	 * @return the instrumented command processor
+	 */
 	protected ICommandProcessor wrap(final ICommandProcessor cp, final String processorName) {
 		return new ICommandProcessor() {
 			public Object execute(String... args) {
@@ -204,6 +216,42 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			}
 		};
 	}
+	
+	/**
+	 * Invokes the named command and returns the result. 
+	 * @param commandName The command name
+	 * @param arguments The command arguments optionally wrapped in <code>"["</code> <code>"]"</code>
+	 * @return The result of the command execution
+	 */
+	public String invokeCommand(String commandName, String arguments) {
+		if(commandName==null || commandName.trim().isEmpty()) throw new IllegalArgumentException("The passed command name was null or empty", new Throwable());		
+		StringBuilder cmd = new StringBuilder(commandName.trim());
+		ICommandProcessor processor = commandProcessors.get(cmd.toString());
+		if(processor==null) throw new IllegalArgumentException("The passed command name [" + cmd.toString() + "] is not a valid command", new Throwable());
+		if(arguments!=null) {
+			arguments = arguments.trim();
+			if(!arguments.isEmpty()) {
+				if(arguments.startsWith("[") && arguments.endsWith("]")) {
+					cmd.append(arguments);
+				} else {
+					cmd.append("[").append(arguments).append("]");
+				}
+			}
+		}
+		log.debug("Executing command [{}]", cmd);
+		return processCommand(cmd);
+	}
+	
+	/**
+	 * Invokes the named command and returns the result. 
+	 * @param commandString The full command string
+	 * @return The result of the command execution
+	 */
+	public String invokeCommand(String commandString) {
+		if(commandString==null || commandString.trim().isEmpty()) throw new IllegalArgumentException("The passed command string was null or empty", new Throwable());
+		return processCommand(commandString.trim());
+	}
+	
 	
 	/**
 	 * Parses a command string
@@ -309,9 +357,31 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			if(isPluginCommandProcessor) {
 				try {
 					IPluginCommandProcessor pluginProcessor = (IPluginCommandProcessor)JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), objectName, "Instance");
-					registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
-					pluginRegistry.put(objectName, pluginProcessor.getLocatorKey());
-					log.info("Registered Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey());
+					try {
+						registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
+						
+						pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{pluginProcessor.getLocatorKey()})));
+						log.info("Registered Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey());
+					} catch (Exception e) {
+						log.error("Failed to register Plugin CommandProcessor [{}]:[{}]", pluginProcessor.getLocatorKey(), e.getMessage());
+						log.debug("Failed to register Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey(), e);
+					}
+					for(String alias: pluginProcessor.getAliases()) {
+						try {
+							registerCommandProcessor(pluginProcessor, alias);
+							Set<String> keys = pluginRegistry.get(objectName);
+							if(keys==null) {
+								keys = new HashSet<String>();
+								pluginRegistry.put(objectName, keys);
+							}
+							keys.add(alias);							
+							log.info("Registered Plugin CommandProcessor [{}]", alias);
+						} catch (Exception e) {
+							log.error("Failed to register Plugin CommandProcessor [{}]:[{}]", alias, e.getMessage());
+							log.debug("Failed to register Plugin CommandProcessor [{}]", alias, e);
+						}
+						
+					}
 					return;
 				} catch (Exception e) {
 					log.warn("Failed to retrieve instance of IPluginCommandProcessor for [{}]. Will attempt proxy", objectName);					
@@ -320,7 +390,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			try {
 				ICommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, ICommandProcessor.class, false);
 				registerCommandProcessor(processor, processor.getLocatorKey());
-				pluginRegistry.put(objectName, processor.getLocatorKey());
+				pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{processor.getLocatorKey()})));
 				log.info("Registered Proxy Command Processor [{}]", processor.getLocatorKey());
 				return;
 			} catch (Exception e) {
@@ -338,11 +408,15 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	protected void unRegisterPlugin(ObjectName objectName) {
 		if(objectName==null) throw new IllegalArgumentException("The passed objectName was null", new Throwable());
 		log.debug("Unregistering plugin at [{}]", objectName);
-		String key = pluginRegistry.remove(objectName);
-		if(key==null || commandProcessors.remove(key)==null) {
-			log.warn("No command processor found to unregister for key [{}] for ObjectName [{}]", key, objectName);
+		Set<String> keys = pluginRegistry.remove(objectName);
+		if(keys==null) {
+			log.warn("No command processor found to unregister for keys [{}] for ObjectName [{}]", keys, objectName);
 		} else {
-			log.info("Unregistered command processor [{}] for ObjectName [{}]", key, objectName);
+			for(String key: keys) {
+				if(commandProcessors.remove(key)!=null) {
+					log.info("Unregistered command processor [{}] for ObjectName [{}]", key, objectName);
+				}
+			}
 		}
 	}
 	
@@ -354,12 +428,16 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	@Override
 	public void handleNotification(Notification notification, Object handback) {
 		if(notification instanceof MBeanServerNotification) {
-			MBeanServerNotification msn = (MBeanServerNotification)notification;
-			if(MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(msn.getType())) {
-				registerPlugin(msn.getMBeanName());
-			} else if(MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(msn.getType())) {
-				unRegisterPlugin(msn.getMBeanName());
-			}
+			final MBeanServerNotification msn = (MBeanServerNotification)notification;
+			executor.execute(new Runnable(){
+				public void run() {
+					if(MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(msn.getType())) {
+						registerPlugin(msn.getMBeanName());
+					} else if(MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(msn.getType())) {
+						unRegisterPlugin(msn.getMBeanName());
+					}					
+				}
+			});
 		}
 	}
 

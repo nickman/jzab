@@ -61,4 +61,19 @@ public interface CommandManagerMXBean {
 	 * @return the command name and implementation class name for all registered command processors
 	 */
 	public Map<String, String> getProcessors();
+	
+	/**
+	 * Invokes the named command and returns the result. 
+	 * @param commandName The command name
+	 * @param arguments The command arguments optionally wrapped in <code>"["</code> <code>"]"</code>
+	 * @return The result of the command execution
+	 */
+	public String invokeCommand(String commandName, String arguments);
+	
+	/**
+	 * Invokes the named command and returns the result. 
+	 * @param commandString The full command string
+	 * @return The result of the command execution
+	 */
+	public String invokeCommand(String commandString);
 }
