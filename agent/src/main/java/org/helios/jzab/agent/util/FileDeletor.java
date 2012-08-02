@@ -165,7 +165,7 @@ public class FileDeletor extends Thread implements FileDeletorMXBean {
 	 * @see org.helios.jzab.agent.util.FileDeletorMXBean#getFileDeletes()
 	 */
 	@Override
-	public int getFileDeletes() {
+	public int getPendingDeletes() {
 		return toBeDeleted.size();
 	}
 

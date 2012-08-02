@@ -41,7 +41,7 @@ public interface FileDeletorMXBean {
 	 * Returns the number of pending file deletions
 	 * @return the number of pending file deletions
 	 */	
-	public int getFileDeletes();
+	public int getPendingDeletes();
 	
 	/**
 	 * Runs a file deletion
