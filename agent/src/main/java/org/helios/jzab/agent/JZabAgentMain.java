@@ -95,6 +95,8 @@ public class JZabAgentMain {
 	 * @param args Same as {@link JZabAgentMain#main(String[])}
 	 */
 	private JZabAgentMain(String...args) {
+		String version = JZabAgentMain.class.getPackage().getImplementationVersion();
+		System.setProperty("org.helios.jzab.agent.version", (version==null || version.trim().isEmpty()) ? "Development" : version);
 		processCommandLineArgs(args);
 		if(locatedConfigFile==null) {			
 			if(testConfFile(DEFAULT_CONF_FILE)) {
