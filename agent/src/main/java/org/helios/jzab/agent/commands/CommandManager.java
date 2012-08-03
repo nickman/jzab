@@ -155,7 +155,10 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		
 		if(commandProcessor==null) throw new IllegalArgumentException("The passed command processor was null", new Throwable());
 		Set<String> keys = new HashSet<String>();
-		keys.add(commandProcessor.getLocatorKey());
+		// The locator key will be optional for plugins
+		if(commandProcessor.getLocatorKey()!=null) {
+			keys.add(commandProcessor.getLocatorKey());
+		}
 		if(aliases!=null) {
 			for(String s: aliases) {
 				if(s!=null && !s.trim().isEmpty()) {
@@ -194,6 +197,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 */
 	protected ICommandProcessor wrap(final ICommandProcessor cp, final String processorName) {
 		return new ICommandProcessor() {
+			@Override
 			public Object execute(String... args) {
 				long start = instrumentation[0] ? SystemClock.currentTimeMillis() : 0;
 				Object result = cp.execute(args);
@@ -202,15 +206,19 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				}
 				return result;
 			}
+			@Override
 			public String getLocatorKey() {
 				return cp.getLocatorKey();
 			}
+			@Override
 			public boolean isDiscovery() {
 				return cp.isDiscovery();
 			}
+			@Override
 			public void setProperties(Properties props) {
 				cp.setProperties(props);
 			}
+			@Override
 			public void init() {
 				cp.init();
 			}
@@ -223,6 +231,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * @param arguments The command arguments optionally wrapped in <code>"["</code> <code>"]"</code>
 	 * @return The result of the command execution
 	 */
+	@Override
 	public String invokeCommand(String commandName, String arguments) {
 		if(commandName==null || commandName.trim().isEmpty()) throw new IllegalArgumentException("The passed command name was null or empty", new Throwable());		
 		StringBuilder cmd = new StringBuilder(commandName.trim());
@@ -247,6 +256,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * @param commandString The full command string
 	 * @return The result of the command execution
 	 */
+	@Override
 	public String invokeCommand(String commandString) {
 		if(commandString==null || commandString.trim().isEmpty()) throw new IllegalArgumentException("The passed command string was null or empty", new Throwable());
 		return processCommand(commandString.trim());
@@ -333,6 +343,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.commands.CommandManagerMXBean#getProcessors()
 	 */
+	@Override
 	public Map<String, String> getProcessors() {
 		Map<String, String> map = new HashMap<String, String>(commandProcessors.size());
 		for(Map.Entry<String, ICommandProcessor> entry: commandProcessors.entrySet()) {
@@ -358,7 +369,12 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				try {
 					IPluginCommandProcessor pluginProcessor = (IPluginCommandProcessor)JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), objectName, "Instance");
 					try {
-						registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
+						if(pluginProcessor.getLocatorKey()!=null) {
+							registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
+						}
+						if(pluginProcessor.getAliases()!=null) {
+							registerCommandProcessor(pluginProcessor, pluginProcessor.getAliases());
+						}
 						
 						pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{pluginProcessor.getLocatorKey()})));
 						log.info("Registered Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey());
@@ -388,6 +404,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				}
 			}
 			try {
+				@SuppressWarnings("cast")
 				ICommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, ICommandProcessor.class, false);
 				registerCommandProcessor(processor, processor.getLocatorKey());
 				pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{processor.getLocatorKey()})));
@@ -430,6 +447,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		if(notification instanceof MBeanServerNotification) {
 			final MBeanServerNotification msn = (MBeanServerNotification)notification;
 			executor.execute(new Runnable(){
+				@Override
 				public void run() {
 					if(MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(msn.getType())) {
 						registerPlugin(msn.getMBeanName());
