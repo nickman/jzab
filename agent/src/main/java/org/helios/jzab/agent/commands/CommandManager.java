@@ -198,9 +198,9 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	protected ICommandProcessor wrap(final ICommandProcessor cp, final String processorName) {
 		return new ICommandProcessor() {
 			@Override
-			public Object execute(String... args) {
+			public Object execute(String commandName, String... args) {
 				long start = instrumentation[0] ? SystemClock.currentTimeMillis() : 0;
-				Object result = cp.execute(args);
+				Object result = cp.execute(commandName, args);
 				if(instrumentation[0]) {
 					ExecutionMetric.submit(processorName, SystemClock.currentTimeMillis()-start);
 				}
@@ -261,7 +261,23 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		if(commandString==null || commandString.trim().isEmpty()) throw new IllegalArgumentException("The passed command string was null or empty", new Throwable());
 		return processCommand(commandString.trim());
 	}
-	
+
+	/**
+	 * Parses a command string
+	 * @param commandString The command string to parse
+	 * @return The name of the command
+	 */
+	public String parseCommandName(CharSequence commandString) {
+		if(commandString==null) return null;
+		String cstring = commandString.toString().trim();
+		if(cstring.isEmpty()) return null;
+		int paramOpener = cstring.indexOf('[');
+		if(paramOpener!=-1) {
+			return cstring.substring(0, paramOpener);
+		}
+		return cstring;		
+	}
+
 	
 	/**
 	 * Parses a command string
@@ -324,7 +340,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			return ICommandProcessor.COMMAND_NOT_SUPPORTED;
 		}
 		try {
-			Object result =  cp.execute(strArgs);
+			Object result =  cp.execute(commandName, strArgs);
 			if(result==null) {
 				log.warn("Null result executing command [{}]", commandString);
 				return ICommandProcessor.COMMAND_NOT_SUPPORTED;				

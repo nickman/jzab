@@ -42,6 +42,7 @@ import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.net.passive.AgentListener;
 import org.helios.jzab.agent.plugin.PluginLoader;
 import org.helios.jzab.agent.util.FileDeletor;
+import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
@@ -97,6 +98,8 @@ public class JZabAgentMain {
 	private JZabAgentMain(String...args) {
 		String version = JZabAgentMain.class.getPackage().getImplementationVersion();
 		System.setProperty("org.helios.jzab.agent.version", (version==null || version.trim().isEmpty()) ? "Development" : version);
+		String jmxDomain = JMXHelper.getHeliosMBeanServer().getDefaultDomain();
+		System.setProperty("org.helios.jzab.jmx.domain", jmxDomain==null ? "DefaultDomain" : jmxDomain);
 		processCommandLineArgs(args);
 		if(locatedConfigFile==null) {			
 			if(testConfFile(DEFAULT_CONF_FILE)) {

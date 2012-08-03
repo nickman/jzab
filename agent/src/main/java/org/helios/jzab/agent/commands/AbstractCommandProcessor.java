@@ -52,12 +52,12 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String[])
+	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String, java.lang.String[])
 	 */
 	@Override
-	public Object execute(String... args) {
+	public Object execute(String commandName, String... args) {
 		try {
-			Object result = doExecute(args);
+			Object result = doExecute(commandName, args);
 			if(result==null) {
 				result = ICommandProcessor.COMMAND_NOT_SUPPORTED;
 			}
@@ -103,9 +103,10 @@ public abstract class AbstractCommandProcessor implements ICommandProcessor {
 	
 	/**
 	 * Delegate to concrete implementations
+	 * @param commandName The command name
 	 * @param args The command arguments 
 	 * @return the result of the command
 	 * @throws Exception on any error
 	 */
-	protected abstract Object doExecute(String... args) throws Exception;
+	protected abstract Object doExecute(String commandName, String... args) throws Exception;
 }

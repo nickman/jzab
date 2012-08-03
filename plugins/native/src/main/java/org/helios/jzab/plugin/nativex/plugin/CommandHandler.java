@@ -22,39 +22,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex.jzab.plugin.system;
+package org.helios.jzab.plugin.nativex.plugin;
 
-import org.helios.jzab.plugin.nativex.jzab.plugin.AbstractCommandProcessor;
-
-
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * <p>Title: AgentCommandPlugin</p>
- * <p>Description: </p> 
+ * <p>Title: CommandHandler</p>
+ * <p>Description: Annotation to identify a method as a command invoker and assign a name to it</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.system.AgentCommandPlugin</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.CommandHandler</code></p>
  */
-public class AgentCommandPlugin extends AbstractCommandProcessor {
-
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface CommandHandler {
 	/**
-	 * Creates a new AgentCommandPlugin
-	 * @param name
-	 * @param aliases
+	 * Returns the name of this command
+	 * @return the name of this command
 	 */
-	public AgentCommandPlugin() {
-		super("agent.hostname");
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.plugin.nativex.jzab.plugin.AbstractCommandProcessor#doExecute(java.lang.String[])
-	 */
-	@Override
-	protected String doExecute(String... args) {
-		return sigar.getFQDN();
-	}
-
-
-
+	public String commandName();
 }

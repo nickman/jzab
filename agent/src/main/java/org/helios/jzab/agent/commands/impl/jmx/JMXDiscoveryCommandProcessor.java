@@ -69,12 +69,13 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	 *  <li><b>Domain</b>: (Optional) Defines the MBeanServer domain in which the target MBeans are registered. Can also be interpreted as a {@link JMXServiceURL} in which case a remote connection will be used to retrieve the attribute values.</li>
 	 * </ol>
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
-	 */	
+	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String, java.lang.String[])
+	 */
 	@Override
-	protected Object doExecute(String... args) throws Exception {
-		if(args==null || args.length < 1) throw new IllegalArgumentException("Invalid argument count for command [" + (args==null ? 0 : args.length) + "]", new Throwable());
-		
+	protected Object doExecute(String commandName, String... args) throws Exception {
+		if(commandName==null || commandName.trim().isEmpty()) throw new IllegalArgumentException("Null or empty command name" , new Throwable());
+		if(args==null || args.length < 1) throw new IllegalArgumentException("Invalid argument count for command [" + commandName + "] with args [" + (args==null ? 0 : args.length) + "]", new Throwable());
+		commandName = commandName.trim();
 		Map<String, String> tokens = new HashMap<String, String> ();
 		ObjectName objectName = null;
 		try {

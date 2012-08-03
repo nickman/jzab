@@ -22,15 +22,22 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex.jzab.plugin;
+package org.helios.jzab.plugin.nativex.plugin.generic;
 
 /**
- * <p>Title: CommandProcessorMXBean</p>
- * <p>Description: Defines the MBean interface for registered plugins</p> 
+ * <p>Title: ICommandInvoker</p>
+ * <p>Description: A simple command invoker definition to simplify reflection</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.CommandProcessorMXBean</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.generic.ICommandInvoker</code></p>
  */
-public interface CommandProcessorMXBean {
 
+public interface ICommandInvoker {
+	/**
+	 * Executes a command
+	 * @param commandName The command name
+	 * @param args The command arguments
+	 * @return The command result
+	 */
+	public String execute(String commandName, String... args);
 }

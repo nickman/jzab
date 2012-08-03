@@ -22,19 +22,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.agent.commands.CommandManager;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.jzab;
 
 /**
- * <p>Title: JZabAgentBoot</p>
- * <p>Description: </p> 
+ * <p>Title: CommandProcessorMXBean</p>
+ * <p>Description: Defines the MBean interface for registered plugins</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.CommandProcessorMXBean</code></p>
  */
-public class JZabAgentBoot {
-	public static void bootPlugin() {
-		CommandManager.getInstance().registerCommandProcessor(new AgentCommandPlugin());
-	}
+public interface CommandProcessorMXBean {
+
 }

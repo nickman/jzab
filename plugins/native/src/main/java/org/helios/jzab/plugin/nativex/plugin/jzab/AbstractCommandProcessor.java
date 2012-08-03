@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex.jzab.plugin;
+package org.helios.jzab.plugin.nativex.plugin.jzab;
 
 import java.util.Properties;
 
@@ -38,8 +38,6 @@ import org.helios.jzab.plugin.nativex.HeliosSigar;
  * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.AbstractCommandProcessor</code></p>
  */
 public abstract class AbstractCommandProcessor implements IPluginCommandProcessor {
-	/** The processor locator key */
-	protected final String name;
 	/** The processor locator key aliases */
 	protected final String[] aliases;
 	/** The jzab agent supplied properties */
@@ -50,11 +48,9 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	
 	/**
 	 * Creates a new AbstractCommandProcessor
-	 * @param name The processor locator key
 	 * @param aliases The processor locator key aliases
 	 */
-	protected AbstractCommandProcessor(String name, String...aliases) {
-		this.name = name;
+	protected AbstractCommandProcessor(String...aliases) {
 		if(aliases==null) {
 			this.aliases = new String[]{};
 		} else {
@@ -64,18 +60,20 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String[])
+	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String, java.lang.String[])
 	 */
 	@Override
-	public String execute(String... args) {
-		return doExecute(args);
+	public String execute(String commandName, String... args) {
+		return doExecute(commandName, args);
 	}
 	
 	/**
-	 * @param args
-	 * @return
+	 * Executes the command
+	 * @param commandName The command name
+	 * @param args The arguments
+	 * @return the result
 	 */
-	protected abstract String doExecute(String... args);
+	protected abstract String doExecute(String commandName, String... args);
 
 	/**
 	 * {@inheritDoc}
@@ -83,7 +81,7 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	 */
 	@Override
 	public String getLocatorKey() {
-		return name;
+		return null;
 	}
 
 	/**

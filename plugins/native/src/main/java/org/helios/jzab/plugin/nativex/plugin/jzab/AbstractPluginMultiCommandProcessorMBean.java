@@ -22,19 +22,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.agent.commands.CommandManager;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.jzab;
+
+import org.helios.jzab.agent.commands.ICommandProcessor;
 
 /**
- * <p>Title: JZabAgentBoot</p>
+ * <p>Title: AbstractPluginMultiCommandProcessorMBean</p>
  * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.generic.AbstractPluginMultiCommandProcessorMBean</code></p>
  */
-public class JZabAgentBoot {
-	public static void bootPlugin() {
-		CommandManager.getInstance().registerCommandProcessor(new AgentCommandPlugin());
-	}
+
+public interface AbstractPluginMultiCommandProcessorMBean {
+    /**
+     * Returns the actual instance of the processor
+     * @return the actual instance of the processor
+     */
+    public ICommandProcessor getInstance();
+    
+    /**
+     * Returns additional aliases for this plugin
+     * @return additional aliases for this plugin
+     */
+    public String[] getAliases();
+
 }

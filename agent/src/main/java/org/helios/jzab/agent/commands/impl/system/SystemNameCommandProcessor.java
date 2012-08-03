@@ -50,10 +50,10 @@ public class SystemNameCommandProcessor extends AbstractCommandProcessor {
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String[])
+	 * @see org.helios.jzab.agent.commands.AbstractCommandProcessor#doExecute(java.lang.String, java.lang.String[])
 	 */
 	@Override
-	protected Object doExecute(String... args) throws Exception {	
+	protected Object doExecute(String commandName, String... args) throws Exception {	
 		log.info("\n\t===================================\n\tProcessing SystemName\n\tResult [{}]\n\t===================================\n", systemName);
 		return systemName;
 	}

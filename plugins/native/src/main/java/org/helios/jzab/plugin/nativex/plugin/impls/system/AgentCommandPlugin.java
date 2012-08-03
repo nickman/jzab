@@ -22,19 +22,38 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.agent.commands.CommandManager;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.impls.system;
+
+import org.helios.jzab.plugin.nativex.plugin.jzab.AbstractCommandProcessor;
+
+
 
 /**
- * <p>Title: JZabAgentBoot</p>
+ * <p>Title: AgentCommandPlugin</p>
  * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.system.AgentCommandPlugin</code></p>
  */
-public class JZabAgentBoot {
-	public static void bootPlugin() {
-		CommandManager.getInstance().registerCommandProcessor(new AgentCommandPlugin());
+public class AgentCommandPlugin extends AbstractCommandProcessor {
+
+	/**
+	 * Creates a new AgentCommandPlugin
+	 * @param aliases The aliases for this plugin
+	 */
+	public AgentCommandPlugin() {
+		super("agent.hostname");
 	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.nativex.plugin.jzab.AbstractCommandProcessor#doExecute(java.lang.String[])
+	 */
+	@Override
+	protected String doExecute(String commandName, String... args) {
+		return sigar.getFQDN();
+	}
+
+
+
 }

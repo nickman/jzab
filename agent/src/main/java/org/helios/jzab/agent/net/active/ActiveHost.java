@@ -617,6 +617,8 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 	public class ActiveHostCheck implements Callable<String>, ActiveHostCheckMBean {
 		/** The host name the item being checked  is for */
 		protected final String hostName;		
+		/** The command name to execute */
+		protected final String commandName;
 		/** The key of the item being checked */
 		protected final String itemKey;
 		/** The key of the item being checked escaped */
@@ -654,6 +656,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 			this.mtime = mtime;
 			lastRefreshTime = System.currentTimeMillis();
 			itemKeyEsc = StringHelper.escapeQuotes(this.itemKey);
+			commandName = commandManager.parseCommandName(itemKey);
 			String[] ops = commandManager.parseCommandString(itemKey);
 			if(ops==null) {
 				throw new RuntimeException("Command Manager Failed to parse item key [" + itemKey + "]", new Throwable());
@@ -683,7 +686,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		 */
 		@Override
 		public String call()  {
-			Object result = commandProcessor.execute(processorArguments);
+			Object result = commandProcessor.execute(commandName, processorArguments);
 			return String.format(RESPONSE_TEMPLATE, hostName, itemKeyEsc, StringHelper.escapeQuotes(result.toString()), SystemClock.currentTimeSecs() );
 		}
 
@@ -692,7 +695,7 @@ public class ActiveHost implements JSONResponseHandler, ActiveHostMXBean, Iterab
 		 * @return the discovery check result
 		 */
 		public Object discover() {
-			return commandProcessor.execute(processorArguments);
+			return commandProcessor.execute(commandName, processorArguments);
 		}
 
 		/**

@@ -22,24 +22,25 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.commands;
+package org.helios.jzab.plugin.nativex.plugin.generic;
 
 import java.util.Properties;
 
-
 /**
- * <p>Title: ICommandProcessor</p>
- * <p>Description: Defines an executable command.</p>
+ * <p>Title: AbstractMultiCommandProcessorMBean</p>
+ * <p>Description: Defines the JMX interface for an {@link AbstractMultiCommandProcessor}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.commands.ICommandProcessor</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessorMBean</code></p>
  */
-public interface ICommandProcessor {
-	
+
+public interface AbstractMultiCommandProcessorMBean {
 	/** Return result for a command when the command is not supported or cannot be executed */
 	public static final String COMMAND_NOT_SUPPORTED = "ZBX_NOTSUPPORTED";
 	/** Return result for a command when the command fails execution */
 	public static final String COMMAND_ERROR = "ZBX_ERROR";
+	/** The system property name that the jZab agent sets with the JMX mbean server domain name */
+	public static final String ZABX_DOMAIN_PROP = "org.helios.jzab.jmx.domain";
 	
     /**
      * Executes the command and returns the result
@@ -72,6 +73,12 @@ public interface ICommandProcessor {
      * Callback to initialize the command processor after properties have been set
      */
     public void init();
+    
+    /**
+     * Returns the names of all the command names supported by this class
+     * @return the names of all the command names supported by this class
+     */
+    public String[] getAliases();
     
 
 }
