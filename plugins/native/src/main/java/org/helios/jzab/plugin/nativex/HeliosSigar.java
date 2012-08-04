@@ -278,12 +278,16 @@ public class HeliosSigar implements SigarProxy {
 	}
 
 	/**
-	 * @return
-	 * @throws SigarException
+	 * Get system CPU info in percentage format.
+	 * @return system CPU info in percentage format.
 	 * @see org.hyperic.sigar.Sigar#getCpuPerc()
 	 */
-	public CpuPerc getCpuPerc() throws SigarException {
-		return sigar.getCpuPerc();
+	public CpuPerc getCpuPerc()  {
+		try {
+			return sigar.getCpuPerc();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invoke sigar getCpuPerc", se);
+		}
 	}
 
 	/**
@@ -1099,6 +1103,20 @@ public class HeliosSigar implements SigarProxy {
 	 */
 	public void kill(long arg0, String arg1) throws SigarException {
 		sigar.kill(arg0, arg1);
+	}
+	
+	/**
+	 * Reloads the sigar instance
+	 * @return this instance
+	 */
+	public HeliosSigar load() {
+		try {
+			sigar.load();
+			return this;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to reload the sigar instance", e);
+		}
+		
 	}
 
 	/**

@@ -166,6 +166,16 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				}
 			}
 		}
+		if(commandProcessor instanceof IPluginCommandProcessor) {
+			IPluginCommandProcessor plugin = (IPluginCommandProcessor)commandProcessor;
+			if(plugin.getAliases()!=null) {
+				for(String s: plugin.getAliases()) {
+					if(s!=null && !s.trim().isEmpty()) {
+						keys.add(s.trim().toLowerCase());
+					}
+				}				
+			}
+		}
 		for(String key: keys) {			
 			if(!commandProcessors.containsKey(key)) {
 				synchronized(commandProcessors) {
@@ -259,7 +269,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	@Override
 	public String invokeCommand(String commandString) {
 		if(commandString==null || commandString.trim().isEmpty()) throw new IllegalArgumentException("The passed command string was null or empty", new Throwable());
-		return processCommand(commandString.trim());
+			return processCommand(commandString.trim());
 	}
 
 	/**

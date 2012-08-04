@@ -28,8 +28,10 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -91,12 +93,17 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * @param aliases The processor locator key aliases
 	 */
 	protected AbstractMultiCommandProcessor(String...aliases) {
-		if(aliases==null) {
-			this.aliases = new String[]{};
-		} else {
-			this.aliases = aliases;
+		Set<String> als = new HashSet<String>();
+		if(aliases!=null) {
+			for(String s: aliases) {
+				if(s!=null && !s.isEmpty()) {
+					als.add(s);
+				}
+			}
 		}
 		initializeInvokers();
+		als.addAll(invokers.keySet());
+		this.aliases = als.toArray(new String[als.size()]);
 	}
 	
 	/**
@@ -130,24 +137,28 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 			try {
 				CommandHandler ch = m.getAnnotation(CommandHandler.class);
 				if(ch==null) continue;
-				// validate signature  String execute(String... args)
+				// validate signature  
+				
 				if(!m.getReturnType().equals(String.class)) {
 					log.warn("The method [{}] is annotated with @CommandHandler but has a return type of [{}]", m, m.getReturnType().getName());
 					continue;
 				}
-				if(m.getParameterTypes().length!=1) {
+				if(m.getParameterTypes().length!=2) {
 					log.warn("The method [{}] is annotated with @CommandHandler but has an invalid parameter count [{}]", m, m.getParameterTypes().length);
 					continue;
 				}
-				Class<?> param = m.getParameterTypes()[0];
+				Class<?> param0 = m.getParameterTypes()[0];
+				Class<?> param1 = m.getParameterTypes()[1];
 				if(
-						(param.isArray() && param.getComponentType().equals(String.class))
+						(param1.isArray() && param1.getComponentType().equals(String.class))
 						||
-						(m.isVarArgs() && param.equals(String.class))
-				) {
+						(m.isVarArgs() && param1.equals(String.class))
+				&& (param0.equals(String.class)) ) 
+				
+				{
 					log.debug("Qualified method [{}] as  @CommandHandler", m);
 					m.setAccessible(true);
-					final String key = ch.commandName();
+					final String key = ch.value();
 					final Object invTarget = Modifier.isStatic(m.getModifiers()) ? null : this;
 					invokers.put(key, new ICommandInvoker(){
 						/**
@@ -157,7 +168,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 						@Override
 						public String execute(String commandName, String... args) {
 							try {
-								Object result = m.invoke(invTarget, new Object[]{args});
+								Object result = m.invoke(invTarget, new Object[]{commandName, args});
 								return result==null ? "" : result.toString();
 							} catch (Exception e) {
 								log.warn("Failed to invoke command [{}]:[{}]", key, e.toString());
@@ -190,7 +201,19 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * @param args The command arguments
 	 * @return The argument result
 	 */
-	protected abstract String doExecute(String commandName, String... args);
+	protected String doExecute(String commandName, String... args) {
+		if(commandName==null || commandName.trim().isEmpty()) throw new IllegalArgumentException("The passed command name was null or empty", new Throwable());
+		ICommandInvoker invoker = invokers.get(commandName);
+		if(invoker==null) {
+			return COMMAND_NOT_SUPPORTED;
+		}
+		try {
+			return invoker.execute(commandName, args);
+		} catch (Exception e) {
+			log.error("Failed to execute command [{}]:[{}]", commandName, e.toString());
+			return COMMAND_ERROR;
+		}
+	}
 
 	/**
 	 * {@inheritDoc}

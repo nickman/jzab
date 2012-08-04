@@ -24,36 +24,60 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system;
 
-import org.helios.jzab.plugin.nativex.plugin.jzab.AbstractCommandProcessor;
+import java.util.Arrays;
+
+import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
+import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 
 
 
 /**
  * <p>Title: AgentCommandPlugin</p>
- * <p>Description: </p> 
+ * <p>Description: Implements basic agent checks </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.system.AgentCommandPlugin</code></p>
  */
-public class AgentCommandPlugin extends AbstractCommandProcessor {
+public class AgentCommandPlugin extends AbstractMultiCommandProcessor {
 
 	/**
 	 * Creates a new AgentCommandPlugin
-	 * @param aliases The aliases for this plugin
 	 */
 	public AgentCommandPlugin() {
-		super("agent.hostname");
+		super();
 	}
 
 	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.plugin.nativex.plugin.jzab.AbstractCommandProcessor#doExecute(java.lang.String[])
+	 * Returns the fully qualified host name
+	 * @param commandName The command name
+	 * @param args The arguments
+	 * @return the fully qualified host name
 	 */
-	@Override
-	protected String doExecute(String commandName, String... args) {
+	@CommandHandler("agent.hostname")
+	protected String getHostName(String commandName, String... args) {
 		return sigar.getFQDN();
 	}
 
+	/**
+	 * Returns the process pid for this agent
+	 * @param commandName The command name
+	 * @param args The arguments 
+	 * @return the process pid for this agent
+	 */
+	@CommandHandler("agent.pid")
+	protected String getPid(String commandName, String... args) {
+		return "" + sigar.getPid();
+	}
 
+	/**
+	 * Returns the process startup arguments
+	 * @param commandName The command name
+	 * @param args The arguments 
+	 * @return the process startup arguments
+	 */
+	@CommandHandler("agent.process.args")
+	protected String getProcessArgs(String commandName, String... args) {
+		return Arrays.toString(sigar.getProcArgs(sigar.getPid()));
+	}
 
 }

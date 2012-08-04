@@ -45,5 +45,5 @@ public @interface CommandHandler {
 	 * Returns the name of this command
 	 * @return the name of this command
 	 */
-	public String commandName();
+	public String value();
 }

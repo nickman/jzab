@@ -1,0 +1,79 @@
+<jzab homeDir="./src/test/resources/conf">
+<!-- 
+conf-redirects
+server urls
+listen urls  (and optional local port ranges)
+homedir
+jmx-connectors
+thread pools and scheduler
+java agent relays
+plugins
+collected data buffer size
+enable/disable passive/active checks
+logging config override
+refresh config from server interval
+wait for server wakeup 
+check processing timeout
+config version
+ -->
+ 
+ <logging-factory type="" /> 	
+
+ <proxy-listener interface="0.0.0.0" port="20050" name="ProxyListener" >
+ 	<boss-pool name="NettyBoss" />
+ 	<worker-pool  name="NettyWorker" />
+ 	<socket-options>
+ 		<opt name="child.keepAlive" value="true" />
+ 	</socket-options>
+ </proxy-listener>
+ 
+  <active-agent refresh="10"  collection-timeout="2"  threading-policy="CHECK" collation-type="DIRECTDISK" >
+ 	<scheduler-pool name="Scheduler" />
+ 	<task-pool  name="TaskExecutor" />
+ 	
+ 	<servers>
+ 	</servers>
+ </active-agent>
+ 
+ <thread-pools>
+ 	<thread-pool name="NettyBoss">
+ 		<pool core="1" max="10" keepalive="100" allowCoreTimeout="false" prestart="1" daemon="false"  />
+ 		<termination termTime="5" immediate="false" />
+ 		<queue size="0"   />   <!-- A size of zero means use a non-fair synchronous queue -->
+ 	</thread-pool>
+ 	<thread-pool name="NettyWorker">
+ 		<pool core="5" max="100" keepalive="100" allowCoreTimeout="false" prestart="-1" />  <!-- prestart of -1 means prestart all core threads  -->
+ 		<termination termTime="5" immediate="false" />
+ 		<queue size="0"  />
+ 	</thread-pool>
+ 	<thread-pool name="TaskExecutor">
+ 		<pool core="5" max="100" keepalive="100" allowCoreTimeout="false" prestart="0" />  
+ 		<termination immediate="true" />
+ 		<queue size="100" fair="false"  />
+ 	</thread-pool>
+ 	<thread-pool name="NotificationProcessor">
+ 		<pool core="3" max="10" keepalive="100" allowCoreTimeout="true" prestart="1" />  
+ 		<termination immediate="true" />
+ 		<queue size="100" fair="false"  />
+ 	</thread-pool>
+ 	
+ 	<scheduler name="Scheduler">
+ 		<pool core="5" prestart="1" />  
+ 		<termination immediate="true" /> 		
+ 	</scheduler>
+ </thread-pools>
+  <active-client  name="ActiveClient" >
+ 	<boss-pool name="NettyBoss" />
+ 	<worker-pool  name="NettyWorker" />
+ 	<socket-options>
+ 		<opt name="connectTimeoutMillis" value="5000" />
+ 	</socket-options>
+ </active-client>
+ 
+
+ 
+ 
+ <props>
+ 	<prop name="passive-protocol" value="1" />
+ </props>
+</jzab>

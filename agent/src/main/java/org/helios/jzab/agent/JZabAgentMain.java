@@ -42,6 +42,7 @@ import org.helios.jzab.agent.net.active.ActiveClient;
 import org.helios.jzab.agent.net.passive.AgentListener;
 import org.helios.jzab.agent.plugin.PluginLoader;
 import org.helios.jzab.agent.util.FileDeletor;
+import org.helios.jzab.proxy.ProxyListener;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -70,6 +71,8 @@ public class JZabAgentMain {
 	
 	/** The agent listeners keyed by name */
 	protected Map<String, AgentListener> listeners = new ConcurrentHashMap<String, AgentListener>();
+	/** The proxy listeners keyed by name */
+	protected Map<String, ProxyListener> proxyListeners = new ConcurrentHashMap<String, ProxyListener>();
 	
 	
 	/** Static class logger */
@@ -275,6 +278,17 @@ public class JZabAgentMain {
 			listeners.put(listener.getListenerName(), listener);
 			cnt++;
 		}
+		for(Node listenerNode : XMLHelper.getChildNodesByName(parsedConfigNode, "proxy-listener", false)) {
+			ProxyListener listener = new ProxyListener(listenerNode);
+			if(proxyListeners.containsKey(listener.getListenerName())) {
+				throw new RuntimeException("Duplicate definition of ProxyListener [" + listener.getListenerName() + "]");
+			}
+			listener.start();
+			log.info("Started ProxyListener [{}]", listener.getListenerName());
+			proxyListeners.put(listener.getListenerName(), listener);
+			cnt++;
+		}
+		
 		return cnt;
 	}
 	

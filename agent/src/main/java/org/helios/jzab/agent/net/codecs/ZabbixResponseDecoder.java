@@ -30,6 +30,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.replay.ReplayingDecoder;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,9 +86,17 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixEncoding> {
 				length = (Long)ctx.getAttachment();
 				byte[] jsonBytes = new byte[(int)length];
 				buffer.readBytes(jsonBytes);
-				JSONObject obj = new JSONObject(new String(jsonBytes));
-				log.trace("Decoded JSONObject [{}]",  obj.toString());
-				return obj;
+				String msg = new String(jsonBytes);
+				try {
+					JSONObject obj = new JSONObject(msg);
+					log.trace("Decoded JSONObject [{}]",  obj.toString());
+					return obj;
+				} catch (JSONException e) {
+					log.warn("Failed to parse JSON request [{}]", msg);
+					return null;
+				} finally {
+					checkpoint(ZabbixEncoding.ZHEADER);
+				}
 		}
 		return null;
 	}

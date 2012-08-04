@@ -22,23 +22,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.agent.net.codecs;
+package org.helios.jzab.proxy;
+
+import org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder;
 
 /**
- * <p>Title: ZabbixResponse</p>
- * <p>Description: Replaying decoder enum for Zabbix Responses</p> 
+ * <p>Title: ZabbixProxyRequestDecoder</p>
+ * <p>Description: Decoder for Zabbix Server requests to a passive proxy</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.agent.net.codecs.ZabbixResponse</code></p>
+ * <p><code>org.helios.jzab.proxy.ZabbixProxyRequestDecoder</code></p>
  */
 
-public enum ZabbixResponse {
-	/** The ZABX header */
-	ZHEADER,
-	/** The Zabbix protocol byte */
-	ZPROTOCOL,
-	/** The length of the forthcoming payload */
-	ZLENGTH,
-	/** The JSON payload bytes */
-	JSON;
+public class ZabbixProxyRequestDecoder extends ZabbixResponseDecoder {
+
 }

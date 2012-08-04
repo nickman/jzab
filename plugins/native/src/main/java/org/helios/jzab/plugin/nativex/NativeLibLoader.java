@@ -25,6 +25,7 @@
 package org.helios.jzab.plugin.nativex;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -33,7 +34,6 @@ import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -103,37 +103,52 @@ public class NativeLibLoader {
 		} catch (Throwable e) {			
 		}
 		//  ===  Extract and write tmp===
-		extractNativeLib(libName);
+		String libFileName = extractNativeLib(libName);
+		System.load(libFileName);
+		
+		
 	}
 	
 	/**
 	 * Reads the native library from the source and writes to the temp file.
+	 * @return The file name where the lib was written
 	 * @throws IOException
 	 */
-	private static void extractNativeLib(String nativeLibraryName) {
-		FileChannel fc = null;
+	private static String extractNativeLib(String nativeLibraryName) {
+		FileOutputStream fos = null;
+		InputStream is = null;
 		try {
 			
 			LOG.debug("Reading library as resource [{}{}]", NATIVE_DIR_PREFIX , nativeLibraryName );
-			InputStream is = null;
 			
-			ByteBufferStreams buff = ByteBufferStreams.readInputStreamDirect(NativeLibLoader.class.getClassLoader().getResourceAsStream("META-INF/native/" + nativeLibraryName));
-			int size = buff.position();
-			LOG.debug("Read [{}] bytes into buffer [{}]", size, buff);
-			buff.flip();
+			byte[] buffer = new byte[4096];
+			int bytesWritten = 0;
+			int totalBytesWritten = 0;
+			is = NativeLibLoader.class.getClassLoader().getResourceAsStream("META-INF/native/" + nativeLibraryName);
 			File tmpFile = File.createTempFile("jzabTmp", nativeLibraryName);
 			SnipeFilesRepo.getInstance().bypass(tmpFile);
 			LOG.debug("Writing to tmp file [{}] ", tmpFile);
-			fc = new RandomAccessFile(tmpFile, "rw").getChannel();
-			long written = fc.map(MapMode.READ_WRITE, 0, size).put(buff.getBuffer()).position();			
-			LOG.debug("Wrote [{}] bytes to tmp file [{}] ", written, tmpFile);
-			fc.force(true);
-			fc.close();
+			fos = new FileOutputStream(tmpFile, true);
+
+			while((bytesWritten=is.read(buffer))!=-1) {
+				fos.write(buffer, 0, bytesWritten);
+				totalBytesWritten += bytesWritten;
+			}
+			fos.close();
+			is.close();
+			
+			//ByteBufferStreams buff = ByteBufferStreams.readInputStreamDirect(NativeLibLoader.class.getClassLoader().getResourceAsStream("META-INF/native/" + nativeLibraryName));
+//			int size = buff.position();
+//			LOG.debug("Read [{}] bytes into buffer [{}]", size, buff);
+//			buff.flip();
+						
+			LOG.debug("Wrote [{}] bytes to tmp file [{}] ", totalBytesWritten, tmpFile);
+			return tmpFile.getAbsolutePath();
 		} catch (Exception e) {
 			throw new RuntimeException("Unable to load native library [" + nativeLibraryName + "]", e);
 		} finally {
-			try { fc.force(true); } catch (Exception e) {}
-			try { fc.close(); } catch (Exception e) {}
+			try { is.close(); } catch (Exception e) {}
+			try { fos.close(); } catch (Exception e) {}
 		}
 	}
 	

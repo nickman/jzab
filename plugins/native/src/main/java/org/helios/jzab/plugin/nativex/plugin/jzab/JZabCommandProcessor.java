@@ -29,51 +29,44 @@ import java.util.Properties;
 import org.helios.jzab.agent.commands.ICommandProcessor;
 import org.helios.jzab.agent.commands.IPluginCommandProcessor;
 import org.helios.jzab.plugin.nativex.HeliosSigar;
+import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 
 /**
- * <p>Title: AbstractCommandProcessor</p>
+ * <p>Title: JZabCommandProcessor</p>
  * <p>Description: Base command processor class for native plugins</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.plugin.nativex.jzab.plugin.AbstractCommandProcessor</code></p>
  */
-public abstract class AbstractCommandProcessor implements IPluginCommandProcessor {
-	/** The processor locator key aliases */
-	protected final String[] aliases;
-	/** The jzab agent supplied properties */
-	protected final Properties props = new Properties();
-	
-	/** The sigar native interface */
-	protected final HeliosSigar sigar = HeliosSigar.getInstance();
-	
+public class JZabCommandProcessor implements IPluginCommandProcessor {
+	/** The native plugin processor to wrap */
+	protected final AbstractMultiCommandProcessor wrappedProcessor;
+
 	/**
-	 * Creates a new AbstractCommandProcessor
-	 * @param aliases The processor locator key aliases
+	 * Creates a new JZabCommandProcessor
+	 * @param wrappedProcessor The processor to wrap
+	 * @return a new JZabCommandProcessor
 	 */
-	protected AbstractCommandProcessor(String...aliases) {
-		if(aliases==null) {
-			this.aliases = new String[]{};
-		} else {
-			this.aliases = aliases;
-		}
+	public static JZabCommandProcessor wrap(AbstractMultiCommandProcessor wrappedProcessor) {
+		return new JZabCommandProcessor(wrappedProcessor);
 	}
 	
+	/**
+	 * Creates a new JZabCommandProcessor
+	 * @param wrappedProcessor The native plugin processor to wrap 
+	 */
+	public JZabCommandProcessor(AbstractMultiCommandProcessor wrappedProcessor) {
+		this.wrappedProcessor = wrappedProcessor;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.commands.ICommandProcessor#execute(java.lang.String, java.lang.String[])
 	 */
 	@Override
-	public String execute(String commandName, String... args) {
-		return doExecute(commandName, args);
+	public Object execute(String commandName, String... args) {
+		return wrappedProcessor.execute(commandName, args);
 	}
-	
-	/**
-	 * Executes the command
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the result
-	 */
-	protected abstract String doExecute(String commandName, String... args);
 
 	/**
 	 * {@inheritDoc}
@@ -90,7 +83,7 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	 */
 	@Override
 	public boolean isDiscovery() {
-		return false;
+		return wrappedProcessor.isDiscovery();
 	}
 
 	/**
@@ -99,9 +92,8 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	 */
 	@Override
 	public void setProperties(Properties props) {
-		if(props!=null) {
-			this.props.putAll(props);
-		}
+		wrappedProcessor.setProperties(props);
+		
 	}
 
 	/**
@@ -110,7 +102,8 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	 */
 	@Override
 	public void init() {
-
+		wrappedProcessor.init();
+		
 	}
 
 	/**
@@ -128,7 +121,6 @@ public abstract class AbstractCommandProcessor implements IPluginCommandProcesso
 	 */
 	@Override
 	public String[] getAliases() {
-		return aliases;
+		return wrappedProcessor.getAliases();
 	}
-
 }

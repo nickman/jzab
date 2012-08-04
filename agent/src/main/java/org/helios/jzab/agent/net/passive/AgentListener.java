@@ -126,6 +126,10 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	public static final String WORKER_POOL_TYPE = "worker-pool";
 	
 	
+	protected String getNodeName() {
+		return "agent-listener";
+	}
+	
 	/**
 	 * Creates a new AgentListener
 	 * @param configNode The configuration node
@@ -134,8 +138,8 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 		super(ThreadPoolFactory.getInstance("NotificationProcessor"));
 		if(configNode==null) throw new IllegalArgumentException("The passed configuration node was null", new Throwable());
 		String nodeName = configNode.getNodeName(); 
-		if(!NODE.equals(nodeName)) {
-			throw new RuntimeException("Configuration Node expected to have node name [" + NODE + "] but was [" + nodeName + "]", new Throwable());
+		if(!getNodeName().equals(nodeName)) {
+			throw new RuntimeException("Configuration Node expected to have node name [" + getNodeName() + "] but was [" + nodeName + "]", new Throwable());
 		}
 		bindingPort = XMLHelper.getAttributeByName(configNode, "port", DEFAULT_PORT);
 		bindingInterface = XMLHelper.getAttributeByName(configNode, "interface", DEFAULT_INTERFACE);		

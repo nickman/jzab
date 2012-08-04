@@ -158,6 +158,7 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 	 * Returns the number of pending tasks in the work queue
 	 * @return the number of pending tasks in the work queue
 	 */
+	@Override
 	public int getQueueDepth() {
 		return getQueue().size();
 	}
@@ -166,6 +167,7 @@ public class ThreadPoolFactory extends ThreadPoolExecutor implements ThreadFacto
 	 * Returns the remaining capacity for new tasks in the work queue
 	 * @return the remaining capacity for new tasks in the work queue
 	 */
+	@Override
 	public int getQueueCapacity() {
 		return getQueue().remainingCapacity();
 	}

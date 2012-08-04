@@ -29,6 +29,7 @@ import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -105,6 +106,9 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	
 	/** The singleton ActiveClient instance */
 	private static volatile ActiveClient instance = null;
+	/** The singleton API ActiveClient instance */
+	private static volatile ActiveClient apiInstance = null;
+	
 	/** The singleton ActiveClient instance ctor lock */
 	private static final Object lock = new Object();
 	
@@ -153,12 +157,51 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	}
 	
 	/**
+	 * Creates a new Zabbix API client
+	 * @param socketOptions The optional socket options map
+	 * @return an Active Client.
+	 */
+	public static ActiveClient getInstance(Map<String, Object> socketOptions) {
+		if(apiInstance==null) {
+			synchronized(lock) {
+				if(apiInstance==null) {
+					apiInstance = new ActiveClient(socketOptions);
+				}
+			}
+	}
+	return apiInstance;
+		
+	}
+	
+	
+	
+	/**
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.agent.net.active.ActiveClientMXBean#getChannelCount()
 	 */
 	@Override
 	public int getChannelCount() {
 		return channelGroup.size();
+	}
+	
+	/**
+	 * Creates a new API ActiveClient
+	 * @param socketOptions The socket options
+	 */
+	private ActiveClient(Map<String, Object> socketOptions) {
+		this.agentName = "ZAPI";
+		loggingHandler = new ZabbixLoggingHandler(agentName, InternalLogLevel.DEBUG, true);
+		objectName = JMXHelper.objectName("org.helios.jzab.agent.net", "service", "ActiveClient", "name", agentName);
+		bossPool = Executors.newCachedThreadPool();
+		workerPool = Executors.newCachedThreadPool();
+		channelGroup = new DefaultChannelGroup(agentName + "-ChannelGroup");
+		channelFactory = new NioClientSocketChannelFactory(bossPool, workerPool);
+		this.socketOptions.putAll(socketOptions);
+		bstrap = new ClientBootstrap(channelFactory);
+		bstrap.setPipelineFactory(this);
+		bstrap.setOptions(socketOptions);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
+		log.info("Created ActiveAgent [{}]", agentName);
 	}
 	
 	/**
@@ -275,7 +318,6 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 		bstrap.connect(sa).addListener(wrapHandler(request, responseHandler, timeout, unit));
 	}
 	
-	
 	/**
 	 * Executes a synchronous request response operation against the passed server
 	 * @param request The request object
@@ -286,29 +328,44 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	 * @return the returned result
 	 */
 	public <T> T requestResponse(final Object request, Class<T> responseType, ActiveServer server, long timeout, TimeUnit unit) {
+		return requestResponse(request, responseType, server.getSocketAddress(), timeout, unit);
+	}
+	
+	
+	
+	/**
+	 * Executes a synchronous request response operation against the passed server
+	 * @param request The request object
+	 * @param responseType The expected response type
+	 * @param sockAddr The active server to issue the request to
+	 * @param timeout The operation timeout
+	 * @param unit The operation timeout unit
+	 * @return the returned result
+	 */
+	public <T> T requestResponse(final Object request, Class<T> responseType, SocketAddress sockAddr, long timeout, TimeUnit unit) {
 		final long startTime = SystemClock.currentTimeMillis();
-		ChannelFuture cf = bstrap.connect(server.getSocketAddress());
+		ChannelFuture cf = bstrap.connect(sockAddr);
 		if(!cf.awaitUninterruptibly(timeout, unit)) {
-			log.error("Connection to [{}] timed out", server);
-			throw new RuntimeException("Connection to [" + server + "] timed out", new Throwable());
+			log.error("Connection to [{}] timed out", sockAddr);
+			throw new RuntimeException("Connection to [" + sockAddr+ "] timed out", new Throwable());
 		}
 		if(!cf.isSuccess()) {
-			log.error("Failure Connecting to [{}] timed out: [{}]", server, cf.getCause());
-			throw new RuntimeException("Failure Connecting to [" + server + "]", new Throwable());			
+			log.error("Failure Connecting to [{}] timed out: [{}]", sockAddr, cf.getCause());
+			throw new RuntimeException("Failure Connecting to [" + sockAddr + "]", new Throwable());			
 		}
 		final Channel channel = cf.getChannel();
 		final AtomicReference<T> result = new AtomicReference<T>(null);
 		final AtomicReference<Throwable> exception = new AtomicReference<Throwable>(null);
 		long remaining = computeNextTimeout(TimeUnit.MILLISECONDS.convert(timeout, unit), startTime);
-		log.debug("Connected to [{}]. Time remaining to complete [{}] ms.", server, remaining);
+		log.debug("Connected to [{}]. Time remaining to complete [{}] ms.", sockAddr, remaining);
 		if(!modfyRequestResponseChannel(channel, responseType, result, exception).write(request).awaitUninterruptibly(remaining, TimeUnit.MILLISECONDS)) {
-			log.error("Timed out waiting for response from [{}]", server);
-			throw new RuntimeException("Timed out waiting for response from [" + server + "]", new Throwable());			
+			log.error("Timed out waiting for response from [{}]", sockAddr);
+			throw new RuntimeException("Timed out waiting for response from [" + sockAddr + "]", new Throwable());			
 		}
 		Throwable throwable = exception.get();
 		if(throwable != null) {
-			log.error("Failed to get response from [{}] : [{}]", server, throwable);
-			throw new RuntimeException("Failed to get response from [" + server + "]", throwable);						
+			log.error("Failed to get response from [{}] : [{}]", sockAddr, throwable);
+			throw new RuntimeException("Failed to get response from [" + sockAddr + "]", throwable);						
 		}
 		return result.get();		
 	}
