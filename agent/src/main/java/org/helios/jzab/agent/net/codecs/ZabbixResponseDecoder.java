@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * <p><code>org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder</code></p>
  */
 
-public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixResponse> {
+public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixEncoding> {
 	/** Instance logger */
 	protected Logger log;
 
@@ -52,10 +52,10 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixResponse> {
 	 * @see org.jboss.netty.handler.codec.replay.ReplayingDecoder#decode(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.Channel, org.jboss.netty.buffer.ChannelBuffer, java.lang.Enum)
 	 */
 	@Override
-	protected JSONObject decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, ZabbixResponse state) throws Exception {		
+	protected JSONObject decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, ZabbixEncoding state) throws Exception {		
 		log = LoggerFactory.getLogger(getClass() + "[" + channel.getRemoteAddress() + "]" );
 		if(state==null) {
-			state = ZabbixResponse.ZHEADER;
+			state = ZabbixEncoding.ZHEADER;
 			log.trace("Started Response Decode [{}]", state);
 		}		
 		switch(state) {
@@ -66,21 +66,21 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixResponse> {
 				 if(!Arrays.equals(ZabbixConstants.ZABBIX_HEADER,header)) {
 					 throw new Exception("Invalid Header " + Arrays.toString(header), new Throwable());
 				 }
-				 checkpoint(ZabbixResponse.ZPROTOCOL);
+				 checkpoint(ZabbixEncoding.ZPROTOCOL);
 			case ZPROTOCOL:
 				byte protocol = buffer.readByte();
 				log.trace("Read Response Protocol [{}]", protocol);
 				if(protocol!=ZabbixConstants.ZABBIX_PROTOCOL) {
 					 throw new Exception("Invalid Protocol [" + protocol + "]", new Throwable());
 				}
-				checkpoint(ZabbixResponse.ZLENGTH);
+				checkpoint(ZabbixEncoding.ZLENGTH);
 			case ZLENGTH:
 				byte[] rLength = new byte[8];
 				buffer.readBytes(rLength);
 				long length = ZabbixConstants.decodeLittleEndianLongBytes(rLength);
 				ctx.setAttachment(length);
 				log.trace("Read Response Length: [{}]", length);
-				checkpoint(ZabbixResponse.JSON);
+				checkpoint(ZabbixEncoding.JSON);
 			case JSON:
 				length = (Long)ctx.getAttachment();
 				byte[] jsonBytes = new byte[(int)length];
