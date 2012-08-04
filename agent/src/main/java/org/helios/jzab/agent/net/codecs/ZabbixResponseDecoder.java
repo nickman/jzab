@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * <p>Title: ZabbixResponseDecoder</p>
- * <p>Description: </p> 
+ * <p>Description: Decodes a Zabbix agent request response to a JSON object</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.agent.net.codecs.ZabbixResponseDecoder</code></p>
@@ -56,20 +56,20 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixEncoding> {
 		log = LoggerFactory.getLogger(getClass() + "[" + channel.getRemoteAddress() + "]" );
 		if(state==null) {
 			state = ZabbixEncoding.ZHEADER;
-			log.trace("Started Response Decode [{}]", state);
+			log.trace("Started Decode [{}]", state);
 		}		
 		switch(state) {
 			case ZHEADER:
 				byte[] header = new byte[4];
 				 buffer.readBytes(header);
-				 log.trace("Read Response Header [{}]", new String(header));
+				 log.trace("Read Header [{}]", new String(header));
 				 if(!Arrays.equals(ZabbixConstants.ZABBIX_HEADER,header)) {
 					 throw new Exception("Invalid Header " + Arrays.toString(header), new Throwable());
 				 }
 				 checkpoint(ZabbixEncoding.ZPROTOCOL);
 			case ZPROTOCOL:
 				byte protocol = buffer.readByte();
-				log.trace("Read Response Protocol [{}]", protocol);
+				log.trace("Read Protocol [{}]", protocol);
 				if(protocol!=ZabbixConstants.ZABBIX_PROTOCOL) {
 					 throw new Exception("Invalid Protocol [" + protocol + "]", new Throwable());
 				}
@@ -79,7 +79,7 @@ public class ZabbixResponseDecoder extends ReplayingDecoder<ZabbixEncoding> {
 				buffer.readBytes(rLength);
 				long length = ZabbixConstants.decodeLittleEndianLongBytes(rLength);
 				ctx.setAttachment(length);
-				log.trace("Read Response Length: [{}]", length);
+				log.trace("Read Length: [{}]", length);
 				checkpoint(ZabbixEncoding.JSON);
 			case JSON:
 				length = (Long)ctx.getAttachment();
