@@ -64,6 +64,16 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	/** This instance's JMX ObjectName */
 	protected ObjectName objectName;
 	
+	/** The last time the cpu resoures were updated */
+	protected long lastTime = System.currentTimeMillis();
+	/** The default frequency of refresh in ms. The default is 5000 */
+	public static final long DEFAULT_REFRESH_WINDOW = 5000;
+	/** The configured frequency of the refresh */
+	protected long refreshFrequency = DEFAULT_REFRESH_WINDOW;
+	
+	/** The configuration property name for the resource refresh period */
+	public static final String REFRESH_WINDOW_PROP = "refresh.frequency";
+	
 	/** The jZab identified mbean server */
 	protected static final MBeanServer server;
 	
@@ -244,6 +254,12 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 		if(props!=null) {
 			this.props.putAll(props);
 		}
+		try {
+			refreshFrequency = Long.parseLong(props.getProperty(REFRESH_WINDOW_PROP, "" + DEFAULT_REFRESH_WINDOW));			
+		} catch (Exception e) {
+			refreshFrequency = DEFAULT_REFRESH_WINDOW;
+		}
+		log.info("Refresh window:{} ms.", refreshFrequency);
 	}
 
 	/**

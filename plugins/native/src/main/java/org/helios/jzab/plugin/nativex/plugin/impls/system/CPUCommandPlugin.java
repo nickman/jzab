@@ -45,14 +45,6 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	protected final Cpu cpux = sigar.getCpu();
 
 	
-	/** The last time the cpu resoures were updated */
-	protected long lastTime = System.currentTimeMillis();
-	
-	/** The default frequency of refresh in ms. The default is 5000 */
-	public static final long DEFAULT_REFRESH_WINDOW = 5000;
-	/** The configured frequency of the refresh */
-	protected long refreshFrequency = DEFAULT_REFRESH_WINDOW;
-	
 	/**
 	 * Retrieves the cached CPUPerc instance
 	 * @return the cached CPUPerc instance
