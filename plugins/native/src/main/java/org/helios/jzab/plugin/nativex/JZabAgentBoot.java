@@ -26,7 +26,6 @@ package org.helios.jzab.plugin.nativex;
 import org.helios.jzab.agent.commands.CommandManager;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.CPUCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.CPUTimeCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.jzab.JZabCommandProcessor;
 
 /**
@@ -42,8 +41,7 @@ public class JZabAgentBoot {
 	 */
 	public static void bootPlugin() {
 		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new AgentCommandPlugin()));
-		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new CPUCommandPlugin()));
-		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new CPUTimeCommandPlugin()));
+		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new CPUCommandPlugin()));		
 		
 	}
 }

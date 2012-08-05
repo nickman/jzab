@@ -158,24 +158,26 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 				{
 					log.debug("Qualified method [{}] as  @CommandHandler", m);
 					m.setAccessible(true);
-					final String key = ch.value();
-					final Object invTarget = Modifier.isStatic(m.getModifiers()) ? null : this;
-					invokers.put(key, new ICommandInvoker(){
-						/**
-						 * {@inheritDoc}
-						 * @see org.helios.jzab.plugin.nativex.plugin.generic.ICommandInvoker#execute(java.lang.String, java.lang.String[])
-						 */
-						@Override
-						public String execute(String commandName, String... args) {
-							try {
-								Object result = m.invoke(invTarget, new Object[]{commandName, args});
-								return result==null ? "" : result.toString();
-							} catch (Exception e) {
-								log.warn("Failed to invoke command [{}]:[{}]", key, e.toString());
-								return COMMAND_ERROR;								
+					final String[] keys = ch.value();
+					for(final String key: keys) {
+						final Object invTarget = Modifier.isStatic(m.getModifiers()) ? null : this;
+						invokers.put(key, new ICommandInvoker(){
+							/**
+							 * {@inheritDoc}
+							 * @see org.helios.jzab.plugin.nativex.plugin.generic.ICommandInvoker#execute(java.lang.String, java.lang.String[])
+							 */
+							@Override
+							public String execute(String commandName, String... args) {
+								try {
+									Object result = m.invoke(invTarget, new Object[]{commandName, args});
+									return result==null ? "" : result.toString();
+								} catch (Exception e) {
+									log.warn("Failed to invoke command [{}]:[{}]", key, e.toString());
+									return COMMAND_ERROR;								
+								}
 							}
-						}
-					});						
+						});
+					}
 				} else {
 					log.warn("The method [{}] is annotated with @CommandHandler but has an invalid parameter type [{}]", m, m.getParameterTypes()[0].getName());
 					continue;					

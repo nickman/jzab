@@ -42,8 +42,8 @@ import java.lang.annotation.Target;
 @Documented
 public @interface CommandHandler {
 	/**
-	 * Returns the name of this command
-	 * @return the name of this command
+	 * Returns the aliases for this command
+	 * @return the aliases for this command
 	 */
-	public String value();
+	public String[] value();
 }
