@@ -26,6 +26,7 @@ package org.helios.jzab.agent.logging;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -34,6 +35,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLogLevel;
 import org.jboss.netty.logging.InternalLogger;
+import org.json.JSONObject;
 
 /**
  * <p>Title: ZabbixLoggingHandler</p>
@@ -100,12 +102,24 @@ public class ZabbixLoggingHandler extends LoggingHandler  {
 				            	.append(NEWLINE).append(message).append("|")
 				            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+");
 				            	getLogger().log(getLevel(), zbxHeader.toString());
+				            	try {
+				            		String jsonMmessage = padRight(String.format("         |  JSON Message Decoded. Size:%s", messageSize), LINE_LENGTH-1);
+					            	StringBuilder jsonHeader = new StringBuilder(160 + 240 + (int)messageSize)				            	
+					            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+")
+					            	.append(NEWLINE).append(jsonMmessage).append("|")
+					            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+")
+					            	.append(NEWLINE).append(new JSONObject(buf.toString(BASELINE_SIZE, buf.readableBytes()-BASELINE_SIZE, Charset.forName("UTF-8"))).toString(2))
+					            	.append(NEWLINE).append("+--------+-------------------------------------------------+----------------+");
+				            		getLogger().log(getLevel(), jsonHeader.toString());
+				            	} catch (Exception ex) {
+				            		super.log(e);
+				            	}
 			            	}
 			            }
 	            	}
 	            }
             } finally {
-            	super.log(e);
+            	//super.log(e);
             }
         }		
 	}
