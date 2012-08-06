@@ -104,7 +104,7 @@ public class HeliosSigar implements SigarProxy {
 	private final Sigar sigar;
 	
 	/** The JVM PID */
-	private final long pid;
+	public final long pid;
 	
 	/**
 	 * Acquires the Agent singleton instance

@@ -24,11 +24,16 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.helios.jzab.plugin.nativex.HeliosSigar;
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 import org.hyperic.sigar.Cpu;
 import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
+import org.hyperic.sigar.ProcCpu;
 
 /**
  * <p>Title: CPUCommandPlugin</p>
@@ -48,6 +53,9 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	protected final Cpu cpux = sigar.getCpu();	
 	/** An array of cpu infos */
 	protected final CpuInfo[] cpuInfos = sigar.getCpuInfoList();
+	
+	/** A map of process cpu trackers keyed by pid */
+	protected final Map<Long, ProcCpu> procCpus = new ConcurrentHashMap<Long, ProcCpu>();
 	
 	/**
 	 * Schedules the resource refresh task
@@ -73,6 +81,11 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 			cpuPerc = sigar.getCpuPerc();
 			cpuInstancePercs = sigar.getCpuPercList();
 			cpux.gather(sigar.getSigar());
+			for(Map.Entry<Long, ProcCpu> pc: procCpus.entrySet()) {
+				try { pc.getValue().gather(sigar.getSigar(), pc.getKey()); } catch (Exception e) {
+					log.debug("Failed to gather proc cpu for PID [{}]", pc.getKey(), e );
+				}
+			}
 		} catch (Exception e) {
 			log.warn("Resource refresh exception:[{}]", e.toString());
 		}
@@ -110,7 +123,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu idle percentage
 	 */
 	@CommandHandler("cpu.idle")
-	protected String getCpuIdle(String commandName, String... args) {
+	public String getCpuIdle(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getIdle());
 	}
 	
@@ -121,7 +134,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu irq percentage
 	 */
 	@CommandHandler("cpu.irq")
-	protected String getCpuIrq(String commandName, String... args) {		
+	public String getCpuIrq(String commandName, String... args) {		
 		return formatPerc(getCpuPerc().getIrq());
 	}
 	
@@ -132,7 +145,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu nice percentage
 	 */
 	@CommandHandler("cpu.nice")
-	protected String getCpuNice(String commandName, String... args) {
+	public String getCpuNice(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getNice());
 	}
 	
@@ -143,7 +156,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu sys percentage
 	 */
 	@CommandHandler("cpu.sys")
-	protected String getCpuSys(String commandName, String... args) {
+	public String getCpuSys(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getSys());
 	}
 	
@@ -154,7 +167,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu user percentage
 	 */
 	@CommandHandler("cpu.user")
-	protected String getCpuUser(String commandName, String... args) {
+	public String getCpuUser(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getUser());
 	}
 
@@ -165,7 +178,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu wait percentage
 	 */
 	@CommandHandler("cpu.wait")
-	protected String getCpuWait(String commandName, String... args) {		
+	public String getCpuWait(String commandName, String... args) {		
 		return formatPerc(getCpuPerc().getWait());
 	}
 	
@@ -176,7 +189,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu stolen percentage
 	 */
 	@CommandHandler("cpu.stolen")
-	protected String getCpuStolen(String commandName, String... args) {
+	public String getCpuStolen(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getStolen());
 	}
 	
@@ -187,7 +200,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu soft irq percentage
 	 */
 	@CommandHandler("cpu.sirq")
-	protected String getCpuSoftIrq(String commandName, String... args) {
+	public String getCpuSoftIrq(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getSoftIrq());
 	}
 	
@@ -198,7 +211,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu total percentage
 	 */
 	@CommandHandler("cpu.total")
-	protected String getCpuTotal(String commandName, String... args) {
+	public String getCpuTotal(String commandName, String... args) {
 		return formatPerc(getCpuPerc().getCombined());
 	}
 	
@@ -209,7 +222,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu idle cpu time
 	 */
 	@CommandHandler("cpu.time.idle")
-	protected String getCpuTimeIdle(String commandName, String... args) {
+	public String getCpuTimeIdle(String commandName, String... args) {
 		return format(getCpu().getIdle());
 	}
 	
@@ -220,7 +233,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu irq cpu time
 	 */
 	@CommandHandler("cpu.time.irq")
-	protected String getCpuTimeIrq(String commandName, String... args) {		
+	public String getCpuTimeIrq(String commandName, String... args) {		
 		return format(getCpu().getIrq());
 	}
 	
@@ -231,7 +244,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu nice cpu time
 	 */
 	@CommandHandler("cpu.time.nice")
-	protected String getCpuTimeNice(String commandName, String... args) {
+	public String getCpuTimeNice(String commandName, String... args) {
 		return format(getCpu().getNice());
 	}
 	
@@ -242,7 +255,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu sys cpu time
 	 */
 	@CommandHandler("cpu.time.sys")
-	protected String getCpuTimeSys(String commandName, String... args) {
+	public String getCpuTimeSys(String commandName, String... args) {
 		return format(getCpu().getSys());
 	}
 	
@@ -253,7 +266,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu user cpu time
 	 */
 	@CommandHandler("cpu.time.user")
-	protected String getCpuTimeUser(String commandName, String... args) {
+	public String getCpuTimeUser(String commandName, String... args) {
 		return format(getCpu().getUser());
 	}
 
@@ -264,7 +277,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu wait cpu time
 	 */
 	@CommandHandler("cpu.time.wait")
-	protected String getCpuTimeWait(String commandName, String... args) {		
+	public String getCpuTimeWait(String commandName, String... args) {		
 		return format(getCpu().getWait());
 	}
 	
@@ -275,7 +288,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu stolen cpu time
 	 */
 	@CommandHandler("cpu.time.stolen")
-	protected String getCpuTimeStolen(String commandName, String... args) {
+	public String getCpuTimeStolen(String commandName, String... args) {
 		return format(getCpu().getStolen());
 	}
 	
@@ -286,7 +299,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu soft irq cpu time
 	 */
 	@CommandHandler("cpu.time.sirq")
-	protected String getCpuTimeSoftIrq(String commandName, String... args) {
+	public String getCpuTimeSoftIrq(String commandName, String... args) {
 		return format(getCpu().getSoftIrq());
 	}
 	
@@ -297,7 +310,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu total cpu time
 	 */
 	@CommandHandler("cpu.time.total")
-	protected String getCpuTimeTotal(String commandName, String... args) {
+	public String getCpuTimeTotal(String commandName, String... args) {
 		return format(getCpu().getTotal());
 	}	
 	
@@ -327,7 +340,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the number of cpus
 	 */
 	@CommandHandler("cpu.count")
-	protected String getCpuCount(String commandName, String... args) {
+	public String getCpuCount(String commandName, String... args) {
 		return "" + cpuInfos.length;
 	}
 	
@@ -335,15 +348,35 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * Returns cpu utilization type for a specific process
 	 * @param commandName The command name
 	 * @param args The optional arguments:<ol>
-	 * 	<li>The cpu utilization type. Defaults to total.</li>
 	 *  <li>The pid of the process to get cpu utilization for. Defaults to the agent process.</li>
 	 * </ol>
 	 * @return the requested cpu utilization data
 	 */
 	@CommandHandler("cpu.proc")
 	protected String getProcessCpu(String commandName, String... args) {
+		long pid = HeliosSigar.getInstance().pid;
+		if(args.length>1) {
+			pid = Long.parseLong(args[1].trim());
+		}
+		ProcCpu pc = procCpus.get(pid);
+		if(pc==null) {
+			synchronized(procCpus) {
+				pc = procCpus.get(pid);
+				if(pc==null) {
+					pc = sigar.getProcCpu(pid);
+					procCpus.put(pid, pc);
+					try {
+						pc.gather(sigar.getSigar(), pid);
+					} catch (Exception e) {
+						log.debug("Failed to gather proc cpu for PID [{}]", pid, e );
+					}
+				}
+			}
+		}
 		
-		return "";
+		return formatPerc(pc.getPercent());
+		// **
+		// {User=1591, LastTime=1344271384848, Percent=0.0, StartTime=1344271313939, Total=1809, Sys=218}
 	}
 		
 	/**
@@ -354,7 +387,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the system cpu data
 	 */
 	@CommandHandler("cpu.info")
-	protected String getCpuInfo(String commandName, String... args) {
+	public String getCpuInfo(String commandName, String... args) {
 		if(args != null && args.length>0) {
 			try {
 				int id = getIntArg(args);

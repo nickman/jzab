@@ -54,7 +54,7 @@ public class AgentCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the fully qualified host name
 	 */
 	@CommandHandler("agent.hostname")
-	protected String getHostName(String commandName, String... args) {
+	public String getHostName(String commandName, String... args) {
 		return sigar.getFQDN();
 	}
 
@@ -65,7 +65,7 @@ public class AgentCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the process pid for this agent
 	 */
 	@CommandHandler("agent.pid")
-	protected String getPid(String commandName, String... args) {
+	public String getPid(String commandName, String... args) {
 		return "" + sigar.getPid();
 	}
 
@@ -76,7 +76,7 @@ public class AgentCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @return the process startup arguments
 	 */
 	@CommandHandler("agent.process.args")
-	protected String getProcessArgs(String commandName, String... args) {
+	public String getProcessArgs(String commandName, String... args) {
 		return Arrays.toString(sigar.getProcArgs(sigar.getPid()));
 	}
 

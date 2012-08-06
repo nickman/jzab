@@ -22,24 +22,36 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
+
 
 /**
- * <p>Title: JZabAgentBoot</p>
- * <p>Description: Command processor bootstrap</p> 
+ * <p>Title: ProcessCPUOption</p>
+ * <p>Description: Defines the process cpu utilization options</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.ProcessCPUOption</code></p>
  */
-public class JZabAgentBoot {
+public enum ProcessCPUOption {
+	/** The user CPU time */
+	USER, 
+	/** The system CPU time */
+	SYS,
+	/** The total CPU time */
+	TOTAL;
+	
 	/**
-	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
+	 * Returns the ProcessCPUOption for the passed name. Applies trim and toUpper to the name first.
+	 * @param name The name of the type
+	 * @return the named ProcessCPUOption 
 	 */
-	public static void bootPlugin(String[] args) {
-		new DirectAgentCommandPlugin();
-		new DirectCPUCommandPlugin();			
+	public static ProcessCPUOption forName(CharSequence name) {
+		if(name==null) throw new IllegalArgumentException("The passed ProcessCPUOption name was null", new Throwable());
+		try {
+			return ProcessCPUOption.valueOf(name.toString().trim().toUpperCase());
+		} catch (Exception e) {
+			throw new IllegalArgumentException("The passed ProcessCPUOption name [" + name + "] is not a valid type name", new Throwable());
+		}
 	}
+	
 }

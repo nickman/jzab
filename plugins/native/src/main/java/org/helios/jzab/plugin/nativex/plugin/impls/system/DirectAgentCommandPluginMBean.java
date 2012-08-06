@@ -22,24 +22,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.impls.system;
+
+import org.helios.jzab.agent.commands.IPluginCommandProcessor;
+import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPluginMBean;
 
 /**
- * <p>Title: JZabAgentBoot</p>
- * <p>Description: Command processor bootstrap</p> 
+ * <p>Title: DirectAgentCommandPluginMBean</p>
+ * <p>Description: Direct plugin MBean extension for {@link DirectAgentCommandPlugin}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPluginMBean</code></p>
  */
-public class JZabAgentBoot {
-	/**
-	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
-	 */
-	public static void bootPlugin(String[] args) {
-		new DirectAgentCommandPlugin();
-		new DirectCPUCommandPlugin();			
-	}
+public interface DirectAgentCommandPluginMBean extends DirectCPUCommandPluginMBean {
+	public IPluginCommandProcessor getInstance();
 }

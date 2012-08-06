@@ -22,24 +22,22 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
+package org.helios.jzab.plugin.nativex.plugin.jzab;
+
+import org.helios.jzab.agent.commands.IPluginCommandProcessor;
+import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessorMBean;
 
 /**
- * <p>Title: JZabAgentBoot</p>
- * <p>Description: Command processor bootstrap</p> 
+ * <p>Title: DirectAbstractMultiCommandProcessorMBean</p>
+ * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.JZabAgentBoot</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.jzab.DirectAbstractMultiCommandProcessorMBean</code></p>
  */
-public class JZabAgentBoot {
+public interface DirectAbstractMultiCommandProcessorMBean extends AbstractMultiCommandProcessorMBean {
 	/**
-	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
+	 * Returns this processor instance
+	 * @return this processor instance
 	 */
-	public static void bootPlugin(String[] args) {
-		new DirectAgentCommandPlugin();
-		new DirectCPUCommandPlugin();			
-	}
+	public IPluginCommandProcessor getInstance();
 }

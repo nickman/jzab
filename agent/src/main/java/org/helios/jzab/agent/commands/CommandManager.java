@@ -43,6 +43,7 @@ import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
 import org.helios.jzab.agent.SystemClock;
@@ -193,7 +194,8 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 					}
 				}
 			}
-			throw new RuntimeException("The command processor [" + key + "] was already registered");
+			//throw new RuntimeException("The command processor [" + key + "] was already registered");
+			log.warn("The command processor [{}] was already registered", key);
 		}
 	}
 	
@@ -387,6 +389,25 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	}
 	
 	/**
+	 * Determines if the underlying class of the named MBean is assignable to the passed class.
+	 * @param objectName The JMX ObjectName of the MBean to test
+	 * @param clazz The class being tested as an assignability target
+	 * @return true if assignable, false otherwise
+	 */
+	protected boolean isMBeanClassInstanceOf(ObjectName objectName, Class<?> clazz) {
+		try {
+			ObjectInstance oi = JMXHelper.getHeliosMBeanServer().getObjectInstance(objectName);
+			ClassLoader cl = JMXHelper.getHeliosMBeanServer().getClassLoaderFor(objectName);
+			String className = oi.getClassName();
+			Class<?> mbeanClass = Class.forName(className, true, cl);
+			log.debug("Interfaces {}", Arrays.toString(mbeanClass.getInterfaces()));
+			return clazz.isAssignableFrom(mbeanClass);
+			
+		} catch (Exception e) {}
+		return false;
+	}
+	
+	/**
 	 * Registers a new command processor
 	 * @param objectName The JMX ObjectName of the new command processor
 	 */
@@ -397,7 +418,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			throw new IllegalStateException("The plugin ObjectName [" + objectName + "] is not registered", new Throwable());
 		}
 		try {
-			boolean isPluginCommandProcessor = JMXHelper.getHeliosMBeanServer().isInstanceOf(objectName, IPluginCommandProcessor.class.getName());
+			boolean isPluginCommandProcessor = isMBeanClassInstanceOf(objectName, IPluginCommandProcessor.class);
 			log.debug("Plugin at [{}] is command processor:{}", objectName, isPluginCommandProcessor);
 			if(isPluginCommandProcessor) {
 				try {
