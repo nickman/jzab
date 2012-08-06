@@ -32,6 +32,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -50,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * <p><code>org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor</code></p>
  */
 
-public abstract class AbstractMultiCommandProcessor implements AbstractMultiCommandProcessorMBean {
+public abstract class AbstractMultiCommandProcessor implements AbstractMultiCommandProcessorMBean, Runnable {
 	/** The processor locator key aliases */
 	protected final String[] aliases;
 	/** The jzab agent supplied properties */
@@ -63,6 +66,11 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** This instance's JMX ObjectName */
 	protected ObjectName objectName;
+	/** Indicates if this processor has been initialized */
+	protected final AtomicBoolean inited = new AtomicBoolean(false);
+	
+	/** The handle to this processor's scheduled refresh task */
+	protected ScheduledFuture<?> scheduleHandle = null;
 	
 	/** The last time the cpu resoures were updated */
 	protected long lastTime = System.currentTimeMillis();
@@ -73,6 +81,10 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	
 	/** The configuration property name for the resource refresh period */
 	public static final String REFRESH_WINDOW_PROP = "refresh.frequency";
+	
+	/** The JMX objeect name of the jZab scheduler */
+	public static final ObjectName SCHEDULER_OBJECT_NAME;
+	
 	
 	/** The jZab identified mbean server */
 	protected static final MBeanServer server;
@@ -94,6 +106,11 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 			}
 		}
 		server = tmp;
+		try {
+			SCHEDULER_OBJECT_NAME = new ObjectName("org.helios.jzab.agent.jmx:service=Scheduler,name=Scheduler");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}		
 	}
 	
 	
@@ -117,6 +134,34 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	}
 	
 	/**
+	 * Registers a resource refresh task with the scheduler, cancelling the current task if one exists
+	 */
+	protected void scheduleRefresh() {
+		if(scheduleHandle!=null) {
+			scheduleHandle.cancel(false);
+		}
+		try {
+			scheduleHandle = (ScheduledFuture<?>)server.invoke(SCHEDULER_OBJECT_NAME, "scheduleWithFixedDelay", 
+					new Object[]{"Refresh Task [" + getClass().getSimpleName() + "]", this, refreshFrequency, refreshFrequency, TimeUnit.MILLISECONDS}, 
+					new String[]{String.class.getName(), ObjectName.class.getName(), long.class.getName(), long.class.getName(), TimeUnit.class.getName()});
+			log.debug("Scheduled Refresh Task [{}' ms.", refreshFrequency);
+		} catch (Exception e) {
+			log.error("Failed to schedule resource refresh:[{}]", e.toString());
+			throw new RuntimeException("Failed to schedule resource refresh", e);
+		}
+	}
+	
+	/**
+	 * Cancels the current refresh task if one is scheduled.
+	 */
+	public void cancelRefresh() {
+		if(scheduleHandle!=null) {
+			scheduleHandle.cancel(false);
+			scheduleHandle = null;
+		}		
+	}
+	
+	/**
 	 * Registers this instance's MBean interface
 	 * @param objectName The object name string
 	 */
@@ -127,6 +172,16 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to register MBean with name [" + objectName + "]", e);
 		}
+	}
+	
+	/**
+	 * The default resource refresh task
+	 * {@inheritDoc}
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		
 	}
 	
 	/**
@@ -268,7 +323,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 */
 	@Override
 	public void init() {
-
+		inited.set(true);
 	}
 
 

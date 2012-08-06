@@ -22,11 +22,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex.plugin.impls.system;
+package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
 
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 import org.hyperic.sigar.Cpu;
+import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
 
 /**
@@ -41,35 +42,64 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	
 	/** The shared CpuPerc instance */
 	protected CpuPerc cpuPerc = sigar.getCpuPerc();
+	/** The shared per cpu CpuPerc instances */
+	protected CpuPerc[] cpuInstancePercs = sigar.getCpuPercList();	
 	/** The shared Cpu instance */
-	protected final Cpu cpux = sigar.getCpu();
+	protected final Cpu cpux = sigar.getCpu();	
+	/** An array of cpu infos */
+	protected final CpuInfo[] cpuInfos = sigar.getCpuInfoList();
+	
+	/**
+	 * Schedules the resource refresh task
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor#init()
+	 */
+	@Override
+	public void init() {
+		if(!inited.get()) {
+			scheduleRefresh();
+		}
+		super.init();
+	}
 
+	/**
+	 * The resource refresh task
+	 * {@inheritDoc}
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		try {
+			cpuPerc = sigar.getCpuPerc();
+			cpuInstancePercs = sigar.getCpuPercList();
+			cpux.gather(sigar.getSigar());
+		} catch (Exception e) {
+			log.warn("Resource refresh exception:[{}]", e.toString());
+		}
+	}
+	
 	
 	/**
 	 * Retrieves the cached CPUPerc instance
 	 * @return the cached CPUPerc instance
 	 */
 	public CpuPerc getCpuPerc() {
-		long since = System.currentTimeMillis()-lastTime;
-		if(since>refreshFrequency) {
-			cpuPerc = sigar.getCpuPerc();
-		}
 		return cpuPerc;
 	}
+	
+	/**
+	 * Retrieves the cached per cpu CPUPerc instances
+	 * @return the cached per cpu CPUPerc instances
+	 */
+	public CpuPerc[] getCpuPercList() {
+		return cpuInstancePercs;
+	}	
 	
 	/**
 	 * Retrieves the cached cpu instance
 	 * @return the cached cpu instance
 	 */
 	public Cpu getCpu() {
-		long since = System.currentTimeMillis()-lastTime;
-		if(since>refreshFrequency) {
-			try {
-				cpux.gather(sigar.getSigar());
-			} catch (Exception e) {
-				throw new RuntimeException("Failed to gather CPU", e);
-			}
-		}
 		return cpux;
 	}	
 	
@@ -289,9 +319,103 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	private static String format(long value) {		
 		return "" + value;
 	}
-		
-
 	
+	/**
+	 * Returns the number of cpus
+	 * @param commandName The command name
+	 * @param args The arguments
+	 * @return the number of cpus
+	 */
+	@CommandHandler("cpu.count")
+	protected String getCpuCount(String commandName, String... args) {
+		return "" + cpuInfos.length;
+	}
+	
+	/**
+	 * Returns cpu utilization type for a specific process
+	 * @param commandName The command name
+	 * @param args The optional arguments:<ol>
+	 * 	<li>The cpu utilization type. Defaults to total.</li>
+	 *  <li>The pid of the process to get cpu utilization for. Defaults to the agent process.</li>
+	 * </ol>
+	 * @return the requested cpu utilization data
+	 */
+	@CommandHandler("cpu.proc")
+	protected String getProcessCpu(String commandName, String... args) {
+		
+		return "";
+	}
+		
+	/**
+	 * Returns json formatted information about cpus
+	 * @param commandName The command name
+	 * @param args Optional argument is the id of the cpu (from 0 to n). 
+	 * Zero arguments will return one json document outlinin all cpus.
+	 * @return the system cpu data
+	 */
+	@CommandHandler("cpu.info")
+	protected String getCpuInfo(String commandName, String... args) {
+		if(args != null && args.length>0) {
+			try {
+				int id = getIntArg(args);
+				if(id<0 || id>cpuInfos.length-1) {
+					return COMMAND_NOT_SUPPORTED;
+				}
+				return cpuInfoToJSON(cpuInfos[id]);
+			} catch (Exception e) {
+				return COMMAND_ERROR;
+			}
+		}
+		return cpuInfosToJSON(cpuInfos);
+	}	
+	
+	/**
+	 * Extracts the int from the first arg
+	 * @param args The command args
+	 * @return the first arg as an int
+	 */
+	private static int getIntArg(String... args) {
+		return Integer.parseInt(args[0].trim());
+	}
+	
+	
+	/**
+	 * Returns a json formatted description of all the passed cpu infos
+	 * @param cpuInfos The cpu infos to generate json for
+	 * @return a json string
+	 */
+	public static String cpuInfosToJSON(CpuInfo... cpuInfos) {
+		StringBuilder b = new StringBuilder("{ \"cpus\":[");
+		for(CpuInfo c: cpuInfos) {
+			b.append(cpuInfoToJSON(c));
+		}
+		if(cpuInfos.length>0) {
+			b.deleteCharAt(b.length()-1);
+		}
+		b.append("]}");
+		return b.toString();
+	}
+	
+	/**
+	 * Generates JSON for the passed CPU info
+	 * @param cpuInfo The cpu info to generate json for
+	 * @return the generated JSON
+	 */
+	public static String cpuInfoToJSON(CpuInfo cpuInfo) {
+		try {
+			StringBuilder b = new StringBuilder("{ \"cpu\": {");
+			b.append("\"vendor\":\"").append(cpuInfo.getVendor()).append("\",")
+			.append("\"model\":\"").append(cpuInfo.getModel()).append("\",")
+			.append("\"cache-size\":").append(cpuInfo.getCacheSize()).append(",")
+			.append("\"cores-per-socket\":").append(cpuInfo.getCoresPerSocket()).append(",")
+			.append("\"speed\":").append(cpuInfo.getMhz()).append(",")
+			.append("\"total-cores\":").append(cpuInfo.getTotalCores()).append(",")
+			.append("\"total-sockets\":").append(cpuInfo.getTotalSockets()).append("}}");			
+			return b.toString();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to generate JSON for cpuinfo [" + cpuInfo + "]", e);
+		}
+	}
 	
 	
 

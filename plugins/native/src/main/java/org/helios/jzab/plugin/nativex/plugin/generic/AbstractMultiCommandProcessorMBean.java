@@ -51,6 +51,11 @@ public interface AbstractMultiCommandProcessorMBean {
     public Object execute(String commandName, String...args);
     
     /**
+     * Runs the refresh task
+     */
+    public void run();
+    
+    /**
      * Returns the locator key that the command manager will index this processor by
      * to route incoming requests for invocation here
      * @return the command key

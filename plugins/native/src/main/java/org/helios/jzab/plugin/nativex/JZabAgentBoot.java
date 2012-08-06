@@ -24,8 +24,9 @@
  */
 package org.helios.jzab.plugin.nativex;
 import org.helios.jzab.agent.commands.CommandManager;
+import org.helios.jzab.agent.commands.IPluginCommandProcessor;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.CPUCommandPlugin;
+import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.jzab.JZabCommandProcessor;
 
 /**
@@ -38,10 +39,16 @@ import org.helios.jzab.plugin.nativex.plugin.jzab.JZabCommandProcessor;
 public class JZabAgentBoot {
 	/**
 	 * Boots up the native command processors
+	 * @param args The plugin loader provided args
 	 */
-	public static void bootPlugin() {
-		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new AgentCommandPlugin()));
-		CommandManager.getInstance().registerCommandProcessor(JZabCommandProcessor.wrap(new CPUCommandPlugin()));		
-		
+	public static void bootPlugin(String[] args) {
+		IPluginCommandProcessor[] invokers = new IPluginCommandProcessor[]{
+				JZabCommandProcessor.wrap(new AgentCommandPlugin()),
+				JZabCommandProcessor.wrap(new CPUCommandPlugin())				
+		};
+		for(IPluginCommandProcessor processor: invokers) {
+			processor.init();
+			CommandManager.getInstance().registerCommandProcessor(processor);
+		}		
 	}
 }

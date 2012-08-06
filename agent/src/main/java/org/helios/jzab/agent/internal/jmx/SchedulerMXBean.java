@@ -25,8 +25,10 @@
 package org.helios.jzab.agent.internal.jmx;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MXBean;
+import javax.management.ObjectName;
 
 /**
  * <p>Title: SchedulerMXBean</p>
@@ -104,6 +106,52 @@ public interface SchedulerMXBean {
 	 * @return the number of pending tasks
 	 */
 	public int getPendingTaskCount();
+	
+//    /**
+//     * Creates and executes a one-shot action that becomes enabled after the given delay.
+//     * @param description A description of the command
+//     * @param command The runnable to schedule
+//     * @param delay The delay time
+//     * @param unit The delay unit
+//     * @return the scheduled future for the task
+//     */
+//	public TrackedScheduledFuture schedule(String description, Runnable command, long delay, TimeUnit unit);
+//    
+//    /**
+//     * Creates and executes a one-shot action that becomes enabled after the given delay.
+//     * @param description A description of the command
+//     * @param callable The callable to schedule
+//     * @param delay The delay time
+//     * @param unit The delay unit
+//     * @return the scheduled future for the task
+//     */    
+//	public TrackedScheduledFuture schedule(String description, Callable<?> callable, long delay, TimeUnit unit);
+//    
+//    /**
+//     * Creates and executes a periodic action that becomes enabled first after the given initial delay, 
+//     * and subsequently with the given period; that is executions will commence after initialDelay 
+//     * then initialDelay+period, then initialDelay + 2 * period, and so on.
+//     * @param description A description of the command
+//     * @param command The command to schedule
+//     * @param initialDelay the time to delay first execution
+//     * @param period the period between successive executions
+//     * @param unit The period unit
+//     * @return the scheduled future for the task
+//     */
+//	public TrackedScheduledFuture scheduleAtFixedRate(String description, Runnable command, long initialDelay, long period, TimeUnit unit);
+    
+    /**
+     * Creates and executes a periodic action that becomes enabled first after the given initial delay, 
+     * and subsequently with the given delay between the termination of one execution and the commencement of the next. 
+     * If any execution of the task encounters an exception, subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the executor. 
+     * @param description A description of the command
+     * @param task The JMX ObjectName of the task to schedule
+     * @param initialDelay the time to delay first execution
+     * @param period the period between successive executions
+     * @param unit The period unit
+     * @return the scheduled future for the task
+     */
+    public TrackedScheduledFuture scheduleWithFixedDelay(String description, ObjectName task, long initialDelay, long period, TimeUnit unit);	
 
 
 }

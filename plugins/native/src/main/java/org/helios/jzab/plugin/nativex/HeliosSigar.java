@@ -26,6 +26,7 @@ package org.helios.jzab.plugin.nativex;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -153,16 +154,22 @@ public class HeliosSigar implements SigarProxy {
 		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
 			Logger log = LoggerFactory.getLogger(HeliosSigar.class);
 			log.info("{}", HeliosSigar.getInstance());
-			bootPlugin();
+			try {
+				bootPlugin(args);
+			} catch (Throwable t) {
+				t.printStackTrace(System.err);
+			}
 		} else {
 			System.out.println(HeliosSigar.getInstance());
 		}		
 	}
 	
-	private static void bootPlugin() {
+	private static void bootPlugin(String[] args) {
 		try {
-			Class.forName("org.helios.jzab.plugin.nativex.JZabAgentBoot").getDeclaredMethod("bootPlugin").invoke(null);
-		} catch (Exception e) {
+			Class<?> clazz = Class.forName("org.helios.jzab.plugin.nativex.JZabAgentBoot");
+			Method bootMethod = clazz.getDeclaredMethod("bootPlugin", new String[]{}.getClass()); 
+			bootMethod.invoke(null, new Object[]{args});
+		} catch (Throwable e) {
 			throw new RuntimeException("Failed to boot plugin", e);
 		}
 	}
@@ -188,6 +195,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return a <code>String</code> representation 
 	 * of this object.
 	 */
+	@Override
 	public String toString() {
 		final String TAB = "\n\t";
 		final StringBuilder b = new StringBuilder("Helios NativeAgent[");
@@ -222,6 +230,7 @@ public class HeliosSigar implements SigarProxy {
 	/**
 	 * @return the pid
 	 */
+	@Override
 	public long getPid() {
 		return pid;
 	}
@@ -251,6 +260,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getCpu()
 	 */
+	@Override
 	public Cpu getCpu()  {
 		try {
 			return sigar.getCpu();
@@ -260,12 +270,17 @@ public class HeliosSigar implements SigarProxy {
 	}
 
 	/**
-	 * @return
-	 * @throws SigarException
+	 * Get list of cpu infomation
+	 * @return an attay of cpu infos
 	 * @see org.hyperic.sigar.Sigar#getCpuInfoList()
 	 */
-	public CpuInfo[] getCpuInfoList() throws SigarException {
-		return sigar.getCpuInfoList();
+	@Override
+	public CpuInfo[] getCpuInfoList() {
+		try {
+			return sigar.getCpuInfoList();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invoke sigar getCpuInfoList", se);
+		}
 	}
 
 	/**
@@ -273,6 +288,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getCpuList()
 	 */
+	@Override
 	public Cpu[] getCpuList() throws SigarException {
 		return sigar.getCpuList();
 	}
@@ -282,6 +298,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return system CPU info in percentage format.
 	 * @see org.hyperic.sigar.Sigar#getCpuPerc()
 	 */
+	@Override
 	public CpuPerc getCpuPerc()  {
 		try {
 			return sigar.getCpuPerc();
@@ -291,12 +308,17 @@ public class HeliosSigar implements SigarProxy {
 	}
 
 	/**
-	 * @return
-	 * @throws SigarException
+	 * Get system per CPU info in percentage format.
+	 * @return system per CPU info in percentage format.
 	 * @see org.hyperic.sigar.Sigar#getCpuPercList()
 	 */
-	public CpuPerc[] getCpuPercList() throws SigarException {
-		return sigar.getCpuPercList();
+	@Override
+	public CpuPerc[] getCpuPercList() {
+		try {
+			return sigar.getCpuPercList();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invoke sigar getCpuPercList", se);
+		}
 	}
 
 	/**
@@ -305,6 +327,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getDirStat(java.lang.String)
 	 */
+	@Override
 	public DirStat getDirStat(String name) throws SigarException {
 		return sigar.getDirStat(name);
 	}
@@ -315,6 +338,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getDirUsage(java.lang.String)
 	 */
+	@Override
 	public DirUsage getDirUsage(String name) throws SigarException {
 		return sigar.getDirUsage(name);
 	}
@@ -325,6 +349,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getDiskUsage(java.lang.String)
 	 */
+	@Override
 	public DiskUsage getDiskUsage(String name) throws SigarException {
 		return sigar.getDiskUsage(name);
 	}
@@ -334,6 +359,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return the fully qualified host name
 	 * @see org.hyperic.sigar.Sigar#getFQDN()
 	 */
+	@Override
 	public String getFQDN() {
 		try {
 			return sigar.getFQDN();
@@ -350,6 +376,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getFileInfo(java.lang.String)
 	 */
+	@Override
 	public FileInfo getFileInfo(String name) throws SigarException {
 		return sigar.getFileInfo(name);
 	}
@@ -358,6 +385,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getFileSystemList()
 	 */
+	@Override
 	public FileSystem[] getFileSystemList() {		
 		try {
 			return sigar.getFileSystemList();
@@ -370,6 +398,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getFileSystemMap()
 	 */
+	@Override
 	public FileSystemMap getFileSystemMap() {
 		try {
 			return sigar.getFileSystemMap();
@@ -383,6 +412,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getFileSystemUsage(java.lang.String)
 	 */
+	@Override
 	public FileSystemUsage getFileSystemUsage(String name) {		
 		try {
 			return sigar.getFileSystemUsage(name);
@@ -424,6 +454,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getLinkInfo(java.lang.String)
 	 */
+	@Override
 	public FileInfo getLinkInfo(String name) throws SigarException {
 		return sigar.getLinkInfo(name);
 	}
@@ -433,6 +464,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getLoadAverage()
 	 */
+	@Override
 	public double[] getLoadAverage() throws SigarException {
 		return sigar.getLoadAverage();
 	}
@@ -442,6 +474,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getMem()
 	 */
+	@Override
 	public Mem getMem() throws SigarException {
 		return sigar.getMem();
 	}
@@ -451,6 +484,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getMountedFileSystemUsage(java.lang.String)
 	 */
+	@Override
 	public FileSystemUsage getMountedFileSystemUsage(String arg0)  {
 		try {
 			return sigar.getMountedFileSystemUsage(arg0);
@@ -465,6 +499,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getMultiProcCpu(java.lang.String)
 	 */
+	@Override
 	public MultiProcCpu getMultiProcCpu(String query) throws SigarException {
 		return sigar.getMultiProcCpu(query);
 	}
@@ -475,6 +510,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getMultiProcMem(java.lang.String)
 	 */
+	@Override
 	public ProcMem getMultiProcMem(String query) throws SigarException {
 		return sigar.getMultiProcMem(query);
 	}
@@ -492,6 +528,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetConnectionList(int)
 	 */
+	@Override
 	public NetConnection[] getNetConnectionList(int flag) {
 		try {
 			return sigar.getNetConnectionList(flag);
@@ -532,6 +569,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNetInfo()
 	 */
+	@Override
 	public NetInfo getNetInfo() throws SigarException {
 		return sigar.getNetInfo();
 	}
@@ -541,6 +579,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNetInterfaceConfig()
 	 */
+	@Override
 	public NetInterfaceConfig getNetInterfaceConfig() throws SigarException {
 		return sigar.getNetInterfaceConfig();
 	}
@@ -550,6 +589,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetInterfaceConfig(java.lang.String)
 	 */
+	@Override
 	public NetInterfaceConfig getNetInterfaceConfig(String name) {
 		try {
 			return sigar.getNetInterfaceConfig(name);
@@ -562,6 +602,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetInterfaceList()
 	 */
+	@Override
 	public String[] getNetInterfaceList() {
 		try {
 			return sigar.getNetInterfaceList();
@@ -575,6 +616,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetInterfaceStat(java.lang.String)
 	 */
+	@Override
 	public NetInterfaceStat getNetInterfaceStat(String name) {
 		try {
 			return sigar.getNetInterfaceStat(name);
@@ -589,6 +631,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNetListenAddress(long)
 	 */
+	@Override
 	public String getNetListenAddress(long arg0) throws SigarException {
 		return sigar.getNetListenAddress(arg0);
 	}
@@ -599,6 +642,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNetListenAddress(java.lang.String)
 	 */
+	@Override
 	public String getNetListenAddress(String port) throws SigarException {
 		return sigar.getNetListenAddress(port);
 	}
@@ -607,6 +651,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetRouteList()
 	 */
+	@Override
 	public NetRoute[] getNetRouteList() {
 		try {
 			return sigar.getNetRouteList();
@@ -621,6 +666,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getNetServicesName(int, long)
 	 */
+	@Override
 	public String getNetServicesName(int arg0, long arg1) {
 		return sigar.getNetServicesName(arg0, arg1);
 	}
@@ -630,6 +676,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNetStat()
 	 */
+	@Override
 	public NetStat getNetStat() throws SigarException {
 		return sigar.getNetStat();
 	}
@@ -650,6 +697,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNfsClientV2()
 	 */
+	@Override
 	public NfsClientV2 getNfsClientV2() throws SigarException {
 		return sigar.getNfsClientV2();
 	}
@@ -659,6 +707,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNfsClientV3()
 	 */
+	@Override
 	public NfsClientV3 getNfsClientV3() throws SigarException {
 		return sigar.getNfsClientV3();
 	}
@@ -668,6 +717,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNfsServerV2()
 	 */
+	@Override
 	public NfsServerV2 getNfsServerV2() throws SigarException {
 		return sigar.getNfsServerV2();
 	}
@@ -677,6 +727,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getNfsServerV3()
 	 */
+	@Override
 	public NfsServerV3 getNfsServerV3() throws SigarException {
 		return sigar.getNfsServerV3();
 	}
@@ -686,6 +737,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcArgs(long)
 	 */
+	@Override
 	public String[] getProcArgs(long arg0) {
 		try {
 			return sigar.getProcArgs(arg0);
@@ -700,6 +752,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcArgs(java.lang.String)
 	 */
+	@Override
 	public String[] getProcArgs(String pid) throws SigarException {
 		return sigar.getProcArgs(pid);
 	}
@@ -709,6 +762,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcCpu(long)
 	 */
+	@Override
 	public ProcCpu getProcCpu(long pid) {
 		try {
 			return sigar.getProcCpu(pid);
@@ -723,6 +777,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcCpu(java.lang.String)
 	 */
+	@Override
 	public ProcCpu getProcCpu(String pid) throws SigarException {
 		return sigar.getProcCpu(pid);
 	}
@@ -733,6 +788,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcCred(long)
 	 */
+	@Override
 	public ProcCred getProcCred(long pid) throws SigarException {
 		return sigar.getProcCred(pid);
 	}
@@ -743,6 +799,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcCred(java.lang.String)
 	 */
+	@Override
 	public ProcCred getProcCred(String pid) throws SigarException {
 		return sigar.getProcCred(pid);
 	}
@@ -752,6 +809,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcCredName(long)
 	 */
+	@Override
 	public ProcCredName getProcCredName(long pid) {
 		try {
 			return sigar.getProcCredName(pid);
@@ -766,6 +824,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcCredName(java.lang.String)
 	 */
+	@Override
 	public ProcCredName getProcCredName(String pid) throws SigarException {
 		return sigar.getProcCredName(pid);
 	}
@@ -777,6 +836,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcEnv(long, java.lang.String)
 	 */
+	@Override
 	public String getProcEnv(long pid, String key) throws SigarException {
 		return sigar.getProcEnv(pid, key);
 	}
@@ -786,6 +846,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcEnv(long)
 	 */
+	@Override
 	public Map<?, ?> getProcEnv(long pid) {
 		try {
 			return sigar.getProcEnv(pid);
@@ -801,6 +862,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcEnv(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public String getProcEnv(String pid, String key) throws SigarException {
 		return sigar.getProcEnv(pid, key);
 	}
@@ -811,6 +873,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcEnv(java.lang.String)
 	 */
+	@Override
 	public Map<?, ?> getProcEnv(String pid) throws SigarException {
 		return sigar.getProcEnv(pid);
 	}
@@ -820,6 +883,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcExe(long)
 	 */
+	@Override
 	public ProcExe getProcExe(long pid) {		
 		try {
 			return sigar.getProcExe(pid);
@@ -833,6 +897,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcExe(java.lang.String)
 	 */
+	@Override
 	public ProcExe getProcExe(String pid)  {		
 		try {
 			return sigar.getProcExe(pid);
@@ -846,6 +911,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcFd(long)
 	 */
+	@Override
 	public ProcFd getProcFd(long pid) {		
 		try {
 			return sigar.getProcFd(pid);
@@ -861,6 +927,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcFd(java.lang.String)
 	 */
+	@Override
 	public ProcFd getProcFd(String pid) throws SigarException {
 		return sigar.getProcFd(pid);
 	}
@@ -870,6 +937,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcList()
 	 */
+	@Override
 	public long[] getProcList() throws SigarException {
 		return sigar.getProcList();
 	}
@@ -879,6 +947,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcMem(long)
 	 */
+	@Override
 	public ProcMem getProcMem(long pid) {		
 		try {
 			return sigar.getProcMem(pid);
@@ -894,6 +963,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcMem(java.lang.String)
 	 */
+	@Override
 	public ProcMem getProcMem(String pid) throws SigarException {
 		return sigar.getProcMem(pid);
 	}
@@ -903,6 +973,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcModules(long)
 	 */
+	@Override
 	public List<?> getProcModules(long pid) {
 		try {
 			return sigar.getProcModules(pid);
@@ -917,6 +988,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcModules(java.lang.String)
 	 */
+	@Override
 	public List<?> getProcModules(String pid) throws SigarException {
 		return sigar.getProcModules(pid);
 	}
@@ -927,6 +999,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcPort(int, long)
 	 */
+	@Override
 	public long getProcPort(int arg0, long arg1) {		
 		try {
 			return sigar.getProcPort(arg0, arg1);
@@ -941,6 +1014,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcPort(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public long getProcPort(String protocol, String port) {
 		try {
 			return sigar.getProcPort(protocol, port);
@@ -954,6 +1028,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcStat()
 	 */
+	@Override
 	public ProcStat getProcStat() throws SigarException {
 		return sigar.getProcStat();
 	}
@@ -963,6 +1038,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcState(long)
 	 */
+	@Override
 	public ProcState getProcState(long pid) {		
 		try {
 			return sigar.getProcState(pid);
@@ -978,6 +1054,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcState(java.lang.String)
 	 */
+	@Override
 	public ProcState getProcState(String pid) throws SigarException {
 		return sigar.getProcState(pid);
 	}
@@ -987,6 +1064,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getProcTime(long)
 	 */
+	@Override
 	public ProcTime getProcTime(long pid)  {		
 		try {
 			return sigar.getProcTime(pid);
@@ -1001,6 +1079,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getProcTime(java.lang.String)
 	 */
+	@Override
 	public ProcTime getProcTime(String pid) throws SigarException {
 		return sigar.getProcTime(pid);
 	}
@@ -1009,6 +1088,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getResourceLimit()
 	 */
+	@Override
 	public ResourceLimit getResourceLimit()  {
 		try {
 			return sigar.getResourceLimit();
@@ -1023,6 +1103,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getServicePid(java.lang.String)
 	 */
+	@Override
 	public long getServicePid(String arg0) throws SigarException {
 		return sigar.getServicePid(arg0);
 	}
@@ -1031,6 +1112,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getSwap()
 	 */
+	@Override
 	public Swap getSwap() {
 		try {
 			return sigar.getSwap();
@@ -1043,6 +1125,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getTcp()
 	 */
+	@Override
 	public Tcp getTcp()  {
 		try {
 			return sigar.getTcp();
@@ -1069,6 +1152,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @throws SigarException
 	 * @see org.hyperic.sigar.Sigar#getUptime()
 	 */
+	@Override
 	public Uptime getUptime() throws SigarException {
 		return sigar.getUptime();
 	}
@@ -1077,6 +1161,7 @@ public class HeliosSigar implements SigarProxy {
 	 * @return
 	 * @see org.hyperic.sigar.Sigar#getWhoList()
 	 */
+	@Override
 	public Who[] getWhoList()  {
 		try {
 			return sigar.getWhoList();

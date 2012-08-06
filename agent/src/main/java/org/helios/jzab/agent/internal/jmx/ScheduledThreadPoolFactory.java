@@ -270,6 +270,31 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
     	return enlistTask(description, TimeUnit.SECONDS.convert(period, unit), super.scheduleWithFixedDelay(command, initialDelay, period, unit));
     }
     
+    /**
+     * Creates and executes a periodic action that becomes enabled first after the given initial delay, 
+     * and subsequently with the given delay between the termination of one execution and the commencement of the next. 
+     * If any execution of the task encounters an exception, subsequent executions are suppressed. Otherwise, the task will only terminate via cancellation or termination of the executor. 
+     * @param description A description of the command
+     * @param task The ObjectName of the task to schedule
+     * @param initialDelay the time to delay first execution
+     * @param period the period between successive executions
+     * @param unit The period unit
+     * @return the scheduled future for the task
+     */
+    @Override
+	public TrackedScheduledFuture scheduleWithFixedDelay(String description, final ObjectName task, final long initialDelay, final long period, final TimeUnit unit) {
+    	
+    	return enlistTask(description, TimeUnit.SECONDS.convert(period, unit), super.scheduleWithFixedDelay(new Runnable(){
+    		@Override
+    		public void run() {
+    			JMXHelper.invoke(task, JMXHelper.getHeliosMBeanServer(), "run", 
+    					new Object[]{}, 
+    					new String[]{});
+    		}
+    	}, initialDelay, period, unit));
+    }
+    
+    
     
 	/**
 	 * Returns an array of the scheduled tasks

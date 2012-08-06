@@ -150,7 +150,10 @@ config version
  	 
  	<plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native.jar" />
  	 -->
- 	 <plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/home/nwhitehead/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native.jar" />
+ 	 <plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/home/nwhitehead/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native.jar">
+ 	 	<property name="cpu.refresh.period" value="3000" />
+ 	 	<plugin-arg>DIRECT</plugin-arg>  <!-- DIRECT, IPLUGIN, GENERIC -->
+ 	 </plugin>
  	
  	
  	

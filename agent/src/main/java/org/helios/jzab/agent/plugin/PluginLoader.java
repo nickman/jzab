@@ -30,6 +30,8 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.Manifest;
 
 import org.helios.jzab.agent.classloader.IsolatedArchiveLoader;
@@ -70,10 +72,7 @@ public class PluginLoader {
 				 * <plugin  name="jmx-native-agent" type="java-agent" url="file://home/nwhitehead/.m2/repository/org/helios/helios-native/helios-native-jmx/1.0-SNAPSHOT/helios-native-jmx-1.0-SNAPSHOT-launcher.jar" />
 				 */
 				String name = XMLHelper.getAttributeByName(n, "name", "").trim();
-				// ========================================
-				//	Just doing the basic java-agents for now.
-				// ========================================
-				String agentArgs = getJavaAgentArgs(n);
+				
 				
 				
 				try {
@@ -81,9 +80,11 @@ public class PluginLoader {
 					if(name.isEmpty()) throw new Exception("No name defined in plugin [" + XMLHelper.renderNode(n) + "]");
 					if(type.isEmpty()) throw new Exception("No type defined in plugin [" + name + "]");
 					if("java-agent".equalsIgnoreCase(type.trim())) {
+						String agentArgs = getJavaAgentArgs(n);
 						loadJavaAgent(isolated, new URL(url), name, null, agentArgs);
 					} else if("jzab-plugin".equalsIgnoreCase(type.trim())) {
-						loadPlugin(isolated, new URL(url), name);
+						String[] pluginArgs = getPluginArgs(n);
+						loadPlugin(isolated, new URL(url), name, pluginArgs);
 					}
 				} catch (Exception e) {
 					log.warn("Failed to load plugin [{}]", name, e);
@@ -108,12 +109,26 @@ public class PluginLoader {
 	}
 	
 	/**
+	 * Loads the plugin arguments from the configuration node
+	 * @param pluginNode The plugin configuration node
+	 * @return An array of arguments
+	 */
+	protected String[] getPluginArgs(Node pluginNode) {
+		Set<String> args = new HashSet<String>();
+		for(Node argNode: XMLHelper.getChildNodesByName(pluginNode, "plugin-arg", false)) {
+			args.add(XMLHelper.getNodeTextValue(argNode));
+		}
+		return args.toArray(new String[args.size()]);
+	}
+	
+	/**
 	 * Bootstraps a plugin
 	 * @param isolated Indicates if this plugin's classpath should be isolated from the main or extend it.
 	 * @param jarUrl The URL of the plugin jar
-	 * @param name The name of the plugin that will be used to reference it's services 
+	 * @param name The name of the plugin that will be used to reference it's services
+	 * @param pluginArgs The plugin arguments 
 	 */
-	public void loadPlugin(boolean isolated, URL jarUrl, String name) {
+	public void loadPlugin(boolean isolated, URL jarUrl, String name, String... pluginArgs) {
 		if(jarUrl==null) throw new IllegalArgumentException("Passed Plugin URL was null]", new Throwable());
 		if(name==null) throw new IllegalArgumentException("Passed Plugin Name was null]", new Throwable());
 		log.debug("Loading Plugin [{}] from URL [{}]. Isolated:" + isolated, name, jarUrl );
@@ -125,7 +140,7 @@ public class PluginLoader {
 				Thread.currentThread().setContextClassLoader(pluginClassLoader);
 				String manifestUrl =  "jar:" + jarUrl.toExternalForm() + "!/META-INF/MANIFEST.MF";
 				log.debug("Hoping to find the manifest at [{}]", manifestUrl);
-				invokeJar(pluginClassLoader, manifestUrl, "Main-Class", "main", new Class[]{new String[0].getClass()}, new Object[]{new String[0]});
+				invokeJar(pluginClassLoader, manifestUrl, "Main-Class", "main", new Class[]{new String[0].getClass()}, new Object[]{pluginArgs});
 				log.info("Started Plugin [{}]", name);
 			} finally {
 				Thread.currentThread().setContextClassLoader(cl);
@@ -185,6 +200,7 @@ public class PluginLoader {
 	 * @param methodName The name of the method in the identified class to invoke
 	 * @param signature The class signature of the method
 	 * @param arguments The arguments to pass to the invocation
+	 * @param the return value from the target method invocation
 	 * @throws Exception There's a bunch of places where an exception might be thrown so this is very generic
 	 */
 	protected Object invokeJar(ClassLoader classLoader, String manifestUrl, String manifestEntry, String methodName, Class<?>[] signature, Object...arguments) throws Exception {
@@ -205,9 +221,9 @@ public class PluginLoader {
 		targetMethod.setAccessible(true);
 		if(Modifier.isStatic(targetMethod.getModifiers())) {
 			return targetMethod.invoke(null, arguments);
-		} else {
-			return targetMethod.invoke(pluginClazz.newInstance(), arguments);
 		}
+		Object pluginInstance = pluginClazz.newInstance();
+		return targetMethod.invoke(pluginInstance, arguments);		
 	}
 	
 	
