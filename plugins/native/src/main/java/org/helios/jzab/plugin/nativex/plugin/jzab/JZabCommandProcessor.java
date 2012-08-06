@@ -28,7 +28,6 @@ import java.util.Properties;
 
 import org.helios.jzab.agent.commands.ICommandProcessor;
 import org.helios.jzab.agent.commands.IPluginCommandProcessor;
-import org.helios.jzab.plugin.nativex.HeliosSigar;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 
 /**

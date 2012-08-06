@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
+import javax.management.MBeanServerDelegate;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MBeanServerNotification;
 import javax.management.Notification;
@@ -113,6 +114,12 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		executor = ThreadPoolFactory.getInstance("TaskExecutor");
 		log.info("Created CommandManager");
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
+		try {
+			JMXHelper.getHeliosMBeanServer().addNotificationListener(MBeanServerDelegate.DELEGATE_NAME, this, this, null);
+		} catch (Exception ex) {
+			log.debug("Failed to register plugin listener", ex);
+			log.error("Failed to register plugin listener:[{}]", ex.toString());
+		}
 	}
 	
 	/**
@@ -168,6 +175,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		}
 		if(commandProcessor instanceof IPluginCommandProcessor) {
 			IPluginCommandProcessor plugin = (IPluginCommandProcessor)commandProcessor;
+			plugin.init();
 			if(plugin.getAliases()!=null) {
 				for(String s: plugin.getAliases()) {
 					if(s!=null && !s.trim().isEmpty()) {
@@ -394,6 +402,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			if(isPluginCommandProcessor) {
 				try {
 					IPluginCommandProcessor pluginProcessor = (IPluginCommandProcessor)JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), objectName, "Instance");
+					pluginProcessor.init();
 					try {
 						if(pluginProcessor.getLocatorKey()!=null) {
 							registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
@@ -431,16 +440,46 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			}
 			try {
 				@SuppressWarnings("cast")
-				ICommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, ICommandProcessor.class, false);
-				registerCommandProcessor(processor, processor.getLocatorKey());
-				pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{processor.getLocatorKey()})));
-				log.info("Registered Proxy Command Processor [{}]", processor.getLocatorKey());
+				IPluginCommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, IPluginCommandProcessor.class, false);
+				try { processor.init(); } catch (Exception ex) {ex.printStackTrace(System.err);}
+				Set<String> names = new HashSet<String>();
+				try { 
+					if(processor.getLocatorKey()!=null) {
+						registerCommandProcessor(processor, processor.getLocatorKey());
+						names.add(processor.getLocatorKey());
+					}
+				} catch (Exception ex) {ex.printStackTrace(System.err);}
+				try {
+					if(processor.getAliases()!=null) {
+						for(String alias: processor.getAliases()) {
+							try {
+								registerCommandProcessor(processor, alias);
+								names.add(alias);
+							} catch (Exception ex2) {}
+						}
+					}
+				} catch (Exception ex) {ex.printStackTrace(System.err);}
+				pluginRegistry.put(objectName, names);
+				log.info("Registered [{}] commands for Proxy Command Processor [{}]", names.size(), objectName);
 				return;
 			} catch (Exception e) {
-				log.warn("Failed to register Proxy CommandProcessor for [{}]", objectName);					
+				log.debug("Failed to register Proxy CommandProcessor for [{}]", objectName, e);
+				log.warn("Failed to register Proxy CommandProcessor for [{}]:[{}]", objectName, e.toString());					
 			}
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to register plugin at ObjectName [" + objectName + "]");
+		}
+	}
+	
+	/**
+	 * Attempts to invoke init on a registered plugin
+	 * @param objectName The object name of the plugin
+	 */
+	private void invokeMBeanInit(ObjectName objectName) {
+		try {
+			JMXHelper.getHeliosMBeanServer().invoke(objectName, "init", new Object[0], new String[0]);
+		} catch (Exception e) {
+			log.warn("Failed to execute init on plugin MBean [{}]:[{}]", objectName, e.toString());
 		}
 	}
 	

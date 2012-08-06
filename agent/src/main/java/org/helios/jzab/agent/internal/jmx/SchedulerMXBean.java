@@ -25,7 +25,7 @@
 package org.helios.jzab.agent.internal.jmx;
 
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
 
 import javax.management.MXBean;
 import javax.management.ObjectName;
@@ -149,9 +149,16 @@ public interface SchedulerMXBean {
      * @param initialDelay the time to delay first execution
      * @param period the period between successive executions
      * @param unit The period unit
-     * @return the scheduled future for the task
+     * @return the task schedule handle use to cancel the task
      */
-    public TrackedScheduledFuture scheduleWithFixedDelay(String description, ObjectName task, long initialDelay, long period, TimeUnit unit);	
+    public long scheduleWithFixedDelay(String description, ObjectName task, long initialDelay, long period, String unit);	
+    
+    /**
+     * Cancels the task associated with the passed handle
+     * @param taskId The task handle
+     * @param mayInterruptIfRunning true if the task can be interrupted if running
+     */
+    public void cancelTask(long taskId, boolean mayInterruptIfRunning);    
 
 
 }

@@ -22,35 +22,25 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex.plugin;
+package org.helios.jzab.plugin.nativex;
 
+import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
+import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUCommandPlugin;
 
 /**
- * <p>Title: RegistrationType</p>
- * <p>Description: Enumerates the configurable registration type for plugin command processors</p> 
+ * <p>Title: GenericAgentBoot</p>
+ * <p>Description: Boot process for generic plugins </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.plugin.RegistrationType</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.GenericAgentBoot</code></p>
  */
-
-public enum RegistrationType {
-	/** Plugins are registered as MBeans and expose an instance accessor */
-	IPLUGIN, 
-	/** Plugins are registered as MBeans but do not implement the core interfaces */
-	GENERIC;
-	
+public class GenericAgentBoot {
 	/**
-	 * Returns the RegistrationType for the passed name. Applies trim and toUpper to the name first.
-	 * @param name The name of the type
-	 * @return the named RegistrationType 
+	 * Boots up the native command processors
+	 * @param args The plugin loader provided args
 	 */
-	public static RegistrationType forName(CharSequence name) {
-		if(name==null) throw new IllegalArgumentException("The passed RegistrationType name was null", new Throwable());
-		try {
-			return RegistrationType.valueOf(name.toString().trim().toUpperCase());
-		} catch (Exception e) {
-			throw new IllegalArgumentException("The passed RegistrationType name [" + name + "] is not a valid type name", new Throwable());
-		}
+	public static void bootPlugin(String[] args) {
+		new AgentCommandPlugin();
+		new CPUCommandPlugin();
 	}
-		
 }

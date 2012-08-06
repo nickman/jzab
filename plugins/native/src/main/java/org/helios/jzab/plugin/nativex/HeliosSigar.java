@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.helios.jzab.plugin.nativex.plugin.RegistrationType;
 import org.hyperic.sigar.Cpu;
 import org.hyperic.sigar.CpuInfo;
 import org.hyperic.sigar.CpuPerc;
@@ -154,8 +155,20 @@ public class HeliosSigar implements SigarProxy {
 		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
 			Logger log = LoggerFactory.getLogger(HeliosSigar.class);
 			log.info("{}", HeliosSigar.getInstance());
+			RegistrationType regType = null;
+			if(args.length>0) {
+				try { 
+					regType = RegistrationType.forName(args[0]);
+				} catch (Exception ex) {
+					regType = RegistrationType.GENERIC;
+				}
+			}
 			try {
-				bootPlugin(args);
+				if(regType.equals(RegistrationType.IPLUGIN)) {
+					bootPlugin("org.helios.jzab.plugin.nativex.JZabAgentBoot", args);
+				} else {
+					bootPlugin("org.helios.jzab.plugin.nativex.GenericAgentBoot", args);
+				}
 			} catch (Throwable t) {
 				t.printStackTrace(System.err);
 			}
@@ -164,9 +177,9 @@ public class HeliosSigar implements SigarProxy {
 		}		
 	}
 	
-	private static void bootPlugin(String[] args) {
+	private static void bootPlugin(String className, String[] args) {
 		try {
-			Class<?> clazz = Class.forName("org.helios.jzab.plugin.nativex.JZabAgentBoot");
+			Class<?> clazz = Class.forName(className);
 			Method bootMethod = clazz.getDeclaredMethod("bootPlugin", new String[]{}.getClass()); 
 			bootMethod.invoke(null, new Object[]{args});
 		} catch (Throwable e) {

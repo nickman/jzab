@@ -65,12 +65,12 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** This instance's JMX ObjectName */
-	protected ObjectName objectName;
+	protected final ObjectName objectName;
 	/** Indicates if this processor has been initialized */
 	protected final AtomicBoolean inited = new AtomicBoolean(false);
 	
 	/** The handle to this processor's scheduled refresh task */
-	protected ScheduledFuture<?> scheduleHandle = null;
+	protected long scheduleHandle = -1L;
 	
 	/** The last time the cpu resoures were updated */
 	protected long lastTime = System.currentTimeMillis();
@@ -120,6 +120,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * @param aliases The processor locator key aliases
 	 */
 	protected AbstractMultiCommandProcessor(String...aliases) {
+		objectName = objectName(String.format(OBJECT_NAME_PATTERN, getClass().getSimpleName()));
 		Set<String> als = new HashSet<String>();
 		if(aliases!=null) {
 			for(String s: aliases) {
@@ -131,20 +132,29 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 		initializeInvokers();
 		als.addAll(invokers.keySet());
 		this.aliases = als.toArray(new String[als.size()]);
+		register();
+	}
+	
+	private static ObjectName objectName(CharSequence name) {
+		try {
+			return new ObjectName(name.toString());
+		} catch (Exception e) {
+			throw new RuntimeException("Invalid JMX ObjectName [" + name + "]", e);
+		}
 	}
 	
 	/**
 	 * Registers a resource refresh task with the scheduler, cancelling the current task if one exists
 	 */
 	protected void scheduleRefresh() {
-		if(scheduleHandle!=null) {
-			scheduleHandle.cancel(false);
+		if(scheduleHandle!=-1L) {
+			cancelRefresh();			
 		}
 		try {
-			scheduleHandle = (ScheduledFuture<?>)server.invoke(SCHEDULER_OBJECT_NAME, "scheduleWithFixedDelay", 
-					new Object[]{"Refresh Task [" + getClass().getSimpleName() + "]", this, refreshFrequency, refreshFrequency, TimeUnit.MILLISECONDS}, 
-					new String[]{String.class.getName(), ObjectName.class.getName(), long.class.getName(), long.class.getName(), TimeUnit.class.getName()});
-			log.debug("Scheduled Refresh Task [{}' ms.", refreshFrequency);
+			scheduleHandle = (Long)server.invoke(SCHEDULER_OBJECT_NAME, "scheduleWithFixedDelay", 
+					new Object[]{"Refresh Task [" + getClass().getSimpleName() + "]", objectName, refreshFrequency, refreshFrequency, TimeUnit.MILLISECONDS.name()}, 
+					new String[]{String.class.getName(), ObjectName.class.getName(), long.class.getName(), long.class.getName(), String.class.getName()});
+			log.debug("Scheduled Refresh Task for [{}] at [{}] ms.", objectName, refreshFrequency);
 		} catch (Exception e) {
 			log.error("Failed to schedule resource refresh:[{}]", e.toString());
 			throw new RuntimeException("Failed to schedule resource refresh", e);
@@ -155,9 +165,16 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * Cancels the current refresh task if one is scheduled.
 	 */
 	public void cancelRefresh() {
-		if(scheduleHandle!=null) {
-			scheduleHandle.cancel(false);
-			scheduleHandle = null;
+		if(scheduleHandle!=-1L) {
+			try {
+				server.invoke(SCHEDULER_OBJECT_NAME, "cancelTask", 
+						new Object[]{scheduleHandle, false}, 
+						new String[]{long.class.getName(), boolean.class.getName()});
+			} catch (Exception ex) {
+				log.debug("Failed to cancel refresh task", ex);
+				log.error("Failed to cancel refresh task:[{}]", ex.toString());
+			}
+			scheduleHandle=-1L;
 		}		
 	}
 	
@@ -165,9 +182,8 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * Registers this instance's MBean interface
 	 * @param objectName The object name string
 	 */
-	protected void register(CharSequence objectName) {
-		try {
-			this.objectName = new ObjectName(objectName.toString());
+	protected void register() {
+		try {			
 			server.registerMBean(this, this.objectName);
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to register MBean with name [" + objectName + "]", e);

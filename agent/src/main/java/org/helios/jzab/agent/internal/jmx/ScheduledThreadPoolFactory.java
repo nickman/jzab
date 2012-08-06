@@ -26,7 +26,6 @@ package org.helios.jzab.agent.internal.jmx;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +40,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.ObjectName;
 
@@ -72,6 +71,10 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	/** The currently scheduled tasks */
 	protected final Set<TrackedScheduledFuture> activeTasks = new CopyOnWriteArraySet<TrackedScheduledFuture>();
+	/** Externally scheduled task handles */
+	protected final Map<Long, TrackedScheduledFuture> externalTasks = new ConcurrentHashMap<Long, TrackedScheduledFuture>();
+	/** Serial number generator for external task handles */
+	protected final AtomicLong externalTaskSerial = new AtomicLong(0L);
 
 	/** A map of created and started scheduler factories */
 	protected static final Map<String, ScheduledThreadPoolFactory> tpSchedulers = new ConcurrentHashMap<String, ScheduledThreadPoolFactory>();
@@ -279,21 +282,32 @@ public class ScheduledThreadPoolFactory extends ScheduledThreadPoolExecutor impl
      * @param initialDelay the time to delay first execution
      * @param period the period between successive executions
      * @param unit The period unit
-     * @return the scheduled future for the task
+     * @return the task schedule handle use to cancel the task
      */
     @Override
-	public TrackedScheduledFuture scheduleWithFixedDelay(String description, final ObjectName task, final long initialDelay, final long period, final TimeUnit unit) {
-    	
-    	return enlistTask(description, TimeUnit.SECONDS.convert(period, unit), super.scheduleWithFixedDelay(new Runnable(){
+	public long scheduleWithFixedDelay(String description, final ObjectName task, final long initialDelay, final long period, final String unit) {    	
+    	TrackedScheduledFuture tsf = enlistTask(description, TimeUnit.SECONDS.convert(period, TimeUnit.valueOf(unit)), super.scheduleWithFixedDelay(new Runnable(){
     		@Override
     		public void run() {
     			JMXHelper.invoke(task, JMXHelper.getHeliosMBeanServer(), "run", 
     					new Object[]{}, 
     					new String[]{});
     		}
-    	}, initialDelay, period, unit));
+    	}, initialDelay, period, TimeUnit.valueOf(unit)));
+    	long serial = externalTaskSerial.incrementAndGet();
+    	externalTasks.put(serial, tsf);
+    	return serial;
     }
     
+    /**
+     * Cancels the task associated with the passed handle
+     * @param taskId The task handle
+     * @param mayInterruptIfRunning true if the task can be interrupted if running
+     */
+    public void cancelTask(long taskId, boolean mayInterruptIfRunning) {
+    	TrackedScheduledFuture tsf = externalTasks.remove(taskId);
+    	if(tsf!=null) tsf.cancel(mayInterruptIfRunning);
+    }
     
     
 	/**

@@ -46,4 +46,5 @@ public interface IPluginCommandProcessor extends ICommandProcessor {
      */
     public String[] getAliases();
 
+    
 }
