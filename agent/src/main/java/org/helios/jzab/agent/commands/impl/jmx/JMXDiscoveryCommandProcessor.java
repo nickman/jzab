@@ -136,12 +136,18 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 	
 	
 	
+	/**
+	 * Resolves a discovery token 
+	 * @param objectName The JMX ObjectName string value containing the subst tokens
+	 * @param token The token to replace
+	 * @param original The token replacing value
+	 * @return the resolved and replaced ObjectName string
+	 */
 	protected String resolveValue(String objectName, String token, String original) {
 		StringBuilder b = new StringBuilder(original);
 		int tokLen = token.length();
 		int startIndex = original.indexOf(token);
 		b.delete(startIndex, startIndex + tokLen);
-		String sPart = b.toString().substring(0, startIndex);
 		String ePart = b.toString().substring(startIndex);
 		String replacement = null;
 		if(ePart.isEmpty()) {

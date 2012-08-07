@@ -22,27 +22,18 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.nativex;
-
-import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUCommandPlugin;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryCommandPlugin;
 
 /**
- * <p>Title: GenericAgentBoot</p>
- * <p>Description: Boot process for generic plugins </p> 
- * <p>Company: Helios Development Group LLC</p>
- * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.GenericAgentBoot</code></p>
+ * Command processor implementations for the <b>native</b> plugin.
  */
-public class GenericAgentBoot {
-	/**
-	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
-	 */
-	public static void bootPlugin(String[] args) {
-		new AgentCommandPlugin();
-		new CPUCommandPlugin();
-		new CPUDiscoveryCommandPlugin();
-	}
-}
+package org.helios.jzab.plugin.nativex.plugin.impls.system;
+
+/**
+ * <h3>Supported Commands</h3>
+ * <table border='1'>
+ * 	<tr><th>Command (Item Key></th><th>Arguments</th><th>Description</th></tr>
+ * </table>
+ */
+
+
+

@@ -27,7 +27,6 @@ package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.helios.jzab.plugin.nativex.HeliosSigar;
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 import org.hyperic.sigar.Cpu;
@@ -50,12 +49,21 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	/** The shared per cpu CpuPerc instances */
 	protected CpuPerc[] cpuInstancePercs = sigar.getCpuPercList();	
 	/** The shared Cpu instance */
-	protected final Cpu cpux = sigar.getCpu();	
+	protected final Cpu cpux = sigar.getCpu();
+	/** The shared per cpu Cpu instances */
+	protected final Cpu[] cpuxs = sigar.getCpuList();
+	
 	/** An array of cpu infos */
 	protected final CpuInfo[] cpuInfos = sigar.getCpuInfoList();
 	
 	/** A map of process cpu trackers keyed by pid */
 	protected final Map<Long, ProcCpu> procCpus = new ConcurrentHashMap<Long, ProcCpu>();
+	
+	/** The CPU utilization unit for cummulative CPU time */
+	public static final String UNIT_TIME = "time";
+	/** The CPU utilization unit for percentage utilization */
+	public static final String UNIT_PERCENT = "percent";
+	
 	
 	/**
 	 * Schedules the resource refresh task
@@ -81,6 +89,9 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 			cpuPerc = sigar.getCpuPerc();
 			cpuInstancePercs = sigar.getCpuPercList();
 			cpux.gather(sigar.getSigar());
+			for(Cpu cpuxx: cpuxs) {
+				cpuxx.gather(sigar.getSigar());
+			}
 			for(Map.Entry<Long, ProcCpu> pc: procCpus.entrySet()) {
 				try { pc.getValue().gather(sigar.getSigar(), pc.getKey()); } catch (Exception e) {
 					log.debug("Failed to gather proc cpu for PID [{}]", pc.getKey(), e );
@@ -92,246 +103,55 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	}
 	
 	
-	/**
-	 * Retrieves the cached CPUPerc instance
-	 * @return the cached CPUPerc instance
-	 */
-	public CpuPerc getCpuPerc() {
-		return cpuPerc;
-	}
+	
 	
 	/**
-	 * Retrieves the cached per cpu CPUPerc instances
-	 * @return the cached per cpu CPUPerc instances
-	 */
-	public CpuPerc[] getCpuPercList() {
-		return cpuInstancePercs;
-	}	
-	
-	/**
-	 * Retrieves the cached cpu instance
-	 * @return the cached cpu instance
-	 */
-	public Cpu getCpu() {
-		return cpux;
-	}	
-	
-	/**
-	 * Returns the system cpu idle percentage
+	 * Returns CPU usage for all or a specified cpu
 	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu idle percentage
+	 * @param args The arguments: <ol>
+	 * 	<li>The usage type as defined in {@link CPUUtilizationType}, defaults to {@link CPUUtilizationType#TOTAL}</li>
+	 *  <li>Specifies the utilization unit. One of <code>time</code> or <code>percent</code>. Default is <code>percent</code>.</li> 
+	 *  <li>The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined.</li>
+	 * </ol>
+	 * @return The specified CPU utilization
 	 */
-	@CommandHandler("cpu.idle")
-	public String getCpuIdle(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getIdle());
+	@CommandHandler({"cpu.util", "system.cpu.util"})
+	public String getCpuUsage(String commandName, String... args) {
+		CPUUtilizationType utilType = CPUUtilizationType.TOTAL;
+		String unit = UNIT_PERCENT;
+		int id = -1;
+		if(args.length>0) {
+			try { utilType = CPUUtilizationType.forName(args[0]); } catch (Exception e) { log.error("Invalid CPUUtilizationType [{}]", args[0]); return COMMAND_ERROR; } 
+		}
+		if(args.length>1) {
+			unit = args[1].toLowerCase();
+			if(!UNIT_TIME.equals(unit) && !UNIT_PERCENT.equals(unit)) {
+				log.error("Invalid CPU Utilization Unit [{}]", unit); return COMMAND_ERROR;
+			}
+		}
+		if(args.length>2) {
+			try {
+				id = Integer.parseInt(args[2]);
+				if(id>cpuInstancePercs.length-1) {
+					log.warn("Non existent CPU ID Specified [{}]", id); return COMMAND_NOT_SUPPORTED;
+				}
+			} catch (Exception e) {
+				log.error("Invalid CPU ID Specified [{}]", args[2]); return COMMAND_ERROR;
+			}
+		}
+		if(UNIT_TIME.equals(unit)) {
+			if(id==-1) {
+				return utilType.getTime(cpux);
+			}
+			return utilType.getTime(cpuxs[id]);
+		}
+		if(id==-1) {
+			return utilType.getTime(cpuPerc);
+		}
+		return utilType.getTime(cpuInstancePercs[id]);		
 	}
 	
-	/**
-	 * Returns the system cpu irq percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu irq percentage
-	 */
-	@CommandHandler("cpu.irq")
-	public String getCpuIrq(String commandName, String... args) {		
-		return formatPerc(getCpuPerc().getIrq());
-	}
 	
-	/**
-	 * Returns the system cpu nice percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu nice percentage
-	 */
-	@CommandHandler("cpu.nice")
-	public String getCpuNice(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getNice());
-	}
-	
-	/**
-	 * Returns the system cpu sys percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu sys percentage
-	 */
-	@CommandHandler("cpu.sys")
-	public String getCpuSys(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getSys());
-	}
-	
-	/**
-	 * Returns the system cpu user percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu user percentage
-	 */
-	@CommandHandler("cpu.user")
-	public String getCpuUser(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getUser());
-	}
-
-	/**
-	 * Returns the system cpu wait percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu wait percentage
-	 */
-	@CommandHandler("cpu.wait")
-	public String getCpuWait(String commandName, String... args) {		
-		return formatPerc(getCpuPerc().getWait());
-	}
-	
-	/**
-	 * Returns the system cpu stolen percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu stolen percentage
-	 */
-	@CommandHandler("cpu.stolen")
-	public String getCpuStolen(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getStolen());
-	}
-	
-	/**
-	 * Returns the system cpu soft irq percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu soft irq percentage
-	 */
-	@CommandHandler("cpu.sirq")
-	public String getCpuSoftIrq(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getSoftIrq());
-	}
-	
-	/**
-	 * Returns the system cpu total percentage
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu total percentage
-	 */
-	@CommandHandler("cpu.total")
-	public String getCpuTotal(String commandName, String... args) {
-		return formatPerc(getCpuPerc().getCombined());
-	}
-	
-	/**
-	 * Returns the system cpu idle cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu idle cpu time
-	 */
-	@CommandHandler("cpu.time.idle")
-	public String getCpuTimeIdle(String commandName, String... args) {
-		return format(getCpu().getIdle());
-	}
-	
-	/**
-	 * Returns the system cpu irq cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu irq cpu time
-	 */
-	@CommandHandler("cpu.time.irq")
-	public String getCpuTimeIrq(String commandName, String... args) {		
-		return format(getCpu().getIrq());
-	}
-	
-	/**
-	 * Returns the system cpu nice cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu nice cpu time
-	 */
-	@CommandHandler("cpu.time.nice")
-	public String getCpuTimeNice(String commandName, String... args) {
-		return format(getCpu().getNice());
-	}
-	
-	/**
-	 * Returns the system cpu sys cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu sys cpu time
-	 */
-	@CommandHandler("cpu.time.sys")
-	public String getCpuTimeSys(String commandName, String... args) {
-		return format(getCpu().getSys());
-	}
-	
-	/**
-	 * Returns the system cpu user cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu user cpu time
-	 */
-	@CommandHandler("cpu.time.user")
-	public String getCpuTimeUser(String commandName, String... args) {
-		return format(getCpu().getUser());
-	}
-
-	/**
-	 * Returns the system cpu wait cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu wait cpu time
-	 */
-	@CommandHandler("cpu.time.wait")
-	public String getCpuTimeWait(String commandName, String... args) {		
-		return format(getCpu().getWait());
-	}
-	
-	/**
-	 * Returns the system cpu stolen cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu stolen cpu time
-	 */
-	@CommandHandler("cpu.time.stolen")
-	public String getCpuTimeStolen(String commandName, String... args) {
-		return format(getCpu().getStolen());
-	}
-	
-	/**
-	 * Returns the system cpu soft irq cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu soft irq cpu time
-	 */
-	@CommandHandler("cpu.time.sirq")
-	public String getCpuTimeSoftIrq(String commandName, String... args) {
-		return format(getCpu().getSoftIrq());
-	}
-	
-	/**
-	 * Returns the system cpu total cpu time
-	 * @param commandName The command name
-	 * @param args The arguments
-	 * @return the system cpu total cpu time
-	 */
-	@CommandHandler("cpu.time.total")
-	public String getCpuTimeTotal(String commandName, String... args) {
-		return format(getCpu().getTotal());
-	}	
-	
-	/**
-	 * Formats the percentage return value
-	 * @param value The double value to format
-	 * @return a formated percentage string
-	 */
-	private static String formatPerc(double value) {
-		if(value==Double.NaN) return COMMAND_NOT_SUPPORTED;
-		return "" + Math.round(value*100);
-	}
-	
-	/**
-	 * Formats the cpu time value
-	 * @param value The long value to format
-	 * @return the formated cpu time value
-	 */
-	private static String format(long value) {		
-		return "" + value;
-	}
 	
 	/**
 	 * Returns the number of cpus
@@ -344,40 +164,40 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 		return "" + cpuInfos.length;
 	}
 	
-	/**
-	 * Returns cpu utilization type for a specific process
-	 * @param commandName The command name
-	 * @param args The optional arguments:<ol>
-	 *  <li>The pid of the process to get cpu utilization for. Defaults to the agent process.</li>
-	 * </ol>
-	 * @return the requested cpu utilization data
-	 */
-	@CommandHandler("cpu.proc")
-	protected String getProcessCpu(String commandName, String... args) {
-		long pid = HeliosSigar.getInstance().pid;
-		if(args.length>1) {
-			pid = Long.parseLong(args[1].trim());
-		}
-		ProcCpu pc = procCpus.get(pid);
-		if(pc==null) {
-			synchronized(procCpus) {
-				pc = procCpus.get(pid);
-				if(pc==null) {
-					pc = sigar.getProcCpu(pid);
-					procCpus.put(pid, pc);
-					try {
-						pc.gather(sigar.getSigar(), pid);
-					} catch (Exception e) {
-						log.debug("Failed to gather proc cpu for PID [{}]", pid, e );
-					}
-				}
-			}
-		}
-		
-		return formatPerc(pc.getPercent());
-		// **
-		// {User=1591, LastTime=1344271384848, Percent=0.0, StartTime=1344271313939, Total=1809, Sys=218}
-	}
+//	/**
+//	 * Returns cpu utilization type for a specific process
+//	 * @param commandName The command name
+//	 * @param args The optional arguments:<ol>
+//	 *  <li>The pid of the process to get cpu utilization for. Defaults to the agent process.</li>
+//	 * </ol>
+//	 * @return the requested cpu utilization data
+//	 */
+//	@CommandHandler("cpu.proc")
+//	protected String getProcessCpu(String commandName, String... args) {
+//		long pid = HeliosSigar.getInstance().pid;
+//		if(args.length>1) {
+//			pid = Long.parseLong(args[1].trim());
+//		}
+//		ProcCpu pc = procCpus.get(pid);
+//		if(pc==null) {
+//			synchronized(procCpus) {
+//				pc = procCpus.get(pid);
+//				if(pc==null) {
+//					pc = sigar.getProcCpu(pid);
+//					procCpus.put(pid, pc);
+//					try {
+//						pc.gather(sigar.getSigar(), pid);
+//					} catch (Exception e) {
+//						log.debug("Failed to gather proc cpu for PID [{}]", pid, e );
+//					}
+//				}
+//			}
+//		}
+//		
+//		return formatPerc(pc.getPercent());
+//		// **
+//		// {User=1591, LastTime=1344271384848, Percent=0.0, StartTime=1344271313939, Total=1809, Sys=218}
+//	}
 		
 	/**
 	 * Returns json formatted information about cpus

@@ -297,13 +297,17 @@ public class HeliosSigar implements SigarProxy {
 	}
 
 	/**
-	 * @return
-	 * @throws SigarException
+	 * Returns an array of of per-cpu metrics.
+	 * @return an array of of per-cpu metrics
 	 * @see org.hyperic.sigar.Sigar#getCpuList()
 	 */
 	@Override
-	public Cpu[] getCpuList() throws SigarException {
-		return sigar.getCpuList();
+	public Cpu[] getCpuList() {
+		try {
+			return sigar.getCpuList();
+		} catch (SigarException se) {
+			throw new RuntimeException("Failed to invoke sigar getCpuList", se);
+		}
 	}
 
 	/**

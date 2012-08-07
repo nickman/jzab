@@ -24,6 +24,7 @@
  */
 package org.helios.jzab.plugin.nativex;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
+import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
 
 /**
@@ -40,6 +41,7 @@ public class JZabAgentBoot {
 	 */
 	public static void bootPlugin(String[] args) {
 		new DirectAgentCommandPlugin();
-		new DirectCPUCommandPlugin();			
+		new DirectCPUCommandPlugin();		
+		new CPUDiscoveryCommandPlugin();
 	}
 }
