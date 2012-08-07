@@ -200,7 +200,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 //	}
 		
 	/**
-	 * Returns json formatted information about cpus
+	 * Returns formatted information about cpus
 	 * @param commandName The command name
 	 * @param args Optional argument is the id of the cpu (from 0 to n). 
 	 * Zero arguments will return one json document outlinin all cpus.
@@ -214,12 +214,12 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 				if(id<0 || id>cpuInfos.length-1) {
 					return COMMAND_NOT_SUPPORTED;
 				}
-				return cpuInfoToJSON(cpuInfos[id]);
+				return cpuInfoFormat(cpuInfos[id]);
 			} catch (Exception e) {
 				return COMMAND_ERROR;
 			}
 		}
-		return cpuInfosToJSON(cpuInfos);
+		return cpuInfosFormat(cpuInfos);
 	}	
 	
 	/**
@@ -237,36 +237,32 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @param cpuInfos The cpu infos to generate json for
 	 * @return a json string
 	 */
-	public static String cpuInfosToJSON(CpuInfo... cpuInfos) {
-		StringBuilder b = new StringBuilder("{ \"cpus\":[");
+	public static String cpuInfosFormat(CpuInfo... cpuInfos) {
+		StringBuilder b = new StringBuilder();
 		for(CpuInfo c: cpuInfos) {
-			b.append(cpuInfoToJSON(c));
+			b.append(cpuInfoFormat(c));
 		}
-		if(cpuInfos.length>0) {
-			b.deleteCharAt(b.length()-1);
-		}
-		b.append("]}");
 		return b.toString();
 	}
 	
 	/**
-	 * Generates JSON for the passed CPU info
+	 * Generates formatted text for the passed CPU info
 	 * @param cpuInfo The cpu info to generate json for
-	 * @return the generated JSON
+	 * @return the generated text
 	 */
-	public static String cpuInfoToJSON(CpuInfo cpuInfo) {
+	public static String cpuInfoFormat(CpuInfo cpuInfo) {
 		try {
-			StringBuilder b = new StringBuilder("{ \"cpu\": {");
-			b.append("\"vendor\":\"").append(cpuInfo.getVendor()).append("\",")
-			.append("\"model\":\"").append(cpuInfo.getModel()).append("\",")
-			.append("\"cache-size\":").append(cpuInfo.getCacheSize()).append(",")
-			.append("\"cores-per-socket\":").append(cpuInfo.getCoresPerSocket()).append(",")
-			.append("\"speed\":").append(cpuInfo.getMhz()).append(",")
-			.append("\"total-cores\":").append(cpuInfo.getTotalCores()).append(",")
-			.append("\"total-sockets\":").append(cpuInfo.getTotalSockets()).append("}}");			
+			StringBuilder b = new StringBuilder("====CPU====");
+			b.append("\n\tVendor:").append(cpuInfo.getVendor())
+			.append("\n\tModel:").append(cpuInfo.getModel())
+			.append("\n\tCache-size:").append(cpuInfo.getCacheSize())
+			.append("\n\tCores-per-socket:").append(cpuInfo.getCoresPerSocket())
+			.append("\n\tSpeed:").append(cpuInfo.getMhz())
+			.append("\n\tTotal-cores:").append(cpuInfo.getTotalCores())
+			.append("\n\tTotal-sockets:").append(cpuInfo.getTotalSockets());			
 			return b.toString();
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to generate JSON for cpuinfo [" + cpuInfo + "]", e);
+			throw new RuntimeException("Failed to generate for cpuinfo [" + cpuInfo + "]", e);
 		}
 	}
 	
