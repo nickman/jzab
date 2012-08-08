@@ -43,6 +43,7 @@ import org.helios.jzab.agent.net.passive.AgentListener;
 import org.helios.jzab.agent.plugin.PluginLoader;
 import org.helios.jzab.agent.util.FileDeletor;
 import org.helios.jzab.proxy.ProxyListener;
+import org.helios.jzab.rolling.RollingMetricService;
 import org.helios.jzab.util.JMXHelper;
 import org.helios.jzab.util.XMLHelper;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -149,6 +150,7 @@ public class JZabAgentMain {
 		bootActiveClient();
 		bootActiveAgent();
 		ActiveAgent.getInstance().start();
+		RollingMetricService.getInstance();
 		//loadNativeAgent();   // ONLY LOAD IF SPECIED IN JZAB.XML
 	}
 	
