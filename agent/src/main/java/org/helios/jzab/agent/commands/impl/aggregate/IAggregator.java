@@ -41,4 +41,18 @@ public interface IAggregator {
 	 * @return The aggregate result
 	 */
 	public Object aggregate(List<Object> items);
+	
+	/**
+	 * Aggregates a long array
+	 * @param items The array of longs to aggregate
+	 * @return the aggregated long value
+	 */
+	public long aggregate(long[] items);
+	
+	/**
+	 * Aggregates a double array
+	 * @param items The array of double to aggregate
+	 * @return the aggregated double value
+	 */	
+	public double aggregate(double[] items);
 }

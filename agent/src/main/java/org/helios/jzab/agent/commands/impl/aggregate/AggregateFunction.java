@@ -26,9 +26,11 @@ package org.helios.jzab.agent.commands.impl.aggregate;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -219,6 +221,35 @@ public enum AggregateFunction implements IAggregator {
 			return numbers;
 		}
 		
+		/**
+		 * Sums an array 
+		 * @param items The items to sum
+		 * @return the total sum
+		 */
+		protected long sum(long[] items) {
+			if(items==null || items.length<1) return 0L;
+			long total = 0;
+			for(long t: items) {
+				total += t;
+			}
+			return total;
+		}
+		
+		/**
+		 * Sums an array 
+		 * @param items The items to sum
+		 * @return the total sum
+		 */
+		protected double sum(double[] items) {
+			if(items==null || items.length<1) return 0D;
+			double total = 0;
+			for(double t: items) {
+				total += t;
+			}
+			return total;
+		}
+		
+		
 	}
 	
 	
@@ -246,6 +277,22 @@ public enum AggregateFunction implements IAggregator {
 				d += n.doubleValue();
 			}
 			return d;
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			return sum(items);
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			return sum(items);
 		}
 		
 	}
@@ -277,6 +324,32 @@ public enum AggregateFunction implements IAggregator {
 			}
 			if(total==0 || count==0) return 0D;
 			return total/count;
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items==null) return 0;
+			double total = sum(items);
+			double length = items.length;
+			if(total==0 || length==0) return 0;
+			double avg = total/length;
+			return (long)avg;
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items==null) return 0;
+			double total = sum(items);
+			double length = items.length;
+			if(total==0 || length==0) return 0;
+			double avg = total/length;
+			return avg;
 		}		
 	}
 	
@@ -310,6 +383,26 @@ public enum AggregateFunction implements IAggregator {
 			}
 			return min;
 		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items==null) return 0;
+			Arrays.sort(items);
+			return items[0];
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items==null) return 0;
+			Arrays.sort(items);
+			return items[0];
+		}
 	}
 
 	/**
@@ -341,6 +434,26 @@ public enum AggregateFunction implements IAggregator {
 				if(n.doubleValue() > max) max = n.doubleValue();
 			}
 			return max;
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items==null) return 0;
+			Arrays.sort(items);
+			return items[items.length-1];
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items==null) return 0;
+			Arrays.sort(items);
+			return items[items.length-1];
 		}		
 	}
 	
@@ -384,6 +497,24 @@ public enum AggregateFunction implements IAggregator {
 			} 
 			return items.size();
 		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {			
+			return items==null ? 0 : items.length;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			return items==null ? 0 : items.length;
+		}
 	}
 	
 	
@@ -404,6 +535,30 @@ public enum AggregateFunction implements IAggregator {
 		public Object aggregate(List<Object> items) {
 			if(items==null || items.isEmpty()) return 0;
 			Set<Object> set = new CopyOnWriteArraySet<Object>(items);
+			return set.size();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items==null || items.length<1) return 0;
+			Set<Long> set = new HashSet<Long>(items.length);
+			for(int i = 0; i < items.length; i++) { set.add(items[i]); }
+			return set.size();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items==null || items.length<1) return 0;
+			Set<Double> set = new HashSet<Double>(items.length);
+			for(int i = 0; i < items.length; i++) { set.add(items[i]); }
 			return set.size();
 		}		
 	}
@@ -436,6 +591,24 @@ public enum AggregateFunction implements IAggregator {
 				map.put(key, l);
 			}			
 			return new JSONObject(map);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			throw new UnsupportedOperationException("The direct aggregate(long[]) cannot return a JSONObject. Please use AggregateFunction.aggreaget(Object)", new Throwable());
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			throw new UnsupportedOperationException("The direct aggregate(double[]) cannot return a JSONObject. Please use AggregateFunction.aggreaget(Object)", new Throwable());
 		}		
 	}
 	
@@ -497,7 +670,43 @@ public enum AggregateFunction implements IAggregator {
 			Map<String, Double> map = new HashMap<String, Double>(4);
 			map.put(KEY_MIN, min); map.put(KEY_MAX, max); map.put(KEY_AVG, avg); map.put(KEY_CNT, count);
 			return new JSONObject(map);
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			throw new UnsupportedOperationException("The direct aggregate(long[]) cannot return a JSONObject. Please use AggregateFunction.aggreaget(Object)", new Throwable());
+		}
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			throw new UnsupportedOperationException("The direct aggregate(double[]) cannot return a JSONObject. Please use AggregateFunction.aggreaget(Object)", new Throwable());
 		}		
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+	 */
+	@Override
+	public long aggregate(long[] items) {
+		return aggr.aggregate(items);
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+	 */
+	@Override
+	public double aggregate(double[] items) {
+		return aggr.aggregate(items);
 	}
 
 	
