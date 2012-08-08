@@ -145,12 +145,13 @@ public class JZabAgentMain {
 			log.error("Failed to start agent listeners", e);
 			throw new Exception("Failed to start agent listeners", e);
 		}
+		RollingMetricService.getInstance();
 		bootCommandProcessors();
 		loadPlugins();
 		bootActiveClient();
 		bootActiveAgent();
 		ActiveAgent.getInstance().start();
-		RollingMetricService.getInstance();
+		
 		//loadNativeAgent();   // ONLY LOAD IF SPECIED IN JZAB.XML
 	}
 	
