@@ -43,6 +43,8 @@ public interface AbstractMultiCommandProcessorMBean {
 	public static final String ZABX_DOMAIN_PROP = "org.helios.jzab.jmx.domain";
 	/** The object name pattern for plugins */
 	public static final String OBJECT_NAME_PATTERN = "org.helios.jzab.agent.plugin:type=Plugin,name=%s";
+	/** The rolling metric service object name */
+	public static final String ROLLING_SERVICE = "org.helios.jzab.rolling:service=WeAreRolling";
 
 	
     /**

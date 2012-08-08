@@ -32,15 +32,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 
 import org.helios.jzab.plugin.nativex.HeliosSigar;
+import org.helios.jzab.plugin.nativex.IRollingMetrics;
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,8 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	protected final ObjectName objectName;
 	/** Indicates if this processor has been initialized */
 	protected final AtomicBoolean inited = new AtomicBoolean(false);
+	
+	protected final IRollingMetrics rollingMetrics;
 	
 	/** The handle to this processor's scheduled refresh task */
 	protected long scheduleHandle = -1L;
@@ -133,6 +136,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 		als.addAll(invokers.keySet());
 		this.aliases = als.toArray(new String[als.size()]);
 		register();
+		rollingMetrics = (IRollingMetrics)MBeanServerInvocationHandler.newProxyInstance(server, objectName(ROLLING_SERVICE), IRollingMetrics.class, true);
 	}
 	
 	private static ObjectName objectName(CharSequence name) {

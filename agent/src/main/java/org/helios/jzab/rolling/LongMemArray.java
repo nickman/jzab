@@ -40,7 +40,7 @@ public class LongMemArray implements LongMemArrayMBean {
 	/** The name */
 	protected final String name;
 	/** The number of entries in the buffer */
-	protected final AtomicIntCounter size;
+	protected int size = 0;
 	/** The number of entry slots in the buffer */
 	protected final int entryCount;
 	/** The slot buffer */
@@ -51,6 +51,9 @@ public class LongMemArray implements LongMemArrayMBean {
 	protected final int range;
 	/** The number of samples per minute */
 	protected final int samples;
+	/** The ID key for this LongMemArray */
+	protected final String key;
+	
 	
 	
 	/**
@@ -63,21 +66,37 @@ public class LongMemArray implements LongMemArrayMBean {
 		this.name = name;
 		this.range = range;
 		this.samples = samples;
-		this.entryCount = range*samples;
-		this.size = new AtomicIntCounter(entryCount);
+		this.entryCount = range*samples;	
+		this.key = name + range;
 		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()).asLongBuffer() : ByteBuffer.allocate(entryCount * getEntrySize()).asLongBuffer();
 	}
+	
+	/**
+	 * Creates a new LongMemArray from an existing LongMemArray but for a new range.
+	 * The contents of the old LongMemArray are copied into the new one 
+	 * @param range The new range
+	 * @param lma The old LongMemArray to copy from
+	 */
+	public LongMemArray(int range, LongMemArray lma) {
+		this(lma.name, range, lma.samples, lma.buffer.isDirect());
+		buffer.put(lma.buffer);
+		size = lma.size;
+	}
+		
 	
 	/**
 	 * Inserts a new value to the rolling window
 	 * @param value The value to add
 	 */	
-	public synchronized void add(long value) {
-		int sz = size.tick();
-		if(sz==entryCount) {
-			buffer.position(1);
-			buffer.compact();
-		} 
+	public void add(long value) {
+		synchronized(buffer) {
+			if(size==entryCount) {
+				buffer.position(1);
+				buffer.compact();
+			} else {
+				size++;
+			}
+		}
 		buffer.put(value);		
 	}
 	
@@ -86,10 +105,9 @@ public class LongMemArray implements LongMemArrayMBean {
 	 * @see org.helios.jzab.rolling.LongMemArrayMBean#get()
 	 */
 	@Override
-	public long[] get() {
-		int sz = size.get();
-		long[] arr = new long[sz];
-		for(int i = 0; i < sz; i++) {
+	public long[] get() {		
+		long[] arr = new long[size];
+		for(int i = 0; i < size; i++) {
 			arr[i] = buffer.get(i);
 		}
 		return arr;
@@ -103,8 +121,7 @@ public class LongMemArray implements LongMemArrayMBean {
 	 */
 	public long[] get(int windowSize) {
 		windowSize = windowSize*samples;
-		int sz = size.get();
-		if(windowSize>sz) windowSize = sz;
+		if(windowSize>size) windowSize = size;
 		long[] arr = new long[windowSize];
 		for(int i = 0; i < windowSize; i++) {
 			arr[i] = buffer.get(i);
@@ -112,6 +129,14 @@ public class LongMemArray implements LongMemArrayMBean {
 		return arr;
 		
 	}
+	
+	/**
+	 * Returns the ID key for this LMA
+	 * @return the ID key
+	 */
+	public String getKey() {
+		return key;
+	}		
 	
 	/**
 	 * The name of this array
@@ -127,7 +152,7 @@ public class LongMemArray implements LongMemArrayMBean {
 	 */
 	@Override
 	public int getSize() {
-		return size.get();
+		return size;
 	}
 	
 	/**

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -137,6 +138,9 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 		return exists;
 	}
 	
+	
+	
+
 	/**
 	 * Registers a new rolling metric. The created metric array will allocate slots to accomodate
 	 * the width of the window multiplied by the number of samples to collect within each minute.
@@ -150,15 +154,15 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
 		if(doubleCollector==null) throw new IllegalArgumentException("The passed collector was null", new Throwable());
 		log.debug("Creating DoubleRollingMetric for [{}]", name);
-		DoubleMemArray lma = doubleArrays.get(name);
+		DoubleMemArray dma = doubleArrays.get(name);
 		boolean exists = true;
-		if(lma==null) {
+		if(dma==null) {
 			synchronized(doubleArrays) {
-				lma = doubleArrays.get(name);
-				if(lma==null) {
-					lma = new DoubleMemArray(name, range, samplesPerRange, true);
-					doubleArrays.put(name, lma);
-					final DoubleMemArray finalMemArr = lma;
+				dma = doubleArrays.get(name);
+				if(dma==null) {
+					dma = new DoubleMemArray(name, range, samplesPerRange, true);
+					doubleArrays.put(name, dma);
+					final DoubleMemArray finalMemArr = dma;
 					Callable<Double> task = new Callable<Double>() {
 						@Override
 						public Double call() throws Exception {
@@ -168,7 +172,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 							return val;
 						}
 					};
-					doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(task), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+					doubleCollectors.put(dma.getKey(), ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(task), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 					exists = false;
 				}
 			}

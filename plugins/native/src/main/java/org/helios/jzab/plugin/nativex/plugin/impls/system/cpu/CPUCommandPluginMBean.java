@@ -24,15 +24,21 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
 
-import org.helios.jzab.agent.commands.IPluginCommandProcessor;
+import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessorMBean;
 
 /**
- * <p>Title: DirectCPUCommandPluginMBean</p>
- * <p>Description: </p> 
+ * <p>Title: CPUCommandPluginMBean</p>
+ * <p>Description: Generci plugin interface for {@link CPUCommandPlugin}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPluginMBean</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUCommandPluginMBean</code></p>
  */
-public interface DirectCPUCommandPluginMBean extends CPUCommandPluginMBean {
-	public IPluginCommandProcessor getInstance();
+public interface CPUCommandPluginMBean extends AbstractMultiCommandProcessorMBean {
+	/**
+	 * Alias for {@link CPUCommandPlugin#getCpuUsage(String, String...) but returns a double in decimal percentage 
+	 * @param commandName The command name
+	 * @param args The arguments
+	 * @return a processor load
+	 */
+	public double cpuLoad(String commandName, String... args);
 }

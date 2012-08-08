@@ -80,5 +80,11 @@ public interface DoubleMemArrayMBean {
 	 * @return the name
 	 */
 	public String getName();
+	
+	/**
+	 * Returns the ID key for this DMA
+	 * @return the ID key
+	 */
+	public String getKey();	
 
 }

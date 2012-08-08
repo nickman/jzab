@@ -97,9 +97,9 @@ public class HeliosSigar implements SigarProxy {
 	/** The native agent Java API version */
 	private String version;
 	/** The number of processors visible to the JVM */
-	private final int cpuCount = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
+	public final int cpuCount = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
 	/** Indicates if JVM is running on a multi-cpu system */
-	private final boolean multiCpu =  ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors() > 1;
+	public final boolean multiCpu =  ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors() > 1;
 	/** The native agent instance */
 	private final Sigar sigar;
 	

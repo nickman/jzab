@@ -51,6 +51,8 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	protected final int range;
 	/** The number of samples per minute */
 	protected final int samples;
+	/** The ID key for this DoubleMemArray */
+	protected final String key;
 	
 	/**
 	 * Creates a new DoubleMemArray
@@ -63,9 +65,23 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 		this.range = range;
 		this.samples = samples;
 		this.entryCount = range*samples;
-		//this.size = new AtomicIntCounter(entryCount);
+		this.key = name + range;
 		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()).asDoubleBuffer() : ByteBuffer.allocate(entryCount * getEntrySize()).asDoubleBuffer();
 	}
+	
+	/**
+	 * Creates a new DoubleMemArray from an existing DoubleMemArray but for a new range.
+	 * The contents of the old DoubleMemArray are copied into the new one 
+	 * @param range The new range
+	 * @param dma The old DoubleMemArray to copy from
+	 */
+	public DoubleMemArray(int range, DoubleMemArray dma) {
+		this(dma.name, range, dma.samples, dma.buffer.isDirect());
+		buffer.put(dma.buffer);
+		size = dma.size;
+	}
+	
+	
 	
 	/**
 	 * Inserts a new value to the rolling window
@@ -181,6 +197,15 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 		double d = total/count;
 		return d;
 	}
+	
+
+	/**
+	 * Returns the ID key for this DMA
+	 * @return the ID key
+	 */
+	public String getKey() {
+		return key;
+	}	
 
 	/**
 	 * {@inheritDoc}
@@ -215,7 +240,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 			spoof += lma.avg();
 			//log("Average:" + lma.avg());
 		}
-		lma = new DoubleMemArray("Foo", 15, 4, true);
+		lma = new DoubleMemArray(15, lma);
 		spoof = Double.MIN_VALUE;
 		long start = System.currentTimeMillis();
 		for(int i = 0; i < loops; i++) {
@@ -229,7 +254,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 		long elapsed = System.currentTimeMillis()-start;
 		log("With Avg Elaped: " + elapsed + " ms.");
 		log("With Avg NS per:" + (TimeUnit.NANOSECONDS.convert(elapsed, TimeUnit.MILLISECONDS)/(loops*innerLoops)) + " ns.");
-		lma = new DoubleMemArray("Foo", 15, 4, true);
+		lma = new DoubleMemArray(15, lma);
 		spoof = Double.MIN_VALUE;
 		start = System.currentTimeMillis();
 		for(int i = 0; i < loops; i++) {
@@ -249,6 +274,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	public static void log(Object msg) {
 		System.out.println(msg);
 	}
+
 
 
 

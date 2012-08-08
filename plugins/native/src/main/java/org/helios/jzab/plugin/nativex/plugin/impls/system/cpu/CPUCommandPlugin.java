@@ -42,7 +42,7 @@ import org.hyperic.sigar.ProcCpu;
  * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.CPUCommandPlugin</code></p>
  */
 
-public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
+public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements CPUCommandPluginMBean {
 	
 	/** The shared CpuPerc instance */
 	protected CpuPerc cpuPerc = sigar.getCpuPerc();
@@ -74,6 +74,10 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	public void init() {
 		if(!inited.get()) {
 			scheduleRefresh();
+			rollingMetrics.registerDoubleRollingMetric("CPU Load", 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent");
+			for(int i = 0; i < sigar.cpuCount; i++) {
+				rollingMetrics.registerDoubleRollingMetric("CPU Load #" + i, 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent", "" + i);
+			}
 		}
 		super.init();
 	}
@@ -103,6 +107,25 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	}
 	
 	
+	/**
+	 * Returns CPU usage for all or a specified cpu. 
+	 * More zabbix compatible with <a href="http://www.zabbix.com/documentation/1.8/manual/config/items">system.cpu.util[&lt;cpu&gt;,&lt;type&gt;,&lt;mode&gt;]</a>. 
+	 * @param commandName The command name
+	 * @param args:<ol>
+	 * 	<li><b>cpu</b>: The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined. <code>-1</code> means all.</li>
+	 * 	<li><b>type</b>: The usage type as defined in {@link CPUUtilizationType}, defaults to {@link CPUUtilizationType#USER}</li>
+	 *  <li><b>mode</b>: The aggregation window name. e.g. <b><code>avg1</code></b>, <b><code>avg5</code></b> and <b><code>avg15</code></b>. Defaults to <b><code>avg1</code></b></li> 
+	 * </ol>
+	 * @return
+	 */
+	@CommandHandler({"system.cpu.util"})
+	public String getCpuUtil(String commandName, String... args) {
+		int cpuId = -1;
+		CPUUtilizationType type = CPUUtilizationType.USER;
+		String mode = "avg1";
+		
+		return null;
+	}
 	
 	
 	/**
@@ -111,11 +134,11 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 	 * @param args The arguments: <ol>
 	 * 	<li>The usage type as defined in {@link CPUUtilizationType}, defaults to {@link CPUUtilizationType#TOTAL}</li>
 	 *  <li>Specifies the utilization unit. One of <code>time</code> or <code>percent</code>. Default is <code>percent</code>.</li> 
-	 *  <li>The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined.</li>
+	 *  <li>The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined. <code>-1</code> means all.</li>
 	 * </ol>
 	 * @return The specified CPU utilization
 	 */
-	@CommandHandler({"cpu.util", "system.cpu.util"})
+	@CommandHandler({"cpu.util"})
 	public String getCpuUsage(String commandName, String... args) {
 		CPUUtilizationType utilType = CPUUtilizationType.TOTAL;
 		String unit = UNIT_PERCENT;
@@ -149,6 +172,16 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor {
 			return utilType.getTime(cpuPerc);
 		}
 		return utilType.getTime(cpuInstancePercs[id]);		
+	}
+	
+	/**
+	 * Alias for {@link CPUCommandPlugin#getCpuUsage(String, String...) but returns a double in decimal percentage 
+	 * @param commandName The command name
+	 * @param args The arguments
+	 * @return a processor load
+	 */
+	public double cpuLoad(String commandName, String... args) {
+		return Double.parseDouble(getCpuUsage(commandName, args))/100;
 	}
 	
 	

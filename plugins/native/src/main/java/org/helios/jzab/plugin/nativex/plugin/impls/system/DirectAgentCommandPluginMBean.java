@@ -25,7 +25,7 @@
 package org.helios.jzab.plugin.nativex.plugin.impls.system;
 
 import org.helios.jzab.agent.commands.IPluginCommandProcessor;
-import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPluginMBean;
+import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessorMBean;
 
 /**
  * <p>Title: DirectAgentCommandPluginMBean</p>
@@ -34,6 +34,6 @@ import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPl
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPluginMBean</code></p>
  */
-public interface DirectAgentCommandPluginMBean extends DirectCPUCommandPluginMBean {
+public interface DirectAgentCommandPluginMBean extends AbstractMultiCommandProcessorMBean {
 	public IPluginCommandProcessor getInstance();
 }

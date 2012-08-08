@@ -80,6 +80,12 @@ public interface LongMemArrayMBean {
 	 * @return the name
 	 */
 	public String getName();
+
+	/**
+	 * Returns the ID key for this LMA
+	 * @return the ID key
+	 */
+	public String getKey();
 	
 
 }
