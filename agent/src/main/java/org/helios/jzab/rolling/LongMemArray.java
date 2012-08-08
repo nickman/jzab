@@ -27,6 +27,8 @@ package org.helios.jzab.rolling;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Title: LongMemArray</p>
@@ -41,7 +43,7 @@ public class LongMemArray {
 	/** The number of entry slots in the buffer */
 	protected final int entryCount;
 	/** The slot buffer */
-	protected final ByteBuffer buffer;
+	protected final LongBuffer buffer;
 	/** The size in bytes of one entry */
 	protected final int entrySize = 8;
 	
@@ -52,17 +54,17 @@ public class LongMemArray {
 	 */
 	public LongMemArray(int entryCount, boolean direct) {
 		this.entryCount = entryCount;
-		this.size = new AtomicIntCounter(this.entryCount);
-		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()) : ByteBuffer.allocate(entryCount * getEntrySize());
+		this.size = new AtomicIntCounter(entryCount);
+		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()).asLongBuffer() : ByteBuffer.allocate(entryCount * getEntrySize()).asLongBuffer();
 	}
 	
-	public void add(long value) {
+	public synchronized void add(long value) {
 		int sz = size.tick();
 		if(sz==entryCount) {
-			buffer.position(entrySize);
-			buffer.compact();			
+			buffer.position(1);
+			buffer.compact();
 		} 
-		buffer.putLong((sz-1)*entrySize, value);		
+		buffer.put(value);		
 	}
 	
 	
@@ -70,7 +72,7 @@ public class LongMemArray {
 		int sz = size.get();
 		long[] arr = new long[sz];
 		for(int i = 0; i < sz; i++) {
-			arr[i] = buffer.asLongBuffer().get(i);
+			arr[i] = buffer.get(i);
 		}
 		return arr;
 	}
@@ -81,6 +83,25 @@ public class LongMemArray {
 	 */
 	public int getSize() {
 		return size.get();
+	}
+	
+	public long avg() {
+		long[] arr = get();		
+		long size = arr.length;
+		if(size==0) return 0;
+		long total = 0;
+		for(int i = 0; i < size; i++) {
+			total += arr[i];
+		}
+		return cavg(total, size);
+	}
+	
+	public long cavg(double total, double count) {
+		if(total==0 || count==0) {
+			return 0;
+		}
+		double d = total/count;
+		return (long)d;
 	}
 
 	/**
@@ -101,13 +122,32 @@ public class LongMemArray {
 	
 	public static void main(String[] args) {
 		log("LongMemArrayTest");
-		LongMemArray lma = new LongMemArray(15, true);
-		for(long a = 1L; a < 100; a++) {
-			lma.add(a);
-			if(a%10==0) {
-				log("Arr:" + Arrays.toString(lma.get()));
+		LongMemArray lma = new LongMemArray(60, false);
+		Random r = new Random(System.nanoTime());
+		int loops = 10000;
+		long spoof = Long.MIN_VALUE;
+		
+		for(int i = 0; i < loops; i++) {
+			for(int x = 0; x < 5000; x++) {
+				lma.add(Math.abs(r.nextInt(100)));
 			}
+			spoof += lma.avg();
+			//log("Average:" + lma.avg());
 		}
+		lma = new LongMemArray(60, false);
+		spoof = Long.MIN_VALUE;
+		long start = System.currentTimeMillis();
+		for(int i = 0; i < loops; i++) {
+			for(int x = 0; x < 5000; x++) {
+				lma.add(Math.abs(r.nextInt(100)));
+			}
+			spoof += lma.avg();
+			//log("Average:" + lma.avg());
+		}
+		
+		long elapsed = System.currentTimeMillis()-start;
+		log("Elaped: " + elapsed + " ms.");
+		log("NS per:" + (TimeUnit.NANOSECONDS.convert(elapsed, TimeUnit.MILLISECONDS)/loops) + " ns.");
 	}
 	
 	public static void log(Object msg) {

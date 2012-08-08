@@ -24,51 +24,44 @@
  */
 package org.helios.jzab.rolling;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import javax.management.ObjectName;
+
+import org.helios.jzab.util.JMXHelper;
 
 /**
- * <p>Title: AtomicIntCounter</p>
+ * <p>Title: RollingMetricService</p>
  * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.rolling.AtomicIntCounter</code></p>
+ * <p><code>org.helios.jzab.rolling.RollingMetricService</code></p>
  */
-public class AtomicIntCounter {
-	/** The maximum value the counter can be incremented to */
-	protected final int maxValue;
-	/** The underlying atomic */
-	protected final AtomicInteger atom = new AtomicInteger(-1);
 
+public class RollingMetricService {
+	
+	/** The singleton instance */
+	private static volatile RollingMetricService instance = null;
+	/** The singleton instance ctor lock */
+	private static final Object lock = new Object();
+	
+	/** The service's JMX ObjectName */
+	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.rolling:service=WeAreRolling");
 	/**
-	 * Creates a new AtomicIntCounter
-	 * @param maxValue The maximum value that can be incremented to
+	 * Returns the RollingMetricService singleton instance
+	 * @return the RollingMetricService singleton instance
 	 */
-	public AtomicIntCounter(int maxValue) {
-		this.maxValue = maxValue;
-	}
-
-	/**
-	 * Returns the max value of this counter
-	 * @return the max value of this counter
-	 */
-	public int getMaxValue() {
-		return maxValue;
-	}
-
-	public int tick() {
-        for (;;) {
-            int current = atom.get();
-            if(current==maxValue) return maxValue;
-            int next = current + 1;
-            if (atom.compareAndSet(current, next)) return next;
-            break;
-        }		
-        return tick();
+	public static RollingMetricService getInstance() {
+		if(instance==null) {
+			synchronized(lock) {
+				if(instance==null) {
+					instance = new RollingMetricService();
+				}
+			}
+		}
+		return instance;
+		
 	}
 	
-	
-	public int get() {
-		return atom.get();
+	private RollingMetricService() {
+		
 	}
-
 }
