@@ -25,26 +25,26 @@
 package org.helios.jzab.rolling;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
+import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>Title: LongMemArray</p>
- * <p>Description: A sized long buffer for computing rolling aggregates</p> 
+ * <p>Title: DoubleMemArray</p>
+ * <p>Description:  A sized double buffer for computing rolling aggregates</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.rolling.LongMemArray</code></p>
+ * <p><code>org.helios.jzab.rolling.DoubleMemArray</code></p>
  */
-public class LongMemArray implements LongMemArrayMBean {
+public class DoubleMemArray implements DoubleMemArrayMBean {
 	/** The name */
 	protected final String name;
 	/** The number of entries in the buffer */
-	protected final AtomicIntCounter size;
+	protected int size = 0;
 	/** The number of entry slots in the buffer */
 	protected final int entryCount;
 	/** The slot buffer */
-	protected final LongBuffer buffer;
+	protected final DoubleBuffer buffer;
 	/** The size in bytes of one entry */
 	protected final int entrySize = 8;
 	/** The range of the window in minutes */
@@ -52,44 +52,47 @@ public class LongMemArray implements LongMemArrayMBean {
 	/** The number of samples per minute */
 	protected final int samples;
 	
-	
 	/**
-	 * Creates a new LongMemArray
+	 * Creates a new DoubleMemArray
 	 * @param name The name of this array
 	 * @param entryCount The number of entries
 	 * @param direct true for a direct buffer, false for a heap buffer
 	 */
-	public LongMemArray(String name, int range, int samples, boolean direct) {
+	public DoubleMemArray(String name, int range, int samples, boolean direct) {
 		this.name = name;
 		this.range = range;
 		this.samples = samples;
 		this.entryCount = range*samples;
-		this.size = new AtomicIntCounter(entryCount);
-		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()).asLongBuffer() : ByteBuffer.allocate(entryCount * getEntrySize()).asLongBuffer();
+		//this.size = new AtomicIntCounter(entryCount);
+		buffer = direct ? ByteBuffer.allocateDirect(entryCount * getEntrySize()).asDoubleBuffer() : ByteBuffer.allocate(entryCount * getEntrySize()).asDoubleBuffer();
 	}
 	
 	/**
 	 * Inserts a new value to the rolling window
 	 * @param value The value to add
-	 */	
-	public synchronized void add(long value) {
-		int sz = size.tick();
-		if(sz==entryCount) {
-			buffer.position(1);
-			buffer.compact();
-		} 
+	 */
+	public void add(double value) {
+		synchronized(buffer) {
+			if(size==entryCount) {
+				buffer.position(1);
+				buffer.compact();
+			} else {
+				size++;
+			}
+		}
 		buffer.put(value);		
 	}
 	
+	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#get()
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#get()
 	 */
 	@Override
-	public long[] get() {
-		int sz = size.get();
-		long[] arr = new long[sz];
-		for(int i = 0; i < sz; i++) {
+	public double[] get() {
+		
+		double[] arr = new double[size];
+		for(int i = 0; i < size; i++) {
 			arr[i] = buffer.get(i);
 		}
 		return arr;
@@ -101,80 +104,39 @@ public class LongMemArray implements LongMemArrayMBean {
 	 * @param windowSize The minute window to retrieve
 	 * @return the item entries within the specified minute based window
 	 */
-	public long[] get(int windowSize) {
+	public double[] get(int windowSize) {
 		windowSize = windowSize*samples;
-		int sz = size.get();
-		if(windowSize>sz) windowSize = sz;
-		long[] arr = new long[windowSize];
+		
+		if(windowSize>size) windowSize = size;
+		double[] arr = new double[windowSize];
 		for(int i = 0; i < windowSize; i++) {
 			arr[i] = buffer.get(i);
 		}
 		return arr;
 		
 	}
-	
+
 	/**
 	 * The name of this array
 	 * @return the name
 	 */
 	public String getName() {
 		return name;
-	}	
+	}
+
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#getSize()
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#getSize()
 	 */
 	@Override
 	public int getSize() {
-		return size.get();
+		return size;
 	}
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#avg()
-	 */	
-	@Override
-	public long avg() {
-		long[] arr = get();		
-		long size = arr.length;
-		if(size==0) return 0;
-		long total = 0;
-		for(int i = 0; i < size; i++) {
-			total += arr[i];
-		}
-		return cavg(total, size);
-	}
-	
-	public long cavg(double total, double count) {
-		if(total==0 || count==0) {
-			return 0;
-		}
-		double d = total/count;
-		return (long)d;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#getEntryCount()
-	 */
-	@Override
-	public int getEntryCount() {
-		return entryCount;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#getEntrySize()
-	 */
-	@Override
-	public int getEntrySize() {
-		return entrySize;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#getRange()
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#getRange()
 	 */
 	@Override
 	public int getRange() {
@@ -183,33 +145,81 @@ public class LongMemArray implements LongMemArrayMBean {
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.jzab.rolling.LongMemArrayMBean#getSamples()
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#getSamples()
 	 */
 	@Override
 	public int getSamples() {
 		return samples;
 	}	
-		
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#avg()
+	 */
+	@Override
+	public double avg() {
+		double[] arr = get();		
+		double size = arr.length;
+		if(size==0) return 0;
+		double total = 0;
+		for(int i = 0; i < size; i++) {
+			total += arr[i];
+		}
+		return cavg(total, size);
+	}
+	
+	/**
+	 * Calculates the average
+	 * @param total The total value
+	 * @param count The number of values
+	 * @return The average value
+	 */
+	public double cavg(double total, double count) {
+		if(total==0 || count==0) {
+			return 0;
+		}
+		double d = total/count;
+		return d;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#getEntryCount()
+	 */
+	@Override
+	public int getEntryCount() {
+		return entryCount;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.rolling.DoubleMemArrayMBean#getEntrySize()
+	 */
+	@Override
+	public int getEntrySize() {
+		return entrySize;
+	}
 	
 	public static void main(String[] args) {
-		log("LongMemArrayTest");
-		LongMemArray lma = new LongMemArray("Foo", 15, 4, true);
+		log("DoubleMemArrayTest");
+		DoubleMemArray lma = new DoubleMemArray("Foo", 15, 4, true);
 		Random r = new Random(System.nanoTime());
-		int loops = 10000;
-		long spoof = Long.MIN_VALUE;
+		int loops = 100000;
+		int innerLoops = 5000;
+		double spoof = Double.MIN_VALUE;
 		
 		for(int i = 0; i < loops; i++) {
-			for(int x = 0; x < 5000; x++) {
+			for(int x = 0; x < innerLoops; x++) {
 				lma.add(Math.abs(r.nextInt(100)));
 			}
 			spoof += lma.avg();
 			//log("Average:" + lma.avg());
 		}
-		lma = new LongMemArray("Foo", 15, 4, true);
-		spoof = Long.MIN_VALUE;
+		lma = new DoubleMemArray("Foo", 15, 4, true);
+		spoof = Double.MIN_VALUE;
 		long start = System.currentTimeMillis();
 		for(int i = 0; i < loops; i++) {
-			for(int x = 0; x < 5000; x++) {
+			for(int x = 0; x < innerLoops; x++) {
 				lma.add(Math.abs(r.nextInt(100)));
 			}
 			spoof += lma.avg();
@@ -217,12 +227,29 @@ public class LongMemArray implements LongMemArrayMBean {
 		}
 		
 		long elapsed = System.currentTimeMillis()-start;
-		log("Elaped: " + elapsed + " ms.");
-		log("NS per:" + (TimeUnit.NANOSECONDS.convert(elapsed, TimeUnit.MILLISECONDS)/loops) + " ns.");
+		log("With Avg Elaped: " + elapsed + " ms.");
+		log("With Avg NS per:" + (TimeUnit.NANOSECONDS.convert(elapsed, TimeUnit.MILLISECONDS)/(loops*innerLoops)) + " ns.");
+		lma = new DoubleMemArray("Foo", 15, 4, true);
+		spoof = Double.MIN_VALUE;
+		start = System.currentTimeMillis();
+		for(int i = 0; i < loops; i++) {
+			for(int x = 0; x < innerLoops; x++) {
+				lma.add(Math.abs(r.nextInt(100)));
+			}
+			//spoof += lma.avg();
+			//log("Average:" + lma.avg());
+		}
+		
+		elapsed = System.currentTimeMillis()-start;
+		log("No Avg Elaped: " + elapsed + " ms.");
+		log("No Avg NS per:" + (TimeUnit.NANOSECONDS.convert(elapsed, TimeUnit.MILLISECONDS)/(loops*innerLoops)) + " ns.");
+		
 	}
 	
 	public static void log(Object msg) {
 		System.out.println(msg);
 	}
-	
+
+
+
 }
