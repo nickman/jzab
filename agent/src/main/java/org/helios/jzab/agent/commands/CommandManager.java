@@ -195,7 +195,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				}
 			}
 			//throw new RuntimeException("The command processor [" + key + "] was already registered");
-			log.warn("The command processor [{}] was already registered", key);
+			log.trace("The command processor [{}] was already registered", key);
 		}
 	}
 	
