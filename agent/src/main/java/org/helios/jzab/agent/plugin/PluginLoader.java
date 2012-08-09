@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.agent.plugin;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -133,7 +135,8 @@ public class PluginLoader {
 		if(name==null) throw new IllegalArgumentException("Passed Plugin Name was null]", new Throwable());
 		log.debug("Loading Plugin [{}] from URL [{}]. Isolated:" + isolated, name, jarUrl );
 		try {
-			URLClassLoader pluginClassLoader = isolated ? new IsolatedArchiveLoader(jarUrl) : new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader());
+			URL[] urls = getRelatedArchives(jarUrl);
+			URLClassLoader pluginClassLoader = isolated ? new IsolatedArchiveLoader(urls) : new URLClassLoader(urls, getClass().getClassLoader());
 			log.debug("ClassLoader business for plugin load: \n{}", Arrays.toString(pluginClassLoader.getURLs()));
 			final ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			try {
@@ -151,6 +154,31 @@ public class PluginLoader {
 			throw new RuntimeException("Failed to Load Plugin [" + name + "]", e);			
 		}
 		
+	}
+	
+	/**
+	 * Returns an array of jar file URLs including the passed one and any others in the same directory.
+	 * Currently only supports finding additional jars when the URL protocol is <b><code>file</code></b>.
+	 * @param jarUrl The jar file URL of the main plugin loader
+	 * @return an array of jar file URLs
+	 */
+	protected URL[] getRelatedArchives(URL jarUrl) {
+		if(jarUrl==null) throw new IllegalArgumentException("The passed jarUrl was null", new Throwable());
+		Set<URL> urls = new HashSet<URL>();
+		urls.add(jarUrl);
+		if(jarUrl.getProtocol().equalsIgnoreCase("file")) {
+			File dir = new File(jarUrl.getFile()).getParentFile();
+			for(File archive: dir.listFiles(new FilenameFilter(){
+				@Override
+				public boolean accept(File dir, String name) {					
+					return name.toLowerCase().endsWith(".jar");
+				}
+			})) {
+				try { urls.add(archive.toURI().toURL()); } catch (Exception e) {}
+			}
+		}
+		return urls.toArray(new URL[urls.size()]);
+
 	}
 	
 	

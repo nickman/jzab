@@ -22,28 +22,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.scripting;
+package org.helios.jzab.plugin.scripting.engine;
 
-import org.helios.jzab.plugin.scripting.engine.PluginScriptEngine;
 
 /**
- * <p>Title: ScriptPlugin</p>
- * <p>Description: Bootstrap for scripting plugin.</p> 
+ * <p>Title: PluginScriptEngineMXBean</p>
+ * <p>Description: JMX interface for {@link PluginScriptEngine}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.scripting.ScriptPlugin</code></p>
+ * <p><code>org.helios.jzab.plugin.scripting.engine.PluginScriptEngineMXBean</code></p>
  */
-public class ScriptPlugin {
-
+public interface PluginScriptEngineMXBean {
 	/**
-	 * @param args
+	 * Returns the logging level for this active agent listener
+	 * @return the logging level for this active agent
 	 */
-	public static void main(String[] args) {
-		PluginScriptEngine.getInstance();
-	}
+	public String getLevel();
 	
-	public static void log(Object msg) {
-		System.out.println(msg);
-	}
+	/**
+	 * Sets the logger level for this active agent
+	 * @param level The level to set this logger to
+	 */
+	public void setLevel(String level);
+
+	
 
 }

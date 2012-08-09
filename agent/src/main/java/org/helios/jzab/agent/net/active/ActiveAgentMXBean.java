@@ -35,7 +35,7 @@ import java.util.Map;
  */
 
 public interface ActiveAgentMXBean {
-	/**
+	/*
 	 * Returns the logging level for this active agent listener
 	 * @return the logging level for this active agent
 	 */

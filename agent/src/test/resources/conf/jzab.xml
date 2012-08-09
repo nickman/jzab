@@ -156,6 +156,11 @@ config version
  	 	<property name="cpu.refresh.period" value="3000" />
  	 	<plugin-arg>IPLUGIN</plugin-arg>  <!-- IPLUGIN or GENERIC -->
  	 </plugin>
+ 	 
+ 	 <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/scripting/target/helios-jzab-plugin-scripting.jar">
+ 	 	<plugin-arg>IPLUGIN</plugin-arg>  <!-- IPLUGIN or GENERIC -->
+ 	 </plugin>
+ 	 
  	
  	
  	

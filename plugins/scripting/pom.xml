@@ -58,6 +58,8 @@
                   <exclude>org.helios.jzab:agent</exclude>
                   <exclude>io.netty:*</exclude>
                   <exclude>org.json:*</exclude>
+                  <exclude>ch.qos.logback:*</exclude>
+                  <exclude>net.sf.opencsv:*</exclude>
                 </excludes>
               </artifactSet>
             </configuration>
@@ -100,21 +102,24 @@
 	  <artifactId>groovy-all</artifactId>
 	  <version>2.0.1</version>
 	</dependency>
+	<!--  not jsr 223 yet  -->
+	<!-- 
 	<dependency>
 	  <groupId>org.beanshell</groupId>
 	  <artifactId>bsh</artifactId>
 	  <version>2.0b4</version>
 	</dependency>
-	<dependency>
-	  <groupId>org.beanshell</groupId>
-	  <artifactId>bsh-bsf</artifactId>
-	  <version>2.0b4</version>
-	</dependency>
+	-->
 	<dependency>
 	  <groupId>org.python</groupId>
 	  <artifactId>jython-standalone</artifactId>
 	  <version>2.5.2</version>
 	</dependency>
+
+	
+
+	
+	
 	
 	
      
