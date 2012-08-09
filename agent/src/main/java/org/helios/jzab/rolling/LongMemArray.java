@@ -59,7 +59,8 @@ public class LongMemArray implements LongMemArrayMBean {
 	/**
 	 * Creates a new LongMemArray
 	 * @param name The name of this array
-	 * @param entryCount The number of entries
+	 * @param range The number of minutes in the full range
+	 * @param samples The number of samples taken per minute
 	 * @param direct true for a direct buffer, false for a heap buffer
 	 */
 	public LongMemArray(String name, int range, int samples, boolean direct) {
@@ -134,6 +135,7 @@ public class LongMemArray implements LongMemArrayMBean {
 	 * Returns the ID key for this LMA
 	 * @return the ID key
 	 */
+	@Override
 	public String getKey() {
 		return key;
 	}		
@@ -142,6 +144,7 @@ public class LongMemArray implements LongMemArrayMBean {
 	 * The name of this array
 	 * @return the name
 	 */
+	@Override
 	public String getName() {
 		return name;
 	}	
@@ -214,6 +217,30 @@ public class LongMemArray implements LongMemArrayMBean {
 	public int getSamples() {
 		return samples;
 	}	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("LongMemArray [");
+		if (name != null) {
+			builder.append("name=");
+			builder.append(name);
+			builder.append(", ");
+		}
+		builder.append("entryCount=");
+		builder.append(entryCount);
+		builder.append(", range=");
+		builder.append(range);
+		builder.append(", samples=");
+		builder.append(samples);
+		builder.append("]");
+		return builder.toString();
+	}
+	
 		
 	
 	public static void main(String[] args) {

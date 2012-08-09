@@ -26,6 +26,8 @@ package org.helios.jzab.plugin.nativex.plugin.impls.system.cpu;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
@@ -65,6 +67,9 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 	public static final String UNIT_PERCENT = "percent";
 	
 	
+	/** A regex pattern to match and parse a rolling metric definition such as <b><code>avg15</code></b> */
+	public static final Pattern EXPRESSION = Pattern.compile("(\\w+\\D)(\\d+)");
+	
 	/**
 	 * Schedules the resource refresh task
 	 * {@inheritDoc}
@@ -74,10 +79,10 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 	public void init() {
 		if(!inited.get()) {
 			scheduleRefresh();
-			rollingMetrics.registerDoubleRollingMetric("CPU Load", 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent");
-			for(int i = 0; i < sigar.cpuCount; i++) {
-				rollingMetrics.registerDoubleRollingMetric("CPU Load #" + i, 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent", "" + i);
-			}
+//			rollingMetrics.registerDoubleRollingMetric("CPU Load", 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent");
+//			for(int i = 0; i < sigar.cpuCount; i++) {
+//				rollingMetrics.registerDoubleRollingMetric("CPU Load #" + i, 15, 4, objectName, "cpuLoad", "system.cpu.load", "TOTAL", "percent", "" + i);
+//			}
 		}
 		super.init();
 	}
@@ -111,20 +116,53 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 	 * Returns CPU usage for all or a specified cpu. 
 	 * More zabbix compatible with <a href="http://www.zabbix.com/documentation/1.8/manual/config/items">system.cpu.util[&lt;cpu&gt;,&lt;type&gt;,&lt;mode&gt;]</a>. 
 	 * @param commandName The command name
-	 * @param args:<ol>
+	 * @param args :<ol>
 	 * 	<li><b>cpu</b>: The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined. <code>-1</code> means all.</li>
 	 * 	<li><b>type</b>: The usage type as defined in {@link CPUUtilizationType}, defaults to {@link CPUUtilizationType#USER}</li>
 	 *  <li><b>mode</b>: The aggregation window name. e.g. <b><code>avg1</code></b>, <b><code>avg5</code></b> and <b><code>avg15</code></b>. Defaults to <b><code>avg1</code></b></li> 
 	 * </ol>
-	 * @return
+	 * @return the requested system cpu utilization
+	 * TODO: Need to cache the registration event using (commandName + comncat(args)) as the key
 	 */
 	@CommandHandler({"system.cpu.util"})
 	public String getCpuUtil(String commandName, String... args) {
 		int cpuId = -1;
 		CPUUtilizationType type = CPUUtilizationType.USER;
-		String mode = "avg1";
-		
-		return null;
+		String aggrName = "avg";
+		int range = 1;
+		if(args.length>0) {
+			cpuId = Integer.parseInt(args[0].trim());
+			if(cpuId<0 || cpuId>cpuxs.length-1) {
+				log.error("Invalid CPU ID [{}]", cpuId);
+				return COMMAND_NOT_SUPPORTED;
+			}
+		}
+		if(args.length>1) {
+			type = CPUUtilizationType.forName(args[1]);
+		}
+		if(args.length>2) {
+			String mode = args[2].trim();
+			Matcher m = EXPRESSION.matcher(mode);
+			if(m.matches()) {
+				aggrName = m.group(1);
+				if(!this.rollingMetrics.isValidAggregate(aggrName)) {
+					log.error("Invalid Aggregate Function Name [{}]", aggrName);
+					return COMMAND_NOT_SUPPORTED;
+				}
+				range = Integer.parseInt(m.group(2));
+			} else {
+				log.error("Failed to recognize mode [{}]", mode);
+				return COMMAND_NOT_SUPPORTED;
+			}
+		}
+		String rollingMetricName = new StringBuilder("system.cpu.util.").append(cpuId==-1 ? "ALL" : cpuId).append(".").append(type).append(".").append(aggrName).toString();
+		log.debug("Registering Rolling Metric [{}] with range of [{}]", rollingMetricName, range);
+		if(!rollingMetrics.hasDoubleRollingMetric(rollingMetricName, range)) {
+			rollingMetrics.registerDoubleRollingMetric(rollingMetricName, range, 12, objectName, 
+					"cpuLoad", "system.cpu.load", type.name(), "percent", "" + cpuId);
+			return "" + cpuLoad("system.cpu.load", type.name(), "percent", "" + cpuId);
+		} 
+		return "" + rollingMetrics.getDoubleEvaluation(rollingMetricName, aggrName, range);
 	}
 	
 	

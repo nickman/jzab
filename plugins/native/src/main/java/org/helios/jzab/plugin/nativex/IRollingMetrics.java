@@ -111,7 +111,29 @@ public interface IRollingMetrics {
 	 * @param windowSize The length of the window to evaluate (e.g. 1, 5 or 15 minutes)
 	 * @return The calculated value
 	 */
-	public double getDoubleEvaluation(String name, String type, int windowSize);	
+	public double getDoubleEvaluation(String name, String type, int windowSize);
 	
+	/**
+	 * Indicates if a long rolling metric is registered with the passed name and a range of greater than or equal to the passed range 
+	 * @param name The name of the rolling metric
+	 * @param range The minimum range of the metric
+	 * @return true if there is a long rolling metric meeting the criteria, false otherwise
+	 */
+	public boolean hasLongRollingMetric(String name, int range);
+	
+	/**
+	 * Indicates if a double rolling metric is registered with the passed name and a range of greater than or equal to the passed range 
+	 * @param name The name of the rolling metric
+	 * @param range The minimum range of the metric
+	 * @return true if there is a double rolling metric meeting the criteria, false otherwise
+	 */
+	public boolean hasDoubleRollingMetric(String name, int range);
+
+	/**
+	 * Determines if the passed string is a valid aggregate function name as defined in {@link AggregateFunction}
+	 * @param aggrType The string to test
+	 * @return true if the name is a valid aggregate function name, false otherwise.
+	 */
+	public boolean isValidAggregate(String aggrType);
 	
 }

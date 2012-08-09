@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -120,21 +119,24 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 				if(lma==null) {
 					lma = new LongMemArray(name, range, samplesPerRange, true);
 					longArrays.put(name, lma);
-					final LongMemArray finalMemArr = lma;
-					Callable<Long> task = new Callable<Long>() {
-						@Override
-						public Long call() throws Exception {
-							long val = longCollector.call();
-							finalMemArr.add(val);
-							log.debug("Added [{}] to LongRollingMetric [{}]", val, name);
-							return val;
-						}
-					};
-					longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Long>(task), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+					longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Long>(createTask(lma, longCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 					exists = false;
 				}
 			}
 		}
+		if(exists) {
+			// There's already an existing LMA. If it has a higher range, leave it.
+			// If it has a lower range, replace it with a new one.
+			if(lma.getRange()<range) {
+				LongMemArray newLma = new LongMemArray(range, lma);
+				longArrays.put(name, newLma);
+				TrackedScheduledFuture tsf = longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Long>(createTask(newLma, longCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+				if(tsf!=null) tsf.cancel(false);
+				log.debug("Higher Range Requested --> Replaced RollingMetric \n\t[{}] with \n\t[{}]", lma, newLma);
+			} else {
+				log.debug("Range [{}] Requested but same RollingMetric exists with higher range \n\t[{}]", range, lma);
+			}
+		}		
 		return exists;
 	}
 	
@@ -162,23 +164,63 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 				if(dma==null) {
 					dma = new DoubleMemArray(name, range, samplesPerRange, true);
 					doubleArrays.put(name, dma);
-					final DoubleMemArray finalMemArr = dma;
-					Callable<Double> task = new Callable<Double>() {
-						@Override
-						public Double call() throws Exception {
-							double val = doubleCollector.call();
-							finalMemArr.add(val);
-							log.debug("Added [{}] to DoubleRollingMetric [{}]", val, name);
-							return val;
-						}
-					};
-					doubleCollectors.put(dma.getKey(), ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(task), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+					doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(createTask(dma, doubleCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 					exists = false;
 				}
 			}
 		}
+		if(exists) {
+			// There's already an existing DMA. If it has a higher range, leave it.
+			// If it has a lower range, replace it with a new one.
+			if(dma.getRange()<range) {
+				DoubleMemArray newDma = new DoubleMemArray(range, dma);
+				doubleArrays.put(name, newDma);
+				TrackedScheduledFuture tsf = doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(createTask(newDma, doubleCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+				if(tsf!=null) tsf.cancel(false);
+				log.debug("Higher Range Requested --> Replaced RollingMetric \n\t[{}] with \n\t[{}]", dma, newDma);
+			} else {
+				log.debug("Range [{}] Requested but same RollingMetric exists with higher range \n\t[{}]", range, dma);
+			}
+		}
 		return exists;
 	}
+	
+	/**
+	 * Creates a secheduled task for a rolling collector
+	 * @param dma The DMA to drop results in
+	 * @param collector The collecting callback providing the sampling
+	 * @return The callable to be scheduled
+	 */
+	protected Callable<Double> createTask(final DoubleMemArray dma, final Callable<Double> collector)  {
+		return  new Callable<Double>() {
+			@Override
+			public Double call() throws Exception {
+				double val = collector.call();
+				dma.add(val);
+				log.debug("Added [{}] to DoubleRollingMetric [{}]", val, dma.getName());
+				return val;
+			}
+		};
+	}
+	
+	/**
+	 * Creates a secheduled task for a rolling collector
+	 * @param lma The LMA to drop results in
+	 * @param collector The collecting callback providing the sampling
+	 * @return The callable to be scheduled
+	 */
+	protected Callable<Long> createTask(final LongMemArray lma, final Callable<Long> collector)  {
+		return  new Callable<Long>() {
+			@Override
+			public Long call() throws Exception {
+				long val = collector.call();
+				lma.add(val);
+				log.debug("Added [{}] to LongRollingMetric [{}]", val, lma.getName());
+				return val;
+			}
+		};
+	}
+	
 	
 	/**
 	 * Registers a new rolling metric. The created metric array will allocate slots to accomodate
@@ -192,6 +234,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param args The collection command arguments
 	 * @return true if the collector was created, false if it already existed
 	 */
+	@Override
 	public boolean registerLongRollingMetric(String name, int range, int samplesPerRange, final ObjectName longCollector, final String opName, final String commandName, final String... args) {
 		Callable<Long> callable = new Callable<Long>() {
 			@Override
@@ -214,6 +257,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param args The collection command arguments
 	 * @return true if the collector was created, false if it already existed
 	 */
+	@Override
 	public boolean registerDoubleRollingMetric(String name, int range, int samplesPerRange, final ObjectName doubleCollector, final String opName, final String commandName, final String... args) {
 		Callable<Double> callable = new Callable<Double>() {
 			@Override
@@ -230,6 +274,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param windowSize The number of minutes to retrieve for. <code>-1</code> means the whole raw array.
 	 * @return the raw long array
 	 */
+	@Override
 	public long[] getLongArray(String name, int windowSize) {
 		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
 		log.debug("Fetching long array [{}] with window size [{}]", name, windowSize);
@@ -243,6 +288,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param name The metric name
 	 * @return the raw long array
 	 */
+	@Override
 	public long[] getLongArray(String name) {
 		return getLongArray(name, -1);
 	}
@@ -253,6 +299,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param windowSize The number of minutes to retrieve for. <code>-1</code> means the whole raw array.
 	 * @return the raw double array
 	 */
+	@Override
 	public double[] getDoubleArray(String name, int windowSize) {
 		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
 		log.debug("Fetching double array [{}] with window size [{}]", name, windowSize);
@@ -266,6 +313,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param name The metric name
 	 * @return the raw double array
 	 */
+	@Override
 	public double[] getDoubleArray(String name) {
 		return getDoubleArray(name, -1);
 	}
@@ -281,6 +329,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param windowSize The length of the window to evaluate (e.g. 1, 5 or 15 minutes)
 	 * @return The calculated value
 	 */
+	@Override
 	public long getLongEvaluation(String name, String type, int windowSize) {
 		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
 		if(type==null || type.trim().isEmpty()) throw new IllegalArgumentException("The passed type was null or empty", new Throwable());
@@ -298,6 +347,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param windowSize The length of the window to evaluate (e.g. 1, 5 or 15 minutes)
 	 * @return The calculated value
 	 */
+	@Override
 	public double getDoubleEvaluation(String name, String type, int windowSize) {
 		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
 		if(type==null || type.trim().isEmpty()) throw new IllegalArgumentException("The passed type was null or empty", new Throwable());
@@ -308,11 +358,53 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 		return af.aggregate(lma.get(windowSize));
 	}
 	
+	/**
+	 * Indicates if a long rolling metric is registered with the passed name and a range of greater than or equal to the passed range.
+	 * @param name The name of the rolling metric
+	 * @param range The minimum range of the metric
+	 * @return true if there is a long rolling metric meeting the criteria, false otherwise
+	 */
+	@Override
+	public boolean hasLongRollingMetric(String name, int range) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		LongMemArray lma = longArrays.get(name);
+		if(lma==null) return false;
+		return lma.getRange() >= range;
+	}
+	
+	/**
+	 * Indicates if a double rolling metric is registered with the passed name and a range of greater than or equal to the passed range 
+	 * @param name The name of the rolling metric
+	 * @param range The minimum range of the metric
+	 * @return true if there is a double rolling metric meeting the criteria, false otherwise
+	 */
+	@Override
+	public boolean hasDoubleRollingMetric(String name, int range) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		DoubleMemArray dma = doubleArrays.get(name);
+		if(dma==null) return false;
+		return dma.getRange() >= range;
+	}
+	
+	/**
+	 * Determines if the passed string is a valid aggregate function name as defined in {@link AggregateFunction}
+	 * @param aggrType The string to test
+	 * @return true if the name is a valid aggregate function name, false otherwise.
+	 */
+	public boolean isValidAggregate(String aggrType) {
+		try {
+			AggregateFunction.forName(aggrType);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
 	
 	/**
 	 * Returns a list of the registered rolling double metrics
 	 * @return a list of the registered rolling double metrics
 	 */
+	@Override
 	public List<DoubleMemArrayMBean> getDoubleMemArrays() {
 		return Collections.unmodifiableList(new ArrayList<DoubleMemArrayMBean>(doubleArrays.values()));
 	}
@@ -321,6 +413,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * Returns a list of the registered rolling long metrics
 	 * @return a list of the registered rolling long metrics
 	 */
+	@Override
 	public List<LongMemArrayMBean> getLongMemArrays() {
 		return Collections.unmodifiableList(new ArrayList<LongMemArrayMBean>(longArrays.values()));
 	}
@@ -350,6 +443,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * Returns the number of double mem arrays currently tracked
 	 * @return the number of double mem arrays currently tracked
 	 */
+	@Override
 	public int getDoubleArrayCount() {
 		return doubleArrays.size();
 	}
@@ -358,6 +452,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * Returns the number of long mem arrays currently tracked
 	 * @return the number of long mem arrays currently tracked
 	 */
+	@Override
 	public int getLongArrayCount() {
 		return longArrays.size();
 	}

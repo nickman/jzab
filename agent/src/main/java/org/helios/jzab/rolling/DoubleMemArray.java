@@ -57,7 +57,8 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	/**
 	 * Creates a new DoubleMemArray
 	 * @param name The name of this array
-	 * @param entryCount The number of entries
+	 * @param range The number of minutes in the full range
+	 * @param samples The number of samples taken per minute
 	 * @param direct true for a direct buffer, false for a heap buffer
 	 */
 	public DoubleMemArray(String name, int range, int samples, boolean direct) {
@@ -96,7 +97,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 				size++;
 			}
 		}
-		buffer.put(value);		
+		buffer.put(value);			
 	}
 	
 	
@@ -136,6 +137,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	 * The name of this array
 	 * @return the name
 	 */
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -203,6 +205,7 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	 * Returns the ID key for this DMA
 	 * @return the ID key
 	 */
+	@Override
 	public String getKey() {
 		return key;
 	}	
@@ -273,6 +276,29 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	
 	public static void log(Object msg) {
 		System.out.println(msg);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("DoubleMemArray [");
+		if (name != null) {
+			builder.append("name=");
+			builder.append(name);
+			builder.append(", ");
+		}
+		builder.append("entryCount=");
+		builder.append(entryCount);
+		builder.append(", range=");
+		builder.append(range);
+		builder.append(", samples=");
+		builder.append(samples);
+		builder.append("]");
+		return builder.toString();
 	}
 
 
