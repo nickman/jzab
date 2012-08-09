@@ -45,7 +45,8 @@ public interface AbstractMultiCommandProcessorMBean {
 	public static final String OBJECT_NAME_PATTERN = "org.helios.jzab.agent.plugin:type=Plugin,name=%s";
 	/** The rolling metric service object name */
 	public static final String ROLLING_SERVICE = "org.helios.jzab.rolling:service=WeAreRolling";
-
+	/** The command manager JMX object name */
+	public static final String COMMAND_SERVICE = "org.helios.jzab.agent.command:service=CommandManager";
 	
     /**
      * Executes the command and returns the result
@@ -89,6 +90,14 @@ public interface AbstractMultiCommandProcessorMBean {
      * @return the names of all the command names supported by this class
      */
     public String[] getAliases();
+    
+	/**
+	 * Simplified execution interface. Accepts a full zabbix style item key command. e.g. <b><code>system.cpu.util[3,system,avg15]</code></b>.
+	 * Implemented to enable execution through JConsole.
+	 * @param command a full zabbix style item key command
+	 * @return the result of the command execution
+	 */
+	public String execute(String command);    
     
 
 }

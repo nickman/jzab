@@ -304,9 +304,9 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * @param commandString The command string to parse
 	 * @return A string of commands where the first item is the command processor name and the remainder are the arguments.
 	 */
-	public String[] parseCommandString(CharSequence commandString) {
+	public String[] parseCommandString(String commandString) {
 			if(commandString==null) return null;
-			String cstring = commandString.toString().trim();
+			String cstring = commandString.trim();
 			if(cstring.isEmpty()) return null;
 			int length = cstring.length();
 			int paramOpener = cstring.indexOf('[');

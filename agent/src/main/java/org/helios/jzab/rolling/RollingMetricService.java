@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.ObjectName;
@@ -45,7 +44,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * <p>Title: RollingMetricService</p>
- * <p>Description: </p> 
+ * <p>Description: Tracks rolling averages for named metrics in types of doubles and longs.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.rolling.RollingMetricService</code></p>
@@ -119,7 +118,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 				if(lma==null) {
 					lma = new LongMemArray(name, range, samplesPerRange, true);
 					longArrays.put(name, lma);
-					longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Long>(createTask(lma, longCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+					longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", createTask(lma, longCollector), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 					exists = false;
 				}
 			}
@@ -130,7 +129,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 			if(lma.getRange()<range) {
 				LongMemArray newLma = new LongMemArray(range, lma);
 				longArrays.put(name, newLma);
-				TrackedScheduledFuture tsf = longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Long>(createTask(newLma, longCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+				TrackedScheduledFuture tsf = longCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", createTask(newLma, longCollector), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 				if(tsf!=null) tsf.cancel(false);
 				log.debug("Higher Range Requested --> Replaced RollingMetric \n\t[{}] with \n\t[{}]", lma, newLma);
 			} else {
@@ -164,7 +163,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 				if(dma==null) {
 					dma = new DoubleMemArray(name, range, samplesPerRange, true);
 					doubleArrays.put(name, dma);
-					doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(createTask(dma, doubleCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+					doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", createTask(dma, doubleCollector), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 					exists = false;
 				}
 			}
@@ -175,7 +174,7 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 			if(dma.getRange()<range) {
 				DoubleMemArray newDma = new DoubleMemArray(range, dma);
 				doubleArrays.put(name, newDma);
-				TrackedScheduledFuture tsf = doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", new FutureTask<Double>(createTask(newDma, doubleCollector)), 0, 60/samplesPerRange, TimeUnit.SECONDS));
+				TrackedScheduledFuture tsf = doubleCollectors.put(name, ScheduledThreadPoolFactory.getInstance("Scheduler").scheduleAtFixedRate("Rollng Collection [" + name + "]", createTask(newDma, doubleCollector), 0, 60/samplesPerRange, TimeUnit.SECONDS));
 				if(tsf!=null) tsf.cancel(false);
 				log.debug("Higher Range Requested --> Replaced RollingMetric \n\t[{}] with \n\t[{}]", dma, newDma);
 			} else {
@@ -191,14 +190,20 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param collector The collecting callback providing the sampling
 	 * @return The callable to be scheduled
 	 */
-	protected Callable<Double> createTask(final DoubleMemArray dma, final Callable<Double> collector)  {
-		return  new Callable<Double>() {
+	protected Runnable createTask(final DoubleMemArray dma, final Callable<Double> collector)  {
+		return  new Runnable() {
 			@Override
-			public Double call() throws Exception {
-				double val = collector.call();
-				dma.add(val);
-				log.debug("Added [{}] to DoubleRollingMetric [{}]", val, dma.getName());
-				return val;
+			public void run() {
+				try {
+					long start = System.nanoTime();
+					double val = collector.call();
+					long elapsed = System.nanoTime()-start;
+					dma.add(val);
+					dma.setLastExecution(elapsed);
+					log.trace("Added [{}] to DoubleRollingMetric [{}]", val, dma.getName());
+				} catch (Exception e) {
+					log.error("Failed to execute collection for DoubleRollingMetric [{}]", dma.getName(), e);
+				}
 			}
 		};
 	}
@@ -209,14 +214,20 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @param collector The collecting callback providing the sampling
 	 * @return The callable to be scheduled
 	 */
-	protected Callable<Long> createTask(final LongMemArray lma, final Callable<Long> collector)  {
-		return  new Callable<Long>() {
+	protected Runnable createTask(final LongMemArray lma, final Callable<Long> collector)  {
+		return  new Runnable() {
 			@Override
-			public Long call() throws Exception {
-				long val = collector.call();
-				lma.add(val);
-				log.debug("Added [{}] to LongRollingMetric [{}]", val, lma.getName());
-				return val;
+			public void run() {
+				try {
+					long start = System.nanoTime();
+					long val = collector.call();
+					long elapsed = System.nanoTime()-start;
+					lma.add(val);
+					lma.setLastExecution(elapsed);
+					log.trace("Added [{}] to LongRollingMetric [{}]", val, lma.getName());
+				} catch (Exception e) {
+					log.error("Failed to execute collection for LongRollingMetric [{}]", lma.getName(), e);
+				}
 			}
 		};
 	}
@@ -258,11 +269,17 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 	 * @return true if the collector was created, false if it already existed
 	 */
 	@Override
-	public boolean registerDoubleRollingMetric(String name, int range, int samplesPerRange, final ObjectName doubleCollector, final String opName, final String commandName, final String... args) {
+	public boolean registerDoubleRollingMetric(final String name, int range, int samplesPerRange, final ObjectName doubleCollector, final String opName, final String commandName, final String... args) {
 		Callable<Double> callable = new Callable<Double>() {
 			@Override
 			public Double call() throws Exception {
-				return (Double)JMXHelper.invoke(doubleCollector, JMXHelper.getHeliosMBeanServer(), opName, new Object[]{commandName, args}, COLLECT_SIGNATURE);
+				log.trace("Executing DoubleRollingMetric Collection [{}]", name);
+				try {
+					return (Double)JMXHelper.invoke(doubleCollector, JMXHelper.getHeliosMBeanServer(), opName, new Object[]{commandName, args}, COLLECT_SIGNATURE);
+				} catch (Exception e) {
+					log.error("Failed to execute DoubleRollingMetric Collection [{}]:{}", name, e.toString());
+					throw new RuntimeException("Failed to execute DoubleRollingMetric Collection [" + name + "]", e);
+				}
 			}
 		};
 		return registerDoubleRollingMetric(name, range, samplesPerRange, callable);

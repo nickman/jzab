@@ -131,10 +131,14 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 		String aggrName = "avg";
 		int range = 1;
 		if(args.length>0) {
-			cpuId = Integer.parseInt(args[0].trim());
-			if(cpuId<0 || cpuId>cpuxs.length-1) {
-				log.error("Invalid CPU ID [{}]", cpuId);
-				return COMMAND_NOT_SUPPORTED;
+			if(args[0].trim().equalsIgnoreCase("ALL")) {
+				cpuId = -1;
+			} else {
+				cpuId = Integer.parseInt(args[0].trim());				
+				if(cpuId<-1 || cpuId>cpuxs.length-1) {
+					log.error("Invalid CPU ID [{}]", cpuId);
+					return COMMAND_NOT_SUPPORTED;
+				}
 			}
 		}
 		if(args.length>1) {
@@ -172,7 +176,7 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 	 * @param args The arguments: <ol>
 	 * 	<li>The usage type as defined in {@link CPUUtilizationType}, defaults to {@link CPUUtilizationType#TOTAL}</li>
 	 *  <li>Specifies the utilization unit. One of <code>time</code> or <code>percent</code>. Default is <code>percent</code>.</li> 
-	 *  <li>The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>. Default is a composite of all CPUs combined. <code>-1</code> means all.</li>
+	 *  <li>The CPU ID identified as an int from <code>0</code> to <code>[number of processors -1]</code>, or the string <code>ALL</code>. Default is a composite of all CPUs combined. <code>-1</code> means all.</li>
 	 * </ol>
 	 * @return The specified CPU utilization
 	 */
@@ -192,9 +196,13 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 		}
 		if(args.length>2) {
 			try {
-				id = Integer.parseInt(args[2]);
-				if(id>cpuInstancePercs.length-1) {
-					log.warn("Non existent CPU ID Specified [{}]", id); return COMMAND_NOT_SUPPORTED;
+				if(args[2].trim().equalsIgnoreCase("ALL")) {
+					id = -1;
+				} else {
+					id = Integer.parseInt(args[2]);
+					if(id>cpuInstancePercs.length-1) {
+						log.warn("Non existent CPU ID Specified [{}]", id); return COMMAND_NOT_SUPPORTED;
+					}					
 				}
 			} catch (Exception e) {
 				log.error("Invalid CPU ID Specified [{}]", args[2]); return COMMAND_ERROR;

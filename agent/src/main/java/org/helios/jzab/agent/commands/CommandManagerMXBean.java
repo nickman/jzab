@@ -76,4 +76,11 @@ public interface CommandManagerMXBean {
 	 * @return The result of the command execution
 	 */
 	public String invokeCommand(String commandString);
+	
+	/**
+	 * Parses a command string
+	 * @param commandString The command string to parse
+	 * @return A string of commands where the first item is the command processor name and the remainder are the arguments.
+	 */
+	public String[] parseCommandString(String commandString);
 }

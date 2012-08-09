@@ -53,7 +53,11 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 	protected final int samples;
 	/** The ID key for this DoubleMemArray */
 	protected final String key;
+	/** The last execution time in ns. */
+	protected long lastExecution = -1L;
 	
+
+
 	/**
 	 * Creates a new DoubleMemArray
 	 * @param name The name of this array
@@ -130,8 +134,32 @@ public class DoubleMemArray implements DoubleMemArrayMBean {
 			arr[i] = buffer.get(i);
 		}
 		return arr;
-		
 	}
+	
+	/**
+	 * Returns the last execution time in ns.
+	 * @return the last execution time in ns.
+	 */
+	public long getLastExecution() {
+		return lastExecution;
+	}
+	
+	/**
+	 * Returns the last execution time in ms.
+	 * @return the last execution time in ms.
+	 */
+	public long getLastExecutionMs() {
+		return TimeUnit.MILLISECONDS.convert(lastExecution, TimeUnit.NANOSECONDS);
+	}
+	
+
+	/**
+	 * Sets the last execution time in ns.
+	 * @param lastExecution the last execution time to set 
+	 */
+	public void setLastExecution(long lastExecution) {
+		this.lastExecution = lastExecution;
+	}	
 
 	/**
 	 * The name of this array

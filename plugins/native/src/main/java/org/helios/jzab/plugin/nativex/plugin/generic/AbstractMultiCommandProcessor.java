@@ -27,6 +27,7 @@ package org.helios.jzab.plugin.nativex.plugin.generic;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,6 +44,7 @@ import javax.management.ObjectName;
 import org.helios.jzab.plugin.nativex.HeliosSigar;
 import org.helios.jzab.plugin.nativex.IRollingMetrics;
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
+import org.helios.jzab.plugin.nativex.plugin.ICommandParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +72,10 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	/** Indicates if this processor has been initialized */
 	protected final AtomicBoolean inited = new AtomicBoolean(false);
 	
+	/** Interface to the core rolling metric service */
 	protected final IRollingMetrics rollingMetrics;
+	/** Interface to the core command manager */
+	protected final ICommandParser commandParser; 
 	
 	/** The handle to this processor's scheduled refresh task */
 	protected long scheduleHandle = -1L;
@@ -137,6 +142,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 		this.aliases = als.toArray(new String[als.size()]);
 		register();
 		rollingMetrics = (IRollingMetrics)MBeanServerInvocationHandler.newProxyInstance(server, objectName(ROLLING_SERVICE), IRollingMetrics.class, true);
+		commandParser = (ICommandParser)MBeanServerInvocationHandler.newProxyInstance(server, objectName(COMMAND_SERVICE), ICommandParser.class, true);
 	}
 	
 	private static ObjectName objectName(CharSequence name) {
@@ -258,6 +264,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 									return result==null ? "" : result.toString();
 								} catch (Exception e) {
 									log.warn("Failed to invoke command [{}]:[{}]", key, e.toString());
+									log.debug("Failed to invoke command [{}]", key, e);
 									return COMMAND_ERROR;								
 								}
 							}
@@ -283,6 +290,28 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	}
 	
 	/**
+	 * Simplified execution interface. Accepts a full zabbix style item key command. e.g. <b><code>system.cpu.util[3,system,avg15]</code></b>.
+	 * Implemented to support command testing from JConsole
+	 * @param command a full zabbix style item key command
+	 * @return the result of the command execution
+	 */
+	public String execute(String command) {
+		if(command==null || command.trim().isEmpty()) throw new IllegalArgumentException("The passed command was null or empty", new Throwable());
+		log.debug("Simplified Execute Command [{}]", command);
+		String[] parsedCommand = commandParser.parseCommandString(command);
+		if(parsedCommand.length==0) throw new RuntimeException("Parsed command had zero size", new Throwable());
+		String commandName;
+		String[] args = new String[]{};
+		commandName = parsedCommand[0];
+		if(parsedCommand.length>1) {
+			args = new String[parsedCommand.length-1];
+			System.arraycopy(parsedCommand, 1, args, 0, parsedCommand.length-1);
+		}
+		log.debug("Simplified Execute Parsed [{}]:[{}]", commandName, Arrays.toString(args));
+		return execute(commandName, args);
+	}
+	
+	/**
 	 * Delegates the execution of the command to a concrete implementation
 	 * @param commandName The command name
 	 * @param args The command arguments
@@ -298,6 +327,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 			return invoker.execute(commandName, args);
 		} catch (Exception e) {
 			log.error("Failed to execute command [{}]:[{}]", commandName, e.toString());
+			log.debug("Failed to execute command [{}]", commandName, e);
 			return COMMAND_ERROR;
 		}
 	}

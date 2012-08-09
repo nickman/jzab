@@ -87,5 +87,18 @@ public interface LongMemArrayMBean {
 	 */
 	public String getKey();
 	
+	/**
+	 * Returns the last execution time in ns.
+	 * @return the last execution time in ns.
+	 */
+	public long getLastExecution();
+	
+	/**
+	 * Returns the last execution time in ms.
+	 * @return the last execution time in ms.
+	 */
+	public long getLastExecutionMs();
+	
+	
 
 }

@@ -232,7 +232,7 @@ public class AgentListener extends NotificationBroadcasterSupport implements Cha
 	@Override
 	public ChannelPipeline getPipeline() throws Exception {
 		ChannelPipeline pipeline = Channels.pipeline();
-		pipeline.addLast("logger", loggingHandler);
+		//pipeline.addLast("logger", loggingHandler);
 		pipeline.addLast("frameDecoder", new DelimiterBasedFrameDecoder(256, true, true, Delimiters.lineDelimiter()));
 		pipeline.addLast("stringDecoder", sharableHandlers.getHandler("stringDecoder"));						
 		pipeline.addLast("stringEncoder", sharableHandlers.getHandler("stringEncoder"));		

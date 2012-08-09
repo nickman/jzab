@@ -53,6 +53,10 @@ public class LongMemArray implements LongMemArrayMBean {
 	protected final int samples;
 	/** The ID key for this LongMemArray */
 	protected final String key;
+	/** The last execution time in ns. */
+	protected long lastExecution = -1L;
+	
+	
 	
 	
 	
@@ -130,6 +134,32 @@ public class LongMemArray implements LongMemArrayMBean {
 		return arr;
 		
 	}
+
+	/**
+	 * Returns the last execution time in ns.
+	 * @return the last execution time in ns.
+	 */
+	public long getLastExecution() {
+		return lastExecution;
+	}
+	
+	/**
+	 * Returns the last execution time in ms.
+	 * @return the last execution time in ms.
+	 */
+	public long getLastExecutionMs() {
+		return TimeUnit.MILLISECONDS.convert(lastExecution, TimeUnit.NANOSECONDS);
+	}
+	
+
+	/**
+	 * Sets the last execution time in ns.
+	 * @param lastExecution the last execution time to set 
+	 */
+	public void setLastExecution(long lastExecution) {
+		this.lastExecution = lastExecution;
+	}
+	
 	
 	/**
 	 * Returns the ID key for this LMA
