@@ -28,11 +28,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.ObjectName;
-import javax.script.Bindings;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 
 import org.helios.jzab.agent.logging.LoggerManager;
+import org.helios.jzab.plugin.scripting.engine.invokers.IScriptInvoker;
+import org.helios.jzab.plugin.scripting.engine.invokers.ScriptInvokerFactory;
 import org.helios.jzab.util.JMXHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,13 @@ public class PluginScriptEngine implements PluginScriptEngineMXBean {
 	protected final String name;
 	/** The ObjectName for this plugin */
 	protected final ObjectName objectName;
+	/** A map of engines keyed by their supported extensions */
+	protected final ConcurrentHashMap<String, Engine> enginesByExt = new ConcurrentHashMap<String, Engine>();
+	/** A map of engines keyed by their supported mime types */
+	protected final ConcurrentHashMap<String, Engine> enginesByMime = new ConcurrentHashMap<String, Engine>();
+	/** A map of script invokers keyed by their advertised name */
+	protected final ConcurrentHashMap<String, IScriptInvoker> invokersByName = new ConcurrentHashMap<String, IScriptInvoker>();
+	
 	
 	/** The registered script engines keyed by name */
 	private static final Map<String, PluginScriptEngine> scriptEngines = new ConcurrentHashMap<String, PluginScriptEngine>();
@@ -101,17 +109,29 @@ public class PluginScriptEngine implements PluginScriptEngineMXBean {
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
 		log.info("Started PluginScriptEngine [{}]", name);
 		ScriptEngineManager sem = new ScriptEngineManager();
-		Bindings bindings = sem.getBindings();
+		//Bindings bindings = sem.getBindings();
 		for(ScriptEngineFactory sef: sem.getEngineFactories()) {
 			Engine engine = null;
 			try {
 				engine = new Engine(sef, objectName);
-				bindings.put(engine.getObjectName().toString(), engine);
+				sem.put(engine.getObjectName().toString(), engine);
+				for(String ext: engine.getExtensions()) {
+					if(enginesByExt.putIfAbsent(ext, engine)!=null) {
+						log.warn("Engine [{}] advertised extension [{}] but was already registered by another engine", engine.getEngineName(), ext);
+					}
+				}
+				for(String mime: engine.getMimeTypes()) {
+					if(enginesByMime.putIfAbsent(mime, engine)!=null) {
+						log.warn("Engine [{}] advertised mime-type [{}] but was already registered by another engine", engine.getEngineName(), mime);
+					}
+				}
+				
 				log.info("Registered Scripting Engine [{}]", engine.objectName);
 			} catch (Throwable e) {
 				log.error("Failed to load ScriptEngine [{}:{}]. Are you missing a dependency ?", sef.getEngineName(), sef.getEngineVersion());
 			}
 		}
+		//sem.setBindings(bindings);
 		
 	}
 
@@ -132,5 +152,23 @@ public class PluginScriptEngine implements PluginScriptEngineMXBean {
 	public void setLevel(String level) {
 		LoggerManager.getInstance().getLoggerLevelManager().setLoggerLevel(getClass().getName(), level);
 	}	
+	
+	
+	/**
+	 * Adds a new script
+	 * @param src The source
+	 * @param name The name of the script
+	 * @param ext The extension, or in a pinch, the mime-type
+	 */
+	public void addScript(CharSequence src, String name, String ext) {
+		log.debug("Adding script [{}] of type [{}]", name, ext);
+		Engine engine = enginesByExt.get(ext);
+		if(engine==null) engine = enginesByMime.get(ext);
+		if(engine==null) {
+			log.warn("Failed to add script [{}]. No engine for type [{}]", name, ext);
+		}
+		IScriptInvoker invoker = ScriptInvokerFactory.invokerFor(engine, src.toString());
+		
+	}
 
 }

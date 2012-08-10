@@ -27,6 +27,9 @@ package org.helios.jzab.plugin.scripting;
 import java.util.Properties;
 
 import org.helios.jzab.plugin.scripting.engine.PluginScriptEngine;
+import org.helios.jzab.util.XMLHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
 /**
@@ -41,6 +44,9 @@ public class ScriptPlugin {
 	protected final Properties scriptPluginProps = new Properties();
 	/** The configured Xml configuration */
 	protected Node scriptPluginXmlNode = null;
+	/** Instance logger */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+	
 	
 	
 	/**
@@ -50,8 +56,41 @@ public class ScriptPlugin {
 	 * </ol>
 	 */
 	public void boot(String[] args) {
-		PluginScriptEngine.getInstance(args.length==0 ? PluginScriptEngine.DEFAULT_PLUGIN_NAME : args[0]);
+		PluginScriptEngine pse = PluginScriptEngine.getInstance(args.length==0 ? PluginScriptEngine.DEFAULT_PLUGIN_NAME : args[0]);
+		if(scriptPluginXmlNode!=null) {
+			for(Node scriptNode: XMLHelper.getChildNodesByName(scriptPluginXmlNode, "script", false)) {
+				String name = XMLHelper.getAttributeByName(scriptNode, "name", null);
+				String ext = XMLHelper.getAttributeByName(scriptNode, "ext", null);				
+				if(name==null || name.trim().isEmpty() || ext==null || ext.trim().isEmpty()) {
+					log.warn("Failed to deploy configured script. Name or ext was null. [{}]", XMLHelper.getNodeTextValue(scriptNode));
+					continue;
+				}
+				Node srcNode = XMLHelper.getChildNodeByName(scriptNode, "source", false);
+				if(srcNode==null) {
+					log.warn("Failed to deploy configured script [{}]:[{}]. No source defined.", name, ext);
+					continue;					
+				}
+				pse.addScript(XMLHelper.getNodeTextValue(srcNode), name, ext);
+				log.debug("Added Script [{}]:[{}]", name, ext);
+			}
+		}
 	}
+	
+	/**
+ 	 	<plugin-config>
+ 	 		<script name="TotalBlockCounts" ext="groovy">
+ 	 			<source><![CDATA[
+					import java.lang.management.*;
+					long totalBlocks = 0;
+					ManagementFactory.getThreadMXBean().dumpAllThreads(false, false).each() {
+					    totalBlocks += it.getBlockedCount();
+					}
+					return totalBlocks;
+ 	 			]]></source>
+ 	 		</script>
+ 	 	</plugin-config>
+
+	 */
 	
 	/**
 	 * Handles properties set by the core plugin loader

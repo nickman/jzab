@@ -67,7 +67,7 @@ public class Engine implements EngineMXBean {
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);		
 		Bindings bindings = new SimpleBindings();
 		bindings.put(objectName.toString(), this);
-		engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
+		//engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
 	}
 	/**
 	 * @return
@@ -148,7 +148,7 @@ public class Engine implements EngineMXBean {
 	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getGlobalBindings()
 	 */
 	public List<BindingEntry> getGlobalBindings() {
-		return BindingEntry.newInstance(engine.getBindings(ScriptContext.GLOBAL_SCOPE));
+		return BindingEntry.newInstance(engine.getContext().getBindings(ScriptContext.GLOBAL_SCOPE));
 	}
 	
 	

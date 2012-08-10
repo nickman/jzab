@@ -162,7 +162,18 @@ config version
  --> 	 
  	 <!-- <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/scripting/target/helios-jzab-plugin-scripting.jar"> -->
  	 <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:../plugins/scripting/target/helios-jzab-plugin-scripting.jar">
- 	 	
+ 	 	<plugin-config>
+ 	 		<script name="TotalBlockCounts" ext="groovy">
+ 	 			<source><![CDATA[
+					import java.lang.management.*;
+					long totalBlocks = 0;
+					ManagementFactory.getThreadMXBean().dumpAllThreads(false, false).each() {
+					    totalBlocks += it.getBlockedCount();
+					}
+					return totalBlocks;
+ 	 			]]></source>
+ 	 		</script>
+ 	 	</plugin-config>
  	 </plugin>
  	 
  	

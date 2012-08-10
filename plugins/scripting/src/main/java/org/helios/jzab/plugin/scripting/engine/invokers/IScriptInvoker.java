@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.scripting.engine;
+package org.helios.jzab.plugin.scripting.engine.invokers;
 
 /**
  * <p>Title: IScriptInvoker</p>
@@ -82,5 +82,9 @@ public interface IScriptInvoker {
 	 * getInterface(Class<T> clasz) 
 	 * getInterface(Object thiz, Class<T> clasz) 
 	 */
+	
+	
+	public Object invoke(Object...args);
+	
 	
 }

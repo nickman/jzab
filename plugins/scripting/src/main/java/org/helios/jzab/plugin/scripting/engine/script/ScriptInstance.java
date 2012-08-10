@@ -22,37 +22,29 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.scripting.engine;
+package org.helios.jzab.plugin.scripting.engine.script;
 
+import org.helios.jzab.plugin.scripting.engine.invokers.IScriptInvoker;
 
 /**
- * <p>Title: PluginScriptEngineMXBean</p>
- * <p>Description: JMX interface for {@link PluginScriptEngine}</p> 
+ * <p>Title: ScriptInstance</p>
+ * <p>Description: A wrapper for an individual script</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.scripting.engine.PluginScriptEngineMXBean</code></p>
+ * <p><code>org.helios.jzab.plugin.scripting.engine.script.ScriptInstance</code></p>
  */
-public interface PluginScriptEngineMXBean {
-	/**
-	 * Returns the logging level for this active agent listener
-	 * @return the logging level for this active agent
-	 */
-	public String getLevel();
+public class ScriptInstance {
+	/** The script source */
+	protected String source;
+	/** The script name */
+	protected String name;
 	
-	/**
-	 * Sets the logger level for this active agent
-	 * @param level The level to set this logger to
-	 */
-	public void setLevel(String level);
+	/** The timestamp of the script source */
+	protected long sourceTime;
+	/** The generic script invoker */
+	protected IScriptInvoker invoker;
 	
-	/**
-	 * Adds a new script
-	 * @param src The source
-	 * @param name The name of the script
-	 * @param ext The extension, or in a pinch, the mime-type
-	 */
-	public void addScript(CharSequence src, String name, String ext);	
-
-	
-
+	protected ScriptInstance(CharSequence source) {
+		this.source = source.toString();
+	}
 }
