@@ -24,6 +24,9 @@
  */
 package org.helios.jzab.plugin.scripting.engine;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import javax.management.ObjectName;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -43,44 +46,66 @@ import org.slf4j.LoggerFactory;
 public class PluginScriptEngine implements PluginScriptEngineMXBean {
 	/** Instance logger */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	/** The name of this plugin script engine instance */
+	protected final String name;
+	/** The ObjectName for this plugin */
+	protected final ObjectName objectName;
 	
-	/** The singleton instance */
-	private static volatile PluginScriptEngine instance = null;
-	/** The singleton instance ctor lock */
-	private static final Object lock = new Object();
+	/** The registered script engines keyed by name */
+	private static final Map<String, PluginScriptEngine> scriptEngines = new ConcurrentHashMap<String, PluginScriptEngine>();
 	
-	/** The service's JMX ObjectName */
-	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.plugin.script:type=Plugin,name=PluginScriptEngine");
+	
+	/** The ObjectName template for this script engine plugin instance */
+	public static final String OBJECT_NAME_PATTERN = "org.helios.jzab.agent.plugin.script:type=Plugin,name=%s";
+	/** The default plugin name */
+	public static final String DEFAULT_PLUGIN_NAME = "ScriptEnginePlugin";
 
 	/**
-	 * Returns the PluginScriptEngine singleton instance
-	 * @return the PluginScriptEngine singleton instance
+	 * Returns the default PluginScriptEngine singleton instance
+	 * @return the default PluginScriptEngine singleton instance
 	 */
 	public static PluginScriptEngine getInstance() {
-		if(instance==null) {
-			synchronized(lock) {
-				if(instance==null) {
-					instance = new PluginScriptEngine();
+		return getInstance(DEFAULT_PLUGIN_NAME);
+	}
+
+
+	/**
+	 * Returns the named PluginScriptEngine singleton instance
+	 * @param name The name of the PluginScriptEngine to initialize or acquire
+	 * @return the named PluginScriptEngine singleton instance
+	 */
+	public static PluginScriptEngine getInstance(String name) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed plugin script engine name was null or empty", new Throwable());
+		PluginScriptEngine plugin = scriptEngines.get(name);
+		if(plugin==null) {
+			synchronized(scriptEngines) {
+				plugin = scriptEngines.get(name);
+				if(plugin==null) {
+					plugin = new PluginScriptEngine(name);
+					scriptEngines.put(name, plugin);
 				}
 			}
 		}
-		return instance;
+		return plugin;
 		
 	}
 	
 	/**
 	 * Creates a new PluginScriptEngine
+	 * @param name The name of the PluginScriptEngine
 	 */
-	private PluginScriptEngine() {
-		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), OBJECT_NAME, this);
-		log.info("Started PluginScriptEngine");
+	private PluginScriptEngine(String name) {
+		this.name = name;
+		objectName = JMXHelper.objectName(String.format(OBJECT_NAME_PATTERN, name));
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
+		log.info("Started PluginScriptEngine [{}]", name);
 		ScriptEngineManager sem = new ScriptEngineManager();
 		for(ScriptEngineFactory sef: sem.getEngineFactories()) {
 			Engine engine = null;
 			try {
-				engine = new Engine(sef);
+				engine = new Engine(sef, objectName);
 				log.info("Registered Scripting Engine [{}]", engine.objectName);
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				log.error("Failed to load ScriptEngine [{}:{}]. Are you missing a dependency ?", sef.getEngineName(), sef.getEngineVersion());
 			}
 		}

@@ -51,11 +51,12 @@ public class Engine implements EngineMXBean {
 	/**
 	 * Creates a new Engine
 	 * @param scriptEngineFactory The wrapped {@link javax.script.ScriptEngineFactory}
+	 * @param parent The ObjectName of the parent plugin
 	 */
-	public Engine(ScriptEngineFactory scriptEngineFactory) {
+	public Engine(ScriptEngineFactory scriptEngineFactory, ObjectName parent) {
 		this.scriptEngineFactory = scriptEngineFactory;
 		engine = scriptEngineFactory.getScriptEngine();
-		objectName = JMXHelper.objectName("org.helios.jzab.agent.plugin.script:type=Engine,name=" + ObjectName.quote(this.scriptEngineFactory.getEngineName()));
+		objectName = JMXHelper.objectName(new StringBuilder(parent.toString()).append(",engine=").append(ObjectName.quote(this.scriptEngineFactory.getEngineName())));
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
 	}
 	/**

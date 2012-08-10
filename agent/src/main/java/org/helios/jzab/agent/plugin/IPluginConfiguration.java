@@ -22,56 +22,37 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.scripting;
+package org.helios.jzab.agent.plugin;
 
 import java.util.Properties;
 
-import org.helios.jzab.plugin.scripting.engine.PluginScriptEngine;
 import org.w3c.dom.Node;
 
 /**
- * <p>Title: ScriptPlugin</p>
- * <p>Description: Bootstrap for scripting plugin.</p> 
+ * <p>Title: IPluginConfiguration</p>
+ * <p>Description: Common plugin configuration specification. The configured <b><code>Main-Class</code></b> class
+ * in each plugin's manifest should implement these methods.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.scripting.ScriptPlugin</code></p>
+ * <p><code>org.helios.jzab.agent.plugin.IPluginConfiguration</code></p>
  */
-public class ScriptPlugin {
-	/** The configured properties */
-	protected final Properties scriptPluginProps = new Properties();
-	/** The configured Xml configuration */
-	protected Node scriptPluginXmlNode = null;
-	
-	
+
+public interface IPluginConfiguration {
 	/**
 	 * Main boot loading entry point
-	 * @param args : <ol>
-	 * 	<li>The optional name of this script plugin instance. If not supplied, defaults to <b><code>ScriptEnginePlugin</code></b>.</li>
-	 * </ol>
+	 * @param args The arguments are plugin specific
 	 */
-	public void boot(String[] args) {
-		PluginScriptEngine.getInstance();
-	}
+	public void boot(String[] args);
 	
 	/**
 	 * Handles properties set by the core plugin loader
 	 * @param props The properties passed by the core plugin loader
 	 */
-	public void setProperties(Properties props) {
-		
-	}
+	public void setProperties(Properties props);
 	
 	/**
 	 * Handles XML configuration set by the core plugin loader
 	 * @param configNode The XML node passed by the core plugin loader
 	 */
-	public void setXmlConfiguration(Node configNode) {
-		
-	}
-	
-	
-	public static void log(Object msg) {
-		System.out.println(msg);
-	}
-
+	public void setXmlConfiguration(Node configNode);
 }
