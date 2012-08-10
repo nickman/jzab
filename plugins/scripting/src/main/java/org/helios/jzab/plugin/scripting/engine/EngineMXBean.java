@@ -26,6 +26,9 @@ package org.helios.jzab.plugin.scripting.engine;
 
 import java.util.List;
 
+import javax.script.ScriptContext;
+import javax.script.ScriptEngineFactory;
+
 
 
 /**
@@ -36,6 +39,37 @@ import java.util.List;
  * <p><code>javax.script.EngineMXBean</code></p>
  */
 public interface EngineMXBean {
+	
+	
+	/**
+	 * <p>Title: ThreadSafety</p>
+	 * <p>Description: Enumerates and discovers the possible thread safety advisories for script engine factories</p> 
+	 * <p>Company: Helios Development Group LLC</p>
+	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
+	 * <p><code>org.helios.jzab.plugin.scripting.engine.EngineMXBean.ThreadSafety</code></p>
+	 */
+	public static enum ThreadSafety {
+		/** The engine implementation is not thread safe, and cannot be used to execute scripts concurrently on multiple threads.  */
+		UNSAFE,
+		/** The engine implementation is internally thread-safe and scripts may execute concurrently although effects of script execution on one thread may be visible to scripts on other threads.  */
+		MULTITHREADED,		
+		/** The implementation satisfies the requirements of "MULTITHREADED", and also, the engine maintains independent values for symbols in scripts executing on different threads.  */
+		THREADISOLATED,
+		/** The implementation satisfies the requirements of "THREAD-ISOLATED". In addition, script executions do not alter the mappings in the Bindings which is the engine scope of the ScriptEngine. In particular, the keys in the Bindings and their associated values are the same before and after the execution of the script.  */
+		STATELESS;
+		
+		/**
+		 * Returns the thread safety advisory for the passed ScriptEngineFactory.
+		 * @param sef The script engine factory
+		 * @return The thread safety advisory
+		 */
+		public static ThreadSafety forValue(ScriptEngineFactory sef) {
+			Object prop = sef.getParameter("THREADING");
+			if(prop==null) return UNSAFE;
+			return ThreadSafety.valueOf(prop.toString().trim().toUpperCase().replace("-", ""));
+		}
+	}
+	
     /**
      * Returns the full  name of the <code>ScriptEngine</code>.  For
      * instance an implementation based on the Mozilla Rhino Javascript engine
@@ -174,6 +208,15 @@ public interface EngineMXBean {
     public String getProgram(String... statements);
     
     /**
+     * Returns A valid scripting language executable progam with given statements.
+     * Convenience implementation for JConsole
+     * @param delim The delimiter for the statements being passed
+     * @param statements Delimited statements
+     * @return The Program
+     */
+    public String getProgram(String delim, String statements);
+    
+    /**
      * Determines if scripts can be compiled by this engine
      * @return true if scripts can be compiled by this engine, false otherwise
      */
@@ -184,6 +227,55 @@ public interface EngineMXBean {
      * @return true if the engine is invocable, false otherwise
      */
     public boolean isInvocable();
+    
+    /**
+     * Returns the script engine factory's threading advisory
+     * @return the script engine factory's threading advisory
+     */
+    public String getThreading();    
+    
+	/**
+	 * Determines if the engine is not thread safe
+	 * @return true if the engine is not thread safe, false if it is thread safe or better
+	 */
+	public boolean isThreadUnsafe();
+	
+	/**
+	 * Determines if the engine is thread safe or better
+	 * @return true if the engine is thread safe or better, false if it is thread unsafe
+	 */
+	public boolean isThreadSafe();
+	
+	/**
+	 * Determines if the engine is thread isolated or better
+	 * @return true if the engine is thread isolated or better, false otherwise
+	 */
+	public boolean isThreadIsolated();
+	
+	/**
+	 * Determines if the engine is stateless
+	 * @return true if the engine is stateless, false otherwise
+	 */
+	public boolean isStateless();
+	
+	/**
+	 * Returns the scopes supported by this engine's context
+	 * @return the scopes supported by this engine's context
+	 */
+	public String getContextScopes();
+	
+	/**
+	 * Returns this engine's engine scoped bindings
+	 * @return this engine's engine scoped bindings
+	 */
+	public List<BindingEntry> getEngineBindings();
+	
+	/**
+	 * Returns this engine's global scoped bindings
+	 * @return this engine's global scoped bindings
+	 */
+	public List<BindingEntry> getGlobalBindings();
+    
 
 
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.ObjectName;
+import javax.script.Bindings;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 
@@ -100,10 +101,12 @@ public class PluginScriptEngine implements PluginScriptEngineMXBean {
 		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
 		log.info("Started PluginScriptEngine [{}]", name);
 		ScriptEngineManager sem = new ScriptEngineManager();
+		Bindings bindings = sem.getBindings();
 		for(ScriptEngineFactory sef: sem.getEngineFactories()) {
 			Engine engine = null;
 			try {
 				engine = new Engine(sef, objectName);
+				bindings.put(engine.getObjectName().toString(), engine);
 				log.info("Registered Scripting Engine [{}]", engine.objectName);
 			} catch (Throwable e) {
 				log.error("Failed to load ScriptEngine [{}:{}]. Are you missing a dependency ?", sef.getEngineName(), sef.getEngineVersion());

@@ -27,10 +27,13 @@ package org.helios.jzab.plugin.scripting.engine;
 import java.util.List;
 
 import javax.management.ObjectName;
+import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.Invocable;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
+import javax.script.SimpleBindings;
 
 import org.helios.jzab.util.JMXHelper;
 
@@ -48,6 +51,9 @@ public class Engine implements EngineMXBean {
 	protected final ObjectName objectName;
 	/** The script engine instance */
 	protected final ScriptEngine engine;
+	
+	protected final ThreadSafety engineThreadSafety;
+	
 	/**
 	 * Creates a new Engine
 	 * @param scriptEngineFactory The wrapped {@link javax.script.ScriptEngineFactory}
@@ -55,9 +61,13 @@ public class Engine implements EngineMXBean {
 	 */
 	public Engine(ScriptEngineFactory scriptEngineFactory, ObjectName parent) {
 		this.scriptEngineFactory = scriptEngineFactory;
+		engineThreadSafety = ThreadSafety.forValue(scriptEngineFactory);
 		engine = scriptEngineFactory.getScriptEngine();
-		objectName = JMXHelper.objectName(new StringBuilder(parent.toString()).append(",engine=").append(ObjectName.quote(this.scriptEngineFactory.getEngineName())));
-		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);
+		objectName = JMXHelper.objectName(new StringBuilder(parent.toString()).append(",engine=").append(this.scriptEngineFactory.getEngineName().replace(" ", "")));
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), objectName, this);		
+		Bindings bindings = new SimpleBindings();
+		bindings.put(objectName.toString(), this);
+		engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
 	}
 	/**
 	 * @return
@@ -116,6 +126,32 @@ public class Engine implements EngineMXBean {
 	public Object getParameter(String key) {
 		return scriptEngineFactory.getParameter(key);
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getContextScopes()
+	 */
+	public String getContextScopes() {
+		return engine.getContext().getScopes().toString();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getEngineBindings()
+	 */
+	public List<BindingEntry> getEngineBindings() {
+		return BindingEntry.newInstance(engine.getBindings(ScriptContext.ENGINE_SCOPE));
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getGlobalBindings()
+	 */
+	public List<BindingEntry> getGlobalBindings() {
+		return BindingEntry.newInstance(engine.getBindings(ScriptContext.GLOBAL_SCOPE));
+	}
+	
+	
 	/**
 	 * @param obj
 	 * @param m
@@ -142,6 +178,17 @@ public class Engine implements EngineMXBean {
 	public String getProgram(String... statements) {
 		return scriptEngineFactory.getProgram(statements);
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getProgram(java.lang.String, java.lang.String)
+	 */
+	public String getProgram(String delim, String statements) {
+		if(delim==null || delim.trim().isEmpty()) throw new IllegalArgumentException("The passed delimiter was null or empty", new Throwable());
+		if(statements==null || statements.trim().isEmpty()) throw new IllegalArgumentException("The passed delimiter was null or empty", new Throwable());
+		return getProgram(statements.trim().split(delim.trim()));		
+	}
+	
 	/**
 	 * @return
 	 * @see javax.script.ScriptEngineFactory#getScriptEngine()
@@ -164,6 +211,52 @@ public class Engine implements EngineMXBean {
 	 */
 	public boolean isInvocable() {
 		return (engine instanceof Invocable);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#getThreading()
+	 */
+	public String getThreading() {
+		return engineThreadSafety.name();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#isThreadUnsafe()
+	 */
+	public boolean isThreadUnsafe() {
+		return engineThreadSafety==ThreadSafety.UNSAFE;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#isThreadSafe()
+	 */
+	public boolean isThreadSafe() {
+		return engineThreadSafety.ordinal()>=ThreadSafety.MULTITHREADED.ordinal();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#isThreadIsolated()
+	 */
+	public boolean isThreadIsolated() {
+		return engineThreadSafety.ordinal()>=ThreadSafety.THREADISOLATED.ordinal();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.jzab.plugin.scripting.engine.EngineMXBean#isStateless()
+	 */
+	public boolean isStateless() {
+		return engineThreadSafety.ordinal()>=ThreadSafety.STATELESS.ordinal();
+	}
+	/**
+	 * @return the objectName
+	 */
+	public ObjectName getObjectName() {
+		return objectName;
 	}
 	
 	

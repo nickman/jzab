@@ -50,7 +50,7 @@ public class ScriptPlugin {
 	 * </ol>
 	 */
 	public void boot(String[] args) {
-		PluginScriptEngine.getInstance();
+		PluginScriptEngine.getInstance(args.length==0 ? PluginScriptEngine.DEFAULT_PLUGIN_NAME : args[0]);
 	}
 	
 	/**

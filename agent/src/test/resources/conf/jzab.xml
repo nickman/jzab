@@ -162,7 +162,7 @@ config version
  --> 	 
  	 <!-- <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/scripting/target/helios-jzab-plugin-scripting.jar"> -->
  	 <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:../plugins/scripting/target/helios-jzab-plugin-scripting.jar">
- 	 	<plugin-arg>IPLUGIN</plugin-arg>  <!-- IPLUGIN or GENERIC -->
+ 	 	
  	 </plugin>
  	 
  	
