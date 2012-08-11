@@ -25,6 +25,10 @@
 package org.helios.jzab.plugin.scripting.engine;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.management.ObjectName;
 import javax.script.Bindings;
@@ -35,6 +39,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.SimpleBindings;
 
+import org.helios.jzab.plugin.scripting.engine.script.IScriptUpdateListener;
+import org.helios.jzab.plugin.scripting.engine.script.ScriptInstance;
 import org.helios.jzab.util.JMXHelper;
 
 /**
@@ -52,7 +58,17 @@ public class Engine implements EngineMXBean {
 	/** The script engine instance */
 	protected final ScriptEngine engine;
 	
+	/** A map of script instances keyed by script name */
+	protected final Map<String, ScriptInstance> scriptInstances = new ConcurrentHashMap<String, ScriptInstance>();
+	
+	/** The thread safety of this engine */
 	protected final ThreadSafety engineThreadSafety;
+	
+	/**A set of script update listeners */
+	protected final Set<IScriptUpdateListener> listeners = new CopyOnWriteArraySet<IScriptUpdateListener>();
+	
+	
+	
 	
 	/**
 	 * Creates a new Engine
@@ -69,6 +85,59 @@ public class Engine implements EngineMXBean {
 		bindings.put(objectName.toString(), this);
 		//engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
 	}
+	
+	/**
+	 * Adds a new script instance
+	 * @param instance the script instance
+	 */
+	public void addScriptInstance(ScriptInstance instance) {
+		if(instance==null) throw new IllegalArgumentException("The passed script instance was null", new Throwable());
+		scriptInstances.put(instance.getName(), instance);
+		JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), instance.getObjectName(), instance);		
+	}
+	
+	/**
+	 * Adds a script update listener
+	 * @param listener The listener to add
+	 */
+	public void addScriptUpdateListener(IScriptUpdateListener listener) {
+		if(listener!=null) {
+			listeners.add(listener);
+		}
+	}
+	
+	/**
+	 * Removes a script update listener
+	 * @param listener The listener to remove
+	 */
+	public void removeScriptUpdateListener(IScriptUpdateListener listener) {
+		if(listener!=null) {
+			listeners.remove(listener);
+		}
+	}
+	
+	/**
+	 * Fires a script update event
+	 * @param instance The script instance that was updated
+	 * @param statusOk true if update was clean, false if errors occured (e.g. failed to compile)
+	 */
+	protected void fireScriptChange(ScriptInstance instance, boolean statusOk) {
+		for(IScriptUpdateListener listener: listeners) {
+			listener.onScriptSourceChange(this, instance, statusOk);
+		}
+	}
+	
+	/**
+	 * Fired when a script instance has its source updated
+	 * @param si The updated script instance
+	 * TODO: Currently always sends true. Might fail.
+	 */
+	public void updateScriptSource(ScriptInstance si) {
+		if(si==null) throw new IllegalArgumentException("The passed script instance was null", new Throwable());
+		fireScriptChange(si, true);
+	}
+	
+	
 	/**
 	 * @return
 	 * @see javax.script.ScriptEngineFactory#getEngineName()

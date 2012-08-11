@@ -24,6 +24,11 @@
  */
 package org.helios.jzab.plugin.scripting.engine.invokers;
 
+import javax.script.ScriptException;
+
+import org.helios.jzab.agent.commands.ICommandProcessor;
+import org.helios.jzab.plugin.scripting.engine.Engine;
+
 /**
  * <p>Title: IScriptInvoker</p>
  * <p>Description: Unified script invoker interface to provide a common invoker interface for evals, invocables and compiled scripts.</p> 
@@ -83,8 +88,57 @@ public interface IScriptInvoker {
 	 * getInterface(Object thiz, Class<T> clasz) 
 	 */
 	
+	/**
+	 * Returns the script's name
+	 * @return the script's name
+	 */
+	public String getName();
 	
-	public Object invoke(Object...args);
+	/**
+	 * Determines if this script supports the {@link ICommandProcessor} interface or call siganture
+	 * @return true if this script supports the {@link ICommandProcessor} interface or call siganture, false otherwise
+	 */
+	public boolean isCommand();
+	
+	/**
+	 * Determines if this script is a discovery check
+	 * @return true if this script is a discovery check, false otherwise
+	 */
+	public boolean isDiscovery();
 	
 	
+	/**
+	 * Invokes a script main
+	 * @param args The positional arguments to the script
+	 * @return the result of the script execution
+	 * @throws ScriptException thrown on script execution errors
+	 */
+	public Object invoke(Object...args) throws ScriptException;
+	/**
+	 * Invokes a named function in the script
+	 * @param functionName The function name
+	 * @param args The positional arguments to the script
+	 * @return the result of the script execution
+	 * @throws ScriptException thrown on script execution errors
+	 * @throws NoSuchMethodException Thrown if the named method is not defined
+	 */
+	public Object invoke(String functionName, Object...args) throws ScriptException, NoSuchMethodException;
+	
+	/**
+	 * Invokes a named method in a named object in the script
+	 * @param objectName The name of the object in the scrip that contains the named method
+	 * @param methodName The method name
+	 * @param args The positional arguments to the script
+	 * @return the result of the script execution
+	 * @throws ScriptException thrown on script execution errors
+	 * @throws NoSuchMethodException Thrown if the named method is not defined
+	 */
+	public Object invoke(String objectName, String methodName, Object...args) throws ScriptException, NoSuchMethodException;
+	
+	
+	/**
+	 * Returns the underlying engine for this script invoker
+	 * @return the underlying engine for this script invoker
+	 */
+	public Engine getEngine();
 }

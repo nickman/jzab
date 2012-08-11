@@ -22,37 +22,24 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.jzab.plugin.scripting.engine;
+package org.helios.jzab.plugin.scripting.engine.script;
 
+import org.helios.jzab.plugin.scripting.engine.Engine;
 
 /**
- * <p>Title: PluginScriptEngineMXBean</p>
- * <p>Description: JMX interface for {@link PluginScriptEngine}</p> 
+ * <p>Title: IScriptUpdateListener</p>
+ * <p>Description: Defines a listener that is to be notified of script source changes</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.scripting.engine.PluginScriptEngineMXBean</code></p>
+ * <p><code>org.helios.jzab.plugin.scripting.engine.script.IScriptUpdateListener</code></p>
  */
-public interface PluginScriptEngineMXBean {
-	/**
-	 * Returns the logging level for this active agent listener
-	 * @return the logging level for this active agent
-	 */
-	public String getLevel();
-	
-	/**
-	 * Sets the logger level for this active agent
-	 * @param level The level to set this logger to
-	 */
-	public void setLevel(String level);
-	
-	/**
-	 * Adds a new script
-	 * @param src The source
-	 * @param name The name of the script
-	 * @param ext The extension, or in a pinch, the mime-type
-	 */
-	public void addScript(CharSequence src, String name, String ext);	
 
-	
-
+public interface IScriptUpdateListener {
+	/**
+	 * Callback from the script instance when the source changes (and is possibly recompiled)
+	 * @param engine The script engine that runs the script
+	 * @param instance The script instance that was updated
+	 * @param statusOk true if the source change was clean (e.g. source recompiled ok), false if an error occured on source update
+	 */
+	public void onScriptSourceChange(Engine engine, ScriptInstance instance, boolean statusOk);
 }

@@ -56,7 +56,7 @@ public class ScriptPlugin {
 	 * </ol>
 	 */
 	public void boot(String[] args) {
-		PluginScriptEngine pse = PluginScriptEngine.getInstance(args.length==0 ? PluginScriptEngine.DEFAULT_PLUGIN_NAME : args[0]);
+		PluginScriptEngine pse = PluginScriptEngine.get(args.length==0 ? PluginScriptEngine.DEFAULT_PLUGIN_NAME : args[0]);
 		if(scriptPluginXmlNode!=null) {
 			for(Node scriptNode: XMLHelper.getChildNodesByName(scriptPluginXmlNode, "script", false)) {
 				String name = XMLHelper.getAttributeByName(scriptNode, "name", null);
@@ -70,7 +70,8 @@ public class ScriptPlugin {
 					log.warn("Failed to deploy configured script [{}]:[{}]. No source defined.", name, ext);
 					continue;					
 				}
-				pse.addScript(XMLHelper.getNodeTextValue(srcNode), name, ext);
+				String source = XMLHelper.getNodeTextValue(srcNode);
+				pse.addScript(source, name, ext);
 				log.debug("Added Script [{}]:[{}]", name, ext);
 			}
 		}
@@ -105,10 +106,11 @@ public class ScriptPlugin {
 	 * @param configNode The XML node passed by the core plugin loader
 	 */
 	public void setXmlConfiguration(Node configNode) {
-		
+		this.scriptPluginXmlNode = configNode;
 	}
 	
 	
+	@SuppressWarnings("javadoc")
 	public static void log(Object msg) {
 		System.out.println(msg);
 	}
