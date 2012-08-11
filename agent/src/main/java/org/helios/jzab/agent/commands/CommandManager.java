@@ -88,6 +88,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.command:service=CommandManager");
 	/** The ObjectName pattern for plugins that may register themselves with the CommandManager */
 	public static final ObjectName PLUGIN_OBJECT_NAME = JMXHelper.objectName("org.helios.jzab.agent.plugin:type=Plugin,*");
+																			  	
 	
 	
 	/** Empty string array */
@@ -164,12 +165,13 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 		if(commandProcessor==null) throw new IllegalArgumentException("The passed command processor was null", new Throwable());
 		Set<String> keys = new HashSet<String>();
 		// The locator key will be optional for plugins
-		if(commandProcessor.getLocatorKey()!=null) {
+		String locatorKey = commandProcessor.getLocatorKey();
+		if(locatorKey!=null) {
 			keys.add(commandProcessor.getLocatorKey());
 		}
 		if(aliases!=null) {
 			for(String s: aliases) {
-				if(s!=null && !s.trim().isEmpty()) {
+				if(s!=null && !s.trim().isEmpty() && !s.trim().equalsIgnoreCase(locatorKey)) {
 					keys.add(s.trim().toLowerCase());
 				}
 			}
@@ -179,7 +181,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			plugin.init();
 			if(plugin.getAliases()!=null) {
 				for(String s: plugin.getAliases()) {
-					if(s!=null && !s.trim().isEmpty()) {
+					if(s!=null && !s.trim().isEmpty() && !s.trim().equalsIgnoreCase(locatorKey)) {
 						keys.add(s.trim().toLowerCase());
 					}
 				}				
@@ -462,7 +464,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			try {
 				@SuppressWarnings("cast")
 				IPluginCommandProcessor processor = (IPluginCommandProcessor)MBeanServerInvocationHandler.newProxyInstance(JMXHelper.getHeliosMBeanServer(), objectName, IPluginCommandProcessor.class, false);
-				try { processor.init(); } catch (Exception ex) {ex.printStackTrace(System.err);}
+				try { processor.init(); } catch (Exception ex) {return;}
 				Set<String> names = new HashSet<String>();
 				try { 
 					if(processor.getLocatorKey()!=null) {

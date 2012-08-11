@@ -92,8 +92,8 @@ public class PluginLoader {
 						loadJavaAgent(isolated, new URL(url), name, null, agentArgs);
 					} else if("jzab-plugin".equalsIgnoreCase(type.trim())) {
 						String[] pluginArgs = getPluginArgs(n);
-						Properties props = getProperties(configNode);
-						Node pluginConfigNode = XMLHelper.getChildNodeByName(configNode, "plugin-config", false);
+						Properties props = getProperties(n);
+						Node pluginConfigNode = XMLHelper.getChildNodeByName(n, "plugin-config", false);
 						loadPlugin(isolated, new URL(url), name, props, pluginConfigNode, pluginArgs);
 					}
 				} catch (Exception e) {

@@ -167,19 +167,20 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 		return true;
 	}
 	
-	public static void main(String[] args) {
-		log("JMX Discovery Test");
-		JMXDiscoveryCommandProcessor processor = new JMXDiscoveryCommandProcessor();
-		log(processor.execute("java.lang:type=GarbageCollector,name={#GCName}"));
-	}
-	
-	public static void log(Object msg) {
-		System.out.println(msg);
-	}
+//	public static void main(String[] args) {
+//		log("JMX Discovery Test");
+//		JMXDiscoveryCommandProcessor processor = new JMXDiscoveryCommandProcessor();
+//		log(processor.execute("java.lang:type=GarbageCollector,name={#GCName}"));
+//	}
+//	
+//	public static void log(Object msg) {
+//		System.out.println(msg);
+//	}
 	
 	/**
 	 * Extracts the discovery tokens into a map
 	 * @param on The ObjectName to extract from
+	 * @param tokenMap The token map
 	 * @return a map of tokens
 	 */
 	protected ObjectName extractTokens(String on, final Map<String, String> tokenMap) {		

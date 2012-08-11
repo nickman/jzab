@@ -33,12 +33,10 @@ import javax.management.AttributeList;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import org.helios.jzab.agent.commands.AbstractCommandProcessor;
-import org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction;
 import org.helios.jzab.agent.commands.impl.jmx.remote.RemoteJMXConnector;
 import org.helios.jzab.util.JMXHelper;
 

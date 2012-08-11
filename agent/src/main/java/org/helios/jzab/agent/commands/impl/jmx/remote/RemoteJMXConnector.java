@@ -210,6 +210,7 @@ public class RemoteJMXConnector implements JMXConnector, NotificationListener, C
 				if(reconnectScheduler==null) {
 					reconnectScheduler = Executors.newScheduledThreadPool(2, new ThreadFactory(){
 						protected final AtomicInteger serial = new AtomicInteger(0);
+						@Override
 						public Thread newThread(Runnable r) {
 							Thread t = new Thread(r, "JMXConnectorReconnectThread#" + serial.incrementAndGet());
 							t.setDaemon(true);

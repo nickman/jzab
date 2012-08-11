@@ -165,12 +165,23 @@ config version
  	 	<plugin-config>
  	 		<script name="TotalBlockCounts" ext="groovy">
  	 			<source><![CDATA[
-					import java.lang.management.*;
-					long totalBlocks = 0;
-					ManagementFactory.getThreadMXBean().dumpAllThreads(false, false).each() {
-					    totalBlocks += it.getBlockedCount();
+ 	 				import java.lang.management.*;
+ 	 				def a = 1;
+ 	 				public int getCpuCount() {
+ 	 					return ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
+ 	 				}
+					public Object executeTotalBlockCounts(String commandName, String...args) {
+						if("CpuCount".equals(commandName)) return getCpuCount();
+						else if("TotalThreadBlocks".equals(commandName)) return getTotalThreadBlocks();
 					}
-					return totalBlocks;
+					public long getTotalThreadBlocks() {
+						long totalBlocks = 0;
+						ManagementFactory.getThreadMXBean().dumpAllThreads(false, false).each() {
+						    totalBlocks += it.getBlockedCount();
+						}
+						return totalBlocks;
+					}
+					return getTotalThreadBlocks();
  	 			]]></source>
  	 		</script>
  	 	</plugin-config>
