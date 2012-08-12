@@ -23,6 +23,8 @@
  *
  */
 package org.helios.jzab.plugin.nativex;
+import java.util.Properties;
+
 import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
@@ -37,9 +39,9 @@ import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPl
 public class JZabAgentBoot {
 	/**
 	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
+	 * @param props The plugin loader provided properties
 	 */
-	public static void bootPlugin(String[] args) {
+	public static void bootPlugin(Properties props) {
 		new DirectAgentCommandPlugin();
 		new DirectCPUCommandPlugin();		
 		new CPUDiscoveryCommandPlugin();

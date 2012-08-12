@@ -152,40 +152,9 @@ public class HeliosSigar implements SigarProxy {
 	 * @param args None
 	 */
 	public static void main(String[] args) {		
-		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
-			Logger log = LoggerFactory.getLogger(HeliosSigar.class);
-			log.info("{}", HeliosSigar.getInstance());
-			RegistrationType regType = null;
-			if(args.length>0) {
-				try { 
-					regType = RegistrationType.forName(args[0]);
-				} catch (Exception ex) {
-					regType = RegistrationType.GENERIC;
-				}
-			}
-			try {
-				if(regType.equals(RegistrationType.IPLUGIN)) {
-					bootPlugin("org.helios.jzab.plugin.nativex.JZabAgentBoot", args);
-				} else {
-					bootPlugin("org.helios.jzab.plugin.nativex.GenericAgentBoot", args);
-				}
-			} catch (Throwable t) {
-				t.printStackTrace(System.err);
-			}
-		} else {
-			System.out.println(HeliosSigar.getInstance());
-		}		
+		System.out.println(HeliosSigar.getInstance());
 	}
 	
-	private static void bootPlugin(String className, String[] args) {
-		try {
-			Class<?> clazz = Class.forName(className);
-			Method bootMethod = clazz.getDeclaredMethod("bootPlugin", new String[]{}.getClass()); 
-			bootMethod.invoke(null, new Object[]{args});
-		} catch (Throwable e) {
-			throw new RuntimeException("Failed to boot plugin", e);
-		}
-	}
 	
 	
 	/**

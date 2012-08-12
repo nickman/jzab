@@ -23,7 +23,7 @@
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
               <addClasspath>false</addClasspath>
-              <mainClass>org.helios.jzab.plugin.nativex.HeliosSigar</mainClass>
+              <mainClass>org.helios.jzab.plugin.nativex.NativePlugin</mainClass>
             </manifest>
             <manifestEntries />
           </archive>

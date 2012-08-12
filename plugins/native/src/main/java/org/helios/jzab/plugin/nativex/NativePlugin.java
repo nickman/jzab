@@ -24,8 +24,12 @@
  */
 package org.helios.jzab.plugin.nativex;
 
+import java.lang.reflect.Method;
 import java.util.Properties;
 
+import org.helios.jzab.plugin.nativex.plugin.RegistrationType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
 /**
@@ -50,11 +54,47 @@ public class NativePlugin {
 	 */
 	public void boot(String[] args) {
 		if(System.getProperty("org.helios.jzab.agent.version") !=null) {
+			HeliosSigar.getInstance();
+			Logger log = LoggerFactory.getLogger(HeliosSigar.class);
+			log.info("{}", HeliosSigar.getInstance());
+			RegistrationType regType = null;
+			if(args.length>0) {
+				try { 
+					regType = RegistrationType.forName(args[0]);
+				} catch (Exception ex) {
+					regType = RegistrationType.GENERIC;
+				}
+			}
+			try {
+				if(regType.equals(RegistrationType.IPLUGIN)) {
+					bootPlugin("org.helios.jzab.plugin.nativex.JZabAgentBoot", nativePluginProps);
+				} else {
+					bootPlugin("org.helios.jzab.plugin.nativex.GenericAgentBoot", nativePluginProps);
+				}
+			} catch (Throwable t) {
+				t.printStackTrace(System.err);
+			}
 			
 		} else {
 			HeliosSigar.main(args);
 		}
 	}
+	
+	/**
+	 * Booots the native plugins subcomponents
+	 * @param className The boot class name
+	 * @param props The jzab.xml provided properties
+	 */
+	private void bootPlugin(String className, Properties props) {
+		try {
+			Class<?> clazz = Class.forName(className);
+			Method bootMethod = clazz.getDeclaredMethod("bootPlugin", Properties.class); 
+			bootMethod.invoke(null, new Object[]{props});
+		} catch (Throwable e) {
+			throw new RuntimeException("Failed to boot plugin", e);
+		}
+	}
+	
 	
 	/**
 	 * Handles properties set by the core plugin loader

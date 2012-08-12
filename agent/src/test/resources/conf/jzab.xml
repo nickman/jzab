@@ -152,14 +152,14 @@ config version
  	<plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/native/target/helios-jzab-plugin-native.jar" />
  	 -->
  	 
-<!-- 
+
 
  	 <plugin  name="native-agent" type="jzab-plugin" isolated="false" url="file:../plugins/native/target/helios-jzab-plugin-native.jar">
  	 	<property name="cpu.refresh.period" value="3000" />
  	 	<plugin-arg>IPLUGIN</plugin-arg>  
  	 </plugin>
 
- --> 	 
+ 	 
  	 <!-- <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:/c:/hprojects/jzab/plugins/scripting/target/helios-jzab-plugin-scripting.jar"> -->
  	 <plugin  name="scripting" type="jzab-plugin" isolated="false" url="file:../plugins/scripting/target/helios-jzab-plugin-scripting.jar">
  	 	<plugin-config>

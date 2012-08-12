@@ -24,6 +24,8 @@
  */
 package org.helios.jzab.plugin.nativex;
 
+import java.util.Properties;
+
 import org.helios.jzab.plugin.nativex.plugin.impls.system.AgentCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryCommandPlugin;
@@ -38,9 +40,9 @@ import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryComman
 public class GenericAgentBoot {
 	/**
 	 * Boots up the native command processors
-	 * @param args The plugin loader provided args
+	 * @param props The plugin loader provided properties
 	 */
-	public static void bootPlugin(String[] args) {
+	public static void bootPlugin(Properties props) {
 		new AgentCommandPlugin();
 		new CPUCommandPlugin();
 		new CPUDiscoveryCommandPlugin();
