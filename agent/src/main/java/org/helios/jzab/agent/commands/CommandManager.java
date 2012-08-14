@@ -144,6 +144,48 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			ExecutionMetric.clear();
 		}		
 	}
+	
+	/**
+	 * Retrieves the named command processor
+	 * @param name The name of the command processor
+	 * @return the named command processor or null if one was not found
+	 */
+	public ICommandProcessor getCommandProcessor(String name) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		return commandProcessors.get(name.trim().toLowerCase());
+	}
+	
+	/**
+	 * Inserts a new command processor
+	 * @param name The name of the command processor
+	 * @param processor The command processor to insert
+	 * @return true if the command processor was inserted, false if one was already registered
+	 */
+	protected boolean putCommandProcessor(String name, ICommandProcessor processor) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		if(processor==null) throw new IllegalArgumentException("The passed processor was null", new Throwable());
+		name = name.trim().toLowerCase();
+		boolean exists = true;
+		if(!commandProcessors.containsKey(name)) {
+			synchronized(commandProcessors) {
+				if(!commandProcessors.containsKey(name)) {
+					commandProcessors.put(name, processor);
+					exists = false;
+				}
+			}
+		}
+		return exists;
+	}
+	
+	/**
+	 * Removes a command processor
+	 * @param name The name of the command processor to remove
+	 * @return the removed command processor or null if one was not found
+	 */
+	protected ICommandProcessor removeCommandProcessor(String name) {
+		if(name==null || name.trim().isEmpty()) throw new IllegalArgumentException("The passed name was null or empty", new Throwable());
+		return commandProcessors.remove(name.trim().toLowerCase());
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -188,28 +230,21 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			}
 		}
 		for(String key: keys) {			
-			if(!commandProcessors.containsKey(key)) {
-				synchronized(commandProcessors) {
-					if(!commandProcessors.containsKey(key)) {
-						commandProcessors.put(key, commandProcessor);
-						continue;
-					}
-				}
+			if(!putCommandProcessor(key, commandProcessor)) {
+				log.trace("The command processor [{}] was already registered", key);
 			}
-			//throw new RuntimeException("The command processor [" + key + "] was already registered");
-			log.trace("The command processor [{}] was already registered", key);
 		}
 	}
 	
-	/**
-	 * Returns the named command processor
-	 * @param processorName The name of the command processor to retrieve
-	 * @return the named command processor or null if one was not found
-	 */
-	public ICommandProcessor getCommandProcessor(String processorName) {
-		if(processorName==null || processorName.trim().isEmpty()) throw new IllegalArgumentException("The passed processor name was null or empty", new Throwable());
-		return wrap(commandProcessors.get(processorName), processorName);
-	}
+//	/**
+//	 * Returns the named command processor
+//	 * @param processorName The name of the command processor to retrieve
+//	 * @return the named command processor or null if one was not found
+//	 */
+//	public ICommandProcessor getCommandProcessor(String processorName) {
+//		if(processorName==null || processorName.trim().isEmpty()) throw new IllegalArgumentException("The passed processor name was null or empty", new Throwable());
+//		return wrap(commandProcessors.get(processorName), processorName);
+//	}
 	
 	/**
 	 * Creates an instrumented command processor wrapper
@@ -257,7 +292,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	public String invokeCommand(String commandName, String arguments) {
 		if(commandName==null || commandName.trim().isEmpty()) throw new IllegalArgumentException("The passed command name was null or empty", new Throwable());		
 		StringBuilder cmd = new StringBuilder(commandName.trim());
-		ICommandProcessor processor = commandProcessors.get(cmd.toString());
+		ICommandProcessor processor = getCommandProcessor(cmd.toString());
 		if(processor==null) throw new IllegalArgumentException("The passed command name [" + cmd.toString() + "] is not a valid command", new Throwable());
 		if(arguments!=null) {
 			arguments = arguments.trim();
@@ -306,6 +341,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * @param commandString The command string to parse
 	 * @return A string of commands where the first item is the command processor name and the remainder are the arguments.
 	 */
+	@Override
 	public String[] parseCommandString(String commandString) {
 			if(commandString==null) return null;
 			String cstring = commandString.trim();
@@ -356,7 +392,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 				return ICommandProcessor.COMMAND_ERROR;
 			}
 		}
-		ICommandProcessor cp = commandProcessors.get(commandName);
+		ICommandProcessor cp = getCommandProcessor(commandName);
 		if(cp==null) {
 			log.debug("No command registered called [{}]", commandName);
 			return ICommandProcessor.COMMAND_NOT_SUPPORTED;
@@ -425,15 +461,9 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			if(isPluginCommandProcessor) {
 				try {
 					IPluginCommandProcessor pluginProcessor = (IPluginCommandProcessor)JMXHelper.getAttribute(JMXHelper.getHeliosMBeanServer(), objectName, "Instance");
-					pluginProcessor.init();
+					//pluginProcessor.init();  // this will be done in registerCommandProcessor 
 					try {
-						if(pluginProcessor.getLocatorKey()!=null) {
-							registerCommandProcessor(pluginProcessor, pluginProcessor.getLocatorKey());
-						}
-						if(pluginProcessor.getAliases()!=null) {
-							registerCommandProcessor(pluginProcessor, pluginProcessor.getAliases());
-						}
-						
+						registerCommandProcessor(pluginProcessor);
 						pluginRegistry.put(objectName, new HashSet<String>(Arrays.asList(new String[]{pluginProcessor.getLocatorKey()})));
 						log.info("Registered Plugin CommandProcessor [{}]", pluginProcessor.getLocatorKey());
 					} catch (Exception e) {
@@ -498,7 +528,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 	 * Attempts to invoke init on a registered plugin
 	 * @param objectName The object name of the plugin
 	 */
-	private void invokeMBeanInit(ObjectName objectName) {
+	protected void invokeMBeanInit(ObjectName objectName) {
 		try {
 			JMXHelper.getHeliosMBeanServer().invoke(objectName, "init", new Object[0], new String[0]);
 		} catch (Exception e) {
@@ -518,7 +548,7 @@ public class CommandManager implements CommandManagerMXBean, NotificationListene
 			log.warn("No command processor found to unregister for keys [{}] for ObjectName [{}]", keys, objectName);
 		} else {
 			for(String key: keys) {
-				if(commandProcessors.remove(key)!=null) {
+				if(removeCommandProcessor(key)!=null) {
 					log.info("Unregistered command processor [{}] for ObjectName [{}]", key, objectName);
 				}
 			}
