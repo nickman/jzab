@@ -95,6 +95,11 @@ public class CPUDiscoveryCommandPlugin extends AbstractMultiCommandProcessor {
 		return true;
 	}
 	
+	/**
+	 * Basic command line test
+	 * @param args No args
+	 * @throws Exception Unlikely
+	 */
 	public static void main(String[] args) throws Exception {
 		System.out.println(new JSONObject(new CPUDiscoveryCommandPlugin().doExecute("cpud", "{#CPUNO}")).toString(2));
 	}
