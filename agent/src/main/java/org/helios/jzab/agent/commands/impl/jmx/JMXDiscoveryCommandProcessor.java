@@ -110,29 +110,6 @@ public class JMXDiscoveryCommandProcessor extends BaseJMXCommandProcessor {
 		}		
 	}
 	
-	/*
-{
-  "data":[
-  
-  { "{#FSNAME}":"\/",                           "{#FSTYPE}":"rootfs"   },
-  { "{#FSNAME}":"\/sys",                        "{#FSTYPE}":"sysfs"    },
-  { "{#FSNAME}":"\/proc",                       "{#FSTYPE}":"proc"     },
-  { "{#FSNAME}":"\/dev",                        "{#FSTYPE}":"devtmpfs" },
-  { "{#FSNAME}":"\/dev\/pts",                   "{#FSTYPE}":"devpts"   },
-  { "{#FSNAME}":"\/",                           "{#FSTYPE}":"ext3"     },
-  { "{#FSNAME}":"\/lib\/init\/rw",              "{#FSTYPE}":"tmpfs"    },
-  { "{#FSNAME}":"\/dev\/shm",                   "{#FSTYPE}":"tmpfs"    },
-  { "{#FSNAME}":"\/home",                       "{#FSTYPE}":"ext3"     },
-  { "{#FSNAME}":"\/tmp",                        "{#FSTYPE}":"ext3"     },
-  { "{#FSNAME}":"\/usr",                        "{#FSTYPE}":"ext3"     },
-  { "{#FSNAME}":"\/var",                        "{#FSTYPE}":"ext3"     },
-  { "{#FSNAME}":"\/sys\/fs\/fuse\/connections", "{#FSTYPE}":"fusectl"  }
-  
-  ]
-}
-
-
-	 */
 	
 	
 	
