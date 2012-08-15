@@ -354,6 +354,15 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 		LongMemArray lma = longArrays.get(name);
 		if(lma==null) throw new RuntimeException("No long rolling metric registered for metric name [" + name + "]", new Throwable());
 		AggregateFunction af = AggregateFunction.forName(type);
+		if(af.name().contains("RATE")) {
+			long[] values = lma.get(windowSize);
+			if(values.length<2) return 0L;
+			long[] valuesPlusWindow = new long[values.length+1];
+			System.arraycopy(values, 0, valuesPlusWindow, 1, values.length);
+			valuesPlusWindow[0] = 5;
+			return af.aggregate(valuesPlusWindow);
+		} 
+		
 		return af.aggregate(lma.get(windowSize));
 	}
 	
@@ -372,6 +381,14 @@ public class RollingMetricService implements RollingMetricServiceMXBean {
 		DoubleMemArray lma = doubleArrays.get(name);
 		if(lma==null) throw new RuntimeException("No double rolling metric registered for metric name [" + name + "]", new Throwable());
 		AggregateFunction af = AggregateFunction.forName(type);
+		if(af.name().contains("RATE")) {
+			double[] values = lma.get(windowSize);
+			if(values.length<2) return 0D;
+			double[] valuesPlusWindow = new double[values.length+1];
+			System.arraycopy(values, 0, valuesPlusWindow, 1, values.length);
+			valuesPlusWindow[0] = 5;
+			return af.aggregate(valuesPlusWindow);
+		} 
 		return af.aggregate(lma.get(windowSize));
 	}
 	

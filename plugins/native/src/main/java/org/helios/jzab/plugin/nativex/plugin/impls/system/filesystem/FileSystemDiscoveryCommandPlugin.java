@@ -40,7 +40,9 @@ import org.json.JSONObject;
  * 	<li>The file system root directory or mount point name. e.g. <b><code>/sys</code></b></li>
  * 	<li>The file system device type name. e.g. <b><code>local</code></b>. Not very predictable, but sometimes provides some useful data.</li>
  * </ol></p>
- * <p>Sample output (from an Ubuntu/Linux host) using the command <b><code>fsd[{#FSNAME},{#FSTYPE},{#FSDNAME},{#FSDTYPE}]</code></b>:<pre>
+ * <p>Sample outputs using the command <b><code>fsd[{#FSNAME},{#FSTYPE},{#FSDNAME},{#FSDTYPE}]</code></b>:<ul>
+ * <li><b>Ubuntu/Linux</b>
+ * <pre>
 {"data":[
 	{"{#FSNAME}":"/dev/sda2", "{#FSTYPE}":"ext4", "{#FSDNAME}":"/", "{#FSDTYPE}":"local"},
 	{"{#FSNAME}":"proc", "{#FSTYPE}":"proc", "{#FSDNAME}":"/proc", "{#FSDTYPE}":"none"},
@@ -50,7 +52,44 @@ import org.json.JSONObject;
 	{"{#FSNAME}":"/dev/sdc1", "{#FSTYPE}":"fuseblk", "{#FSDNAME}":"/media/HELIOS", "{#FSDTYPE}":"none"}
 	{"{#FSNAME}":"/dev/sdb1", "{#FSTYPE}":"vfat", "{#FSDNAME}":"/media/PKBACK# 001", "{#FSDTYPE}":"local"}
 ]}  
- * </pre></p>
+ * </pre></li>
+ * <li><b>Windows 7</b>
+ * <pre>
+{"data":[
+	{"{#FSNAME}":"C:\","{#FSTYPE}":"NTFS","{#FSDNAME}":"C:\","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"D:\","{#FSTYPE}":"CDFS","{#FSDNAME}":"D:\","{#FSDTYPE}":"cdrom"},
+	{"{#FSNAME}":"E:\","{#FSTYPE}":"FAT32","{#FSDNAME}":"E:\","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"F:\","{#FSTYPE}":"cdrom","{#FSDNAME}":"F:\","{#FSDTYPE}":"cdrom"},
+	{"{#FSNAME}":"\\localhost\c$\services\jboss\jboss-eap-4.3\jboss-as","{#FSTYPE}":"NTFS","{#FSDNAME}":"J:\","{#FSDTYPE}":"remote"},
+	{"{#FSNAME}":"\\myco.com\pusers\nwhitehe","{#FSTYPE}":"NTFS","{#FSDNAME}":"P:\","{#FSDTYPE}":"remote"},
+]}
+ * </pre></li>
+ * <li><b>Solaris X86</b>
+ * <pre>
+{"data":[
+	{"{#FSNAME}":"rpool/ROOT/solaris","{#FSTYPE}":"zfs","{#FSDNAME}":"/","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"/devices","{#FSTYPE}":"devfs","{#FSDNAME}":"/devices","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"/dev","{#FSTYPE}":"dev","{#FSDNAME}":"/dev","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"ctfs","{#FSTYPE}":"ctfs","{#FSDNAME}":"/system/contract","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"proc","{#FSTYPE}":"proc","{#FSDNAME}":"/proc","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"mnttab","{#FSTYPE}":"mntfs","{#FSDNAME}":"/etc/mnttab","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"swap","{#FSTYPE}":"tmpfs","{#FSDNAME}":"/system/volatile","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"objfs","{#FSTYPE}":"objfs","{#FSDNAME}":"/system/object","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"sharefs","{#FSTYPE}":"sharefs","{#FSDNAME}":"/etc/dfs/sharetab","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"/usr/lib/libc/libc_hwcap1.so.1","{#FSTYPE}":"lofs","{#FSDNAME}":"/lib/libc.so.1","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"fd","{#FSTYPE}":"fd","{#FSDNAME}":"/dev/fd","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"rpool/ROOT/solaris/var","{#FSTYPE}":"zfs","{#FSDNAME}":"/var","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"swap","{#FSTYPE}":"tmpfs","{#FSDNAME}":"/tmp","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"rpool/export","{#FSTYPE}":"zfs","{#FSDNAME}":"/export","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"rpool/export/home","{#FSTYPE}":"zfs","{#FSDNAME}":"/export/home","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"rpool/export/home/iceadmin","{#FSTYPE}":"zfs","{#FSDNAME}":"/export/home/iceadmin","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"rpool/export/home/releng","{#FSTYPE}":"zfs","{#FSDNAME}":"/export/home/releng","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"rpool","{#FSTYPE}":"zfs","{#FSDNAME}":"/rpool","{#FSDTYPE}":"local"},
+	{"{#FSNAME}":"/dev/dsk/c3t1d0s2","{#FSTYPE}":"hsfs","{#FSDNAME}":"/media/VBOXADDITIONS_4.1.18_78361","{#FSDTYPE}":"none"},
+	{"{#FSNAME}":"/export/home/nicholas","{#FSTYPE}":"lofs","{#FSDNAME}":"/home/nicholas","{#FSDTYPE}":"none"}
+]}
+ * </pre></li>
+ * </ul>
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.FileSystemDiscoveryCommandPlugin</code></p>
@@ -95,10 +134,11 @@ public class FileSystemDiscoveryCommandPlugin extends AbstractMultiCommandProces
 	 * @return an array of JSON descriptors providing discovery for file system names and types.
 	 */
 	@Override
-	@CommandHandler("fsd")
+	@CommandHandler({"fsd", "vfs.fs.discovery"})
 	protected String doExecute(String commandName, String... args) {
-		// if(args.length<2) return COMMAND_ERROR;  // we're going to let this one go, for testabilty purposes, we'll default the tokens
-		//return template.replace(TOKEN_TOKEN, args[0]);
+		if("vfs.fs.discovery".equals(commandName)) {
+			args = new String[]{TOKEN_FSNAME};
+		}
 		int a = args.length;
 		if(a<1) return COMMAND_ERROR;
 		String[] tokens = new String[a];
@@ -118,7 +158,7 @@ public class FileSystemDiscoveryCommandPlugin extends AbstractMultiCommandProces
 		
 		StringBuilder b = new StringBuilder("{\"data\":[");
 		for(FileSystem fs: sigar.getFileSystemList()) {
-			b.append("{");
+			b.append("\n\t{");
 			if(a>0) b.append("\"").append(tokens[0]).append("\":\"").append(fs.getDevName()).append("\",");
 			if(a>1) b.append("\"").append(tokens[1]).append("\":\"").append(fs.getSysTypeName()).append("\",");
 			if(a>2) b.append("\"").append(tokens[2]).append("\":\"").append(fs.getDirName()).append("\",");
@@ -127,8 +167,8 @@ public class FileSystemDiscoveryCommandPlugin extends AbstractMultiCommandProces
 			b.append("},");
 		}
 		b.deleteCharAt(b.length()-1);
-		b.append("]}");
-		return b.toString();
+		b.append("\n]}");
+		return b.toString().replace("\\", "\\\\");
 	}
 	
 	/**
@@ -138,7 +178,7 @@ public class FileSystemDiscoveryCommandPlugin extends AbstractMultiCommandProces
 	 */
 	public static void main(String[] args) throws Exception {
 		System.out.println(new JSONObject(new FileSystemDiscoveryCommandPlugin().doExecute("fsd", TOKEN_FSNAME, TOKEN_FSTYPE, TOKEN_FSDNAME, TOKEN_FSDTYPE)).toString(2));
-		//System.out.println(Arrays.toString(new String[]{TOKEN_FSNAME, TOKEN_FSTYPE, TOKEN_FSDNAME, TOKEN_FSDTYPE}));
+		System.out.println(new JSONObject(new FileSystemDiscoveryCommandPlugin().doExecute("vfs.fs.discovery", TOKEN_FSNAME, TOKEN_FSTYPE, TOKEN_FSDNAME, TOKEN_FSDTYPE)).toString(2));
 	}
 	
 	

@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -92,6 +93,9 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	
 	/** The JMX objeect name of the jZab scheduler */
 	public static final ObjectName SCHEDULER_OBJECT_NAME;
+	
+	/** A regex pattern to match and parse a rolling metric definition such as <b><code>avg15</code></b> */
+	public static final Pattern EXPRESSION = Pattern.compile("(\\w+\\D)(\\d+)");
 	
 	
 	/** The jZab identified mbean server */

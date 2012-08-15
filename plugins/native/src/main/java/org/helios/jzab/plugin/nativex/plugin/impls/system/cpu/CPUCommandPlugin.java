@@ -67,8 +67,6 @@ public class CPUCommandPlugin extends AbstractMultiCommandProcessor implements C
 	public static final String UNIT_PERCENT = "percent";
 	
 	
-	/** A regex pattern to match and parse a rolling metric definition such as <b><code>avg15</code></b> */
-	public static final Pattern EXPRESSION = Pattern.compile("(\\w+\\D)(\\d+)");
 	
 	/**
 	 * Schedules the resource refresh task

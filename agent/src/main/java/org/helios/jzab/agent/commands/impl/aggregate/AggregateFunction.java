@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONObject;
 
@@ -77,7 +78,25 @@ public enum AggregateFunction implements IAggregator {
 	/** Returns a JSON composite of Min, Max, Average and Count */
 	MMAC(new MinMaxAvgCntAggregator(false)),
 	/** Returns a JSON composite of Min, Max, Average and Count (strict) */
-	STRMMAC(new MinMaxAvgCntAggregator(true));
+	STRMMAC(new MinMaxAvgCntAggregator(true)),
+	
+	/** Returns the average delta of the sequence of passed items */
+	DELTA_ALL(new Delta(false)),	
+	/** Returns the delta of the most recent 2 of the passed items */
+	DELTA_LAST(new Delta(true)),
+	
+	/** Returns the average rate per second from the sequence of passed items */
+	PS_RATE_ALL(new Rate(false, TimeUnit.SECONDS)),	
+	/** Returns the rate per second from the most recent 2 of the passed items */
+	PS_RATE_LAST(new Rate(false, TimeUnit.SECONDS)),
+
+	/** Returns the average rate per milli-second from the sequence of passed items */
+	PMS_RATE_ALL(new Rate(false, TimeUnit.MILLISECONDS)),	
+	/** Returns the rate per milli-second from the most recent 2 of the passed items */
+	PMS_RATE_LAST(new Rate(false, TimeUnit.MILLISECONDS));
+	
+	
+	;
 	
 
 	/**
@@ -248,7 +267,148 @@ public enum AggregateFunction implements IAggregator {
 			}
 			return total;
 		}
+	}
+	
+	/**
+	 * <p>Title: Delta</p>
+	 * <p>Description: Computes deltas of the passed numbers</p> 
+	 * <p><code>org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction.Delta</code></p>
+	 */
+	public static class Delta extends NumericAggregator {
+		/** If true, returns the delta of the last two items, otherwise returns the average delta of all entries */
+		protected final boolean last;
+		/**
+		 * Creates a new Delta
+		 * @param last If true, returns the delta of the last two items, otherwise returns the average delta of all entries
+		 */
+		public Delta(boolean last) {
+			super(true);
+			this.last = last;
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(java.util.List)
+		 */
+		@Override
+		public Object aggregate(List<Object> items) {
+			List<Number> numbers = sift(items);
+			if(numbers.size()<2) return 0;
+			if(last) {
+				return numbers.get(0).doubleValue() - numbers.get(1).doubleValue(); 
+			} else {
+				double[] deltas = new double[numbers.size()-1];
+				for(int i = 0; i < numbers.size()-1; i++) {
+					deltas[i] = numbers.get(i+1).doubleValue() - numbers.get(i).doubleValue();
+				}
+				return STRAVG.aggregate(deltas);
+			}			
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(long[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items.length<2) return 0;
+			if(last) {
+				return items[0] - items[1]; 
+			} else {
+				long[] deltas = new long[items.length-1];
+				for(int i = 0; i < items.length-1; i++) {
+					deltas[i] = items[i+1] - items[i];
+				}
+				return STRAVG.aggregate(deltas);
+			}			
+		}
+
+		/**
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.IAggregator#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items.length<2) return 0;
+			if(last) {
+				return items[0] - items[1]; 
+			} else {
+				double[] deltas = new double[items.length-1];
+				for(int i = 0; i < items.length-1; i++) {
+					deltas[i] = items[i+1] - items[i];
+				}
+				return STRAVG.aggregate(deltas);
+			}			
+		}
+	}
+	
+	/**
+	 * <p>Title: Rate</p>
+	 * <p>Description: Computes rate of the passed numbers</p> 
+	 * <p><code>org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction.Rate</code></p>
+	 */
+	public static class Rate extends Delta {
+		/** The time unit for which to report rates */
+		protected final TimeUnit rateUnit;
 		
+		/**
+		 * Creates a new Rate
+		 * @param last If true, returns the delta of the last two items, otherwise returns the average delta of all entries
+		 * @param rateUnit The time unit for which to report rates
+		 */
+		public Rate(boolean last, TimeUnit rateUnit) {
+			super(last);
+			this.rateUnit = rateUnit;
+		}
+		
+		/**
+		 * Calculates a rate from the passed numbers. The time window is passed as the first entry in the list
+		 * and is assumed to be in the same unit as this Rate instance and the values are assumed to be ticks per second.
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction.Delta#aggregate(java.util.List)
+		 */
+		@Override
+		public Object aggregate(List<Object> items) {
+			List<Number> numbers = sift(items);
+			if(numbers.size()<3) return 0;
+			double window = rateUnit.convert(numbers.remove(0).longValue(), TimeUnit.SECONDS);
+			double delta = ((Number)super.aggregate(new ArrayList<Object>(numbers))).doubleValue();
+			return delta/window;
+		}
+		
+		/**
+		 * Calculates a rate from the passed double array. The time window is passed as the first array entry
+		 * and is assumed to be in the same unit as this Rate instance and the values are assumed to be ticks per second.
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction.Delta#aggregate(double[])
+		 */
+		@Override
+		public double aggregate(double[] items) {
+			if(items.length<3) return 0;
+			double[] anumbers = new double[items.length-1];
+			System.arraycopy(items, 1, anumbers, 0, items.length-1);
+			double window = TimeUnit.SECONDS.convert((long)items[0], rateUnit);
+			double delta = super.aggregate(anumbers);
+			if(delta<=0 || window<=0) return 0D;
+			return delta/window;
+		}
+		
+		/**
+		 * Calculates a rate from the passed long array. The time window is passed as the first array entry
+		 * and is assumed to be in the same unit as this Rate instance and the values are assumed to be ticks per second.
+		 * {@inheritDoc}
+		 * @see org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction.Delta#aggregate(double[])
+		 */
+		@Override
+		public long aggregate(long[] items) {
+			if(items.length<3) return 0;
+			long[] anumbers = new long[items.length-1];
+			System.arraycopy(items, 1, anumbers, 0, items.length-1);
+			double window = rateUnit.convert(items[0], TimeUnit.SECONDS);
+			double delta = super.aggregate(anumbers);
+			if(delta<=0 || window<=0) return 0L;
+			return (long)(delta/window);
+		}		
 		
 	}
 	
@@ -709,5 +869,35 @@ public enum AggregateFunction implements IAggregator {
 		return aggr.aggregate(items);
 	}
 
+	public static void log(Object msg) {
+		System.out.println(msg);
+	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void main(String[] args) {
+		log("DELTA Test");
+		Object d = null;
+		d = DELTA_LAST.aggregate(new long[]{20, 10, 5});
+		log("DeltaLast:" + d);
+		d = DELTA_ALL.aggregate(new long[]{20, 10, 5});
+		log("DeltaAll:" + d);
+		
+		d = DELTA_LAST.aggregate(new ArrayList(Arrays.asList(20, 10, 5)));
+		log("DeltaLast:" + d);
+		d = DELTA_ALL.aggregate(new ArrayList(Arrays.asList(20, 10, 5)));
+		log("DeltaAll:" + d);
+
+		
+		log("\nRATE Test");
+		d = PS_RATE_LAST.aggregate(new long[]{1, 10, 20});
+		log("PS Last:" + d);
+		d = PS_RATE_LAST.aggregate(new ArrayList(Arrays.asList(1, 10, 20)));
+		log("PS Last:" + d);
+		d = PMS_RATE_LAST.aggregate(new long[]{1, 10000, 20000});
+		log("PMS Last:" + d);
+		d = PMS_RATE_LAST.aggregate(new ArrayList(Arrays.asList(1, 10000, 20000)));
+		log("PMS Last:" + d);
+
+		
+	}
 	
 }

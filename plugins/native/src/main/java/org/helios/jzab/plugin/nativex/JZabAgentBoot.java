@@ -28,6 +28,7 @@ import java.util.Properties;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.DirectAgentCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.CPUDiscoveryCommandPlugin;
 import org.helios.jzab.plugin.nativex.plugin.impls.system.cpu.DirectCPUCommandPlugin;
+import org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.FileSystemCommandPlugin;
 
 /**
  * <p>Title: JZabAgentBoot</p>
@@ -45,5 +46,7 @@ public class JZabAgentBoot {
 		new DirectAgentCommandPlugin();
 		new DirectCPUCommandPlugin();		
 		new CPUDiscoveryCommandPlugin();
+		//new FileSystemDiscoveryCommandPlugin();
+		new FileSystemCommandPlugin();
 	}
 }
