@@ -24,38 +24,14 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem;
 
-import java.util.Set;
-
-import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessorMBean;
-
 /**
- * <p>Title: FileSystemCommandPluginMBean</p>
- * <p>Description: JMX interace for {@link FileSystemCommandPlugin}</p> 
+ * <p>Title: DiskStatSummaryMBean</p>
+ * <p>Description: MXBean attribute MBean interface for {@link DiskStatSummary}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.FileSystemCommandPluginMBean</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatSummaryMBean</code></p>
  */
-public interface FileSystemCommandPluginMBean extends AbstractMultiCommandProcessorMBean {
-	/**
-	 * The callback that the rolling metrics service calls to get disk stats to aggregate
-	 * @param commandName The command name
-	 * @param device The device name
-	 * @param type The type of metric to read
-	 * @return the read metric
-	 */
-	public double diskStats(String commandName, String device, String type);
+
+public interface DiskStatSummaryMBean {
 	
-	/**
-	 * Returns a set of the know file systems
-	 * @return a set of the know file systems
-	 */
-	public Set<String> getFileSystemNames();	
-	
-	/**
-	 * Samples the named metric on the named device twice with a one second pause in between and returns the value as a rate per second.
-	 * @param device The file system name
-	 * @param metricName The DiskUsage metric name
-	 * @return the rate per second
-	 */
-	public double getFillInDiskStat(String device, String metricName);
 }

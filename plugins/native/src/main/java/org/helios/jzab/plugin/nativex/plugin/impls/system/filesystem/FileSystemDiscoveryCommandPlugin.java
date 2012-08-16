@@ -24,8 +24,6 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem;
 
-import java.util.Arrays;
-
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
 import org.hyperic.sigar.FileSystem;

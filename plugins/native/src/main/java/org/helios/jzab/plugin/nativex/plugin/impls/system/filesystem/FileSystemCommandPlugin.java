@@ -99,8 +99,8 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 	 * </ol>
 	 * @return The disk read stats JSON doc
 	 */
-	@CommandHandler({"fsd.reads", "vfs.dev.read", "vfs.dev.write"})
-	public String getReadStats(String commandName, String... args) {
+	@CommandHandler({"vfs.dev.read", "vfs.dev.write"})
+	public String getDiskStats(String commandName, String... args) {
 		String device = "all";
 		String type = "ops";
 		String mode = "avg1";
@@ -126,15 +126,14 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 		if(!DiskUsage.isValidDiskUsage(type) && !"ops".equals(type) && !"bps".equals(type)) {
 			log.warn("Requested Type [{}] not recognized", type);
 			return COMMAND_NOT_SUPPORTED;
-		} else {
-			if("ops".equals(type) || "bps".equals(type)) {
-				boolean reads = commandName.endsWith("read");
-				if("ops".equals(type)) type = reads ? DiskUsage.DISKREADS.name() : DiskUsage.DISKWRITES.name();
-				else if("bps".equals(type)) type = reads ? DiskUsage.DISKREADBYTES.name() : DiskUsage.DISKWRITEBYTES.name();
-				
-			}
-			type = DiskUsage.forValue(type).getInternal();
 		}
+		if("ops".equals(type) || "bps".equals(type)) {
+			boolean reads = commandName.endsWith("read");
+			if("ops".equals(type)) type = reads ? DiskUsage.DISKREADS.name() : DiskUsage.DISKWRITES.name();
+			else if("bps".equals(type)) type = reads ? DiskUsage.DISKREADBYTES.name() : DiskUsage.DISKWRITEBYTES.name();
+			
+		}
+		type = DiskUsage.forValue(type).getInternal();
 		String rollingMetricName = new StringBuilder(commandName).append(".").append(device).append(".").append(type).append(".").toString();
 		log.debug("Registering Rolling Metric [{}] with range of [{}]", rollingMetricName, range);
 		if(!rollingMetrics.hasDoubleRollingMetric(rollingMetricName, range)) {
@@ -151,6 +150,7 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 	 * {@inheritDoc}
 	 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.FileSystemCommandPluginMBean#getFillInDiskStat(java.lang.String, java.lang.String)
 	 */
+	@Override
 	public double getFillInDiskStat(String device, String metricName) {
 		try {
 			FileSystemUsage fsu = usages.get(device);
@@ -178,7 +178,11 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 	 * @param type The type of metric to read
 	 * @return the read metric
 	 */
-	public double diskReads(String commandName, String device, String type) {
+	@Override
+	public double diskStats(String commandName, String device, String type) {
+		if(type==null || type.trim().isEmpty()) throw new IllegalArgumentException("Passed metric type was null or empty", new Throwable());
+		if(device==null || device.trim().isEmpty()) throw new IllegalArgumentException("Passed device was null or empty", new Throwable());
+		type = type.trim().toLowerCase();
 		if(!"all".equals(device) && !FS_NAMES.contains(device)) {
 			throw new IllegalArgumentException("Requested Device was invalid [" + device + "]", new Throwable());
 		}
@@ -202,6 +206,7 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 	 * Returns a set of the know file systems
 	 * @return a set of the know file systems
 	 */
+	@Override
 	public Set<String> getFileSystemNames() {
 		return Collections.unmodifiableSet(FS_NAMES);
 	}

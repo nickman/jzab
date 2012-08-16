@@ -299,6 +299,7 @@ public abstract class AbstractMultiCommandProcessor implements AbstractMultiComm
 	 * @param command a full zabbix style item key command
 	 * @return the result of the command execution
 	 */
+	@Override
 	public String execute(String command) {
 		if(command==null || command.trim().isEmpty()) throw new IllegalArgumentException("The passed command was null or empty", new Throwable());
 		log.debug("Simplified Execute Command [{}]", command);

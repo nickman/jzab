@@ -460,6 +460,8 @@ public class ActiveClient extends NotificationBroadcasterSupport implements Chan
 	 * @param host The host name or ip address to connect to
 	 * @param port The listening port
 	 * @return A connected channel
+	 * TODO: Need to gracefully handle a failed connection to the zabbix server
+	 * TODO: Need to add failover zabbix servers
 	 */
 	public Channel newChannel(String host, int port) {
 		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
