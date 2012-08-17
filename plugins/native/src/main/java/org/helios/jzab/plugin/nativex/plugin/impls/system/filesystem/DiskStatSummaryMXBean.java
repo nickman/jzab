@@ -24,14 +24,21 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem;
 
+import java.util.Set;
+
 /**
- * <p>Title: DiskStatSummaryMBean</p>
+ * <p>Title: DiskStatSummaryMXBean</p>
  * <p>Description: MXBean attribute MBean interface for {@link DiskStatSummary}</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatSummaryMBean</code></p>
+ * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatSummaryMXBean</code></p>
  */
 
-public interface DiskStatSummaryMBean {
+public interface DiskStatSummaryMXBean {
+	/**
+	 * Returns a set of DiskStats
+	 * @return a set of DiskStats
+	 */
+	public Set<DiskStat> getDiskStats();
 	
 }

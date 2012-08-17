@@ -24,13 +24,16 @@
  */
 package org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.helios.jzab.plugin.nativex.HeliosSigar;
 import org.hyperic.sigar.FileSystem;
 import org.hyperic.sigar.FileSystemUsage;
+import org.hyperic.sigar.SigarException;
 
 /**
  * <p>Title: DiskStatSummary</p>
@@ -40,342 +43,64 @@ import org.hyperic.sigar.FileSystemUsage;
  * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatSummary</code></p>
  */
 
-public class DiskStatSummary {
+public class DiskStatSummary  implements DiskStatSummaryMXBean {
 	/** A map of requested file system usage instances, keyed by file system name */
 	protected final Map<String, FileSystemUsage> usages = new ConcurrentHashMap<String, FileSystemUsage>();
+	/** A map of file systems keyed by the name */
+	protected final Map<String, FileSystem> fileSystems = new ConcurrentHashMap<String, FileSystem>();
 	/** Last time updated */
-	protected long lastRefresh = 0;
+	protected AtomicLong lastRefresh = new AtomicLong(0L);
 	
 	/**
 	 * Creates a new DiskStatSummary
 	 */
 	public DiskStatSummary() {
 		for(FileSystem fs: HeliosSigar.getInstance().getFileSystemList()) {
-			usages.put(fs.getDevName(), HeliosSigar.getInstance().getFileSystemUsage(fs.getDevName()));
+			fileSystems.put(fs.getDirName(), fs);
+			usages.put(fs.getDirName(), HeliosSigar.getInstance().getFileSystemUsage(fs.getDirName()));
 		}
-		lastRefresh = System.currentTimeMillis();
-	}
-	
-	public Set<DiskStat> getDiskStats() {
-		long now = System.currentTimeMillis();
-		if((now-lastRefresh)>5000) {
-			
-		}
-	}
-	
-	public interface DiskStatMBean {
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getDevName()
-		 */
-		public abstract String getDevName();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getDirName()
-		 */
-		public abstract String getDirName();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getFlags()
-		 */
-		public abstract long getFlags();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getOptions()
-		 */
-		public abstract String getOptions();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getSysTypeName()
-		 */
-		public abstract String getSysTypeName();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystem#getTypeName()
-		 */
-		public abstract String getTypeName();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getAvail()
-		 */
-		public abstract long getAvail();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskQueue()
-		 */
-		public abstract double getDiskQueue();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskReadBytes()
-		 */
-		public abstract long getDiskReadBytes();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskReads()
-		 */
-		public abstract long getDiskReads();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskServiceTime()
-		 */
-		public abstract double getDiskServiceTime();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskWriteBytes()
-		 */
-		public abstract long getDiskWriteBytes();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getDiskWrites()
-		 */
-		public abstract long getDiskWrites();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getFiles()
-		 */
-		public abstract long getFiles();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getFree()
-		 */
-		public abstract long getFree();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getFreeFiles()
-		 */
-		public abstract long getFreeFiles();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getTotal()
-		 */
-		public abstract long getTotal();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getUsePercent()
-		 */
-		public abstract double getUsePercent();
-
-		/**
-		 * @return
-		 * @see org.hyperic.sigar.FileSystemUsage#getUsed()
-		 */
-		public abstract long getUsed();
-
+		lastRefresh.set(System.currentTimeMillis());
 	}
 	
 	/**
-	 * <p>Title: DiskStat</p>
-	 * <p>Description: MXBean attribute to expose file system info and stats</p> 
-	 * <p>Company: Helios Development Group LLC</p>
-	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
-	 * <p><code>org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStat</code></p>
+	 * Returns a set of DiskStats
+	 * @return a set of DiskStats
 	 */
-	public class DiskStat implements DiskStatMBean {
-		/** File system static info */
-		private final FileSystem fs;
-		/** File system dynamic stats */		
-		private final FileSystemUsage fsu;
-		
-		/**
-		 * Creates a new DiskStat
-		 * @param fs
-		 * @param fsu
-		 */
-		public DiskStat(FileSystem fs, FileSystemUsage fsu) {
-			super();
-			this.fs = fs;
-			this.fsu = fsu;
+	public Set<DiskStat> getDiskStats() {
+		long now = System.currentTimeMillis();
+		if((now-lastRefresh.get())>5000) {
+			lastRefresh.set(now);
+			fileSystems.clear();
+			for(FileSystem fs: HeliosSigar.getInstance().getFileSystemList()) {
+				fileSystems.put(fs.getDirName(), fs);
+			}
+			Set<String> remove = new HashSet<String>();
+			for(String name: fileSystems.keySet()) {
+				FileSystemUsage fsu = usages.get(name);
+				if(fsu==null) {
+					fsu = HeliosSigar.getInstance().getFileSystemUsage(name);
+					usages.put(name, fsu);
+					try {
+						fsu.gather(HeliosSigar.getInstance().getSigar(), name);
+					} catch (SigarException e) {
+					}
+				}
+			}
+			for(Map.Entry<String, FileSystemUsage> fsu: usages.entrySet()) {
+				String name = fsu.getKey();
+				if(!fileSystems.containsKey(name)) {
+					remove.add(name);
+					continue;
+				}
+			}
+			for(String name: remove) {
+				usages.remove(name);
+			}
 		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDevName()
-		 */
-		@Override
-		public String getDevName() {
-			return fs.getDevName();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDirName()
-		 */
-		@Override
-		public String getDirName() {
-			return fs.getDirName();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getFlags()
-		 */
-		@Override
-		public long getFlags() {
-			return fs.getFlags();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getOptions()
-		 */
-		@Override
-		public String getOptions() {
-			return fs.getOptions();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getSysTypeName()
-		 */
-		@Override
-		public String getSysTypeName() {
-			return fs.getSysTypeName();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getTypeName()
-		 */
-		@Override
-		public String getTypeName() {
-			return fs.getTypeName();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getAvail()
-		 */
-		@Override
-		public long getAvail() {
-			return fsu.getAvail();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskQueue()
-		 */
-		@Override
-		public double getDiskQueue() {
-			return fsu.getDiskQueue();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskReadBytes()
-		 */
-		@Override
-		public long getDiskReadBytes() {
-			return fsu.getDiskReadBytes();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskReads()
-		 */
-		@Override
-		public long getDiskReads() {
-			return fsu.getDiskReads();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskServiceTime()
-		 */
-		@Override
-		public double getDiskServiceTime() {
-			return fsu.getDiskServiceTime();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskWriteBytes()
-		 */
-		@Override
-		public long getDiskWriteBytes() {
-			return fsu.getDiskWriteBytes();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getDiskWrites()
-		 */
-		@Override
-		public long getDiskWrites() {
-			return fsu.getDiskWrites();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getFiles()
-		 */
-		@Override
-		public long getFiles() {
-			return fsu.getFiles();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getFree()
-		 */
-		@Override
-		public long getFree() {
-			return fsu.getFree();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getFreeFiles()
-		 */
-		@Override
-		public long getFreeFiles() {
-			return fsu.getFreeFiles();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getTotal()
-		 */
-		@Override
-		public long getTotal() {
-			return fsu.getTotal();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getUsePercent()
-		 */
-		@Override
-		public double getUsePercent() {
-			return fsu.getUsePercent();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 * @see org.helios.jzab.plugin.nativex.plugin.impls.system.filesystem.DiskStatMBean#getUsed()
-		 */
-		@Override
-		public long getUsed() {
-			return fsu.getUsed();
-		}
-		
-		
+		Set<DiskStat> stats = new HashSet<DiskStat>();
+		for(FileSystem fs: HeliosSigar.getInstance().getFileSystemList()) {
+			stats.add(new DiskStat(fs, usages.get(fs.getDirName())));
+		}				
+		return stats;
 	}
 }

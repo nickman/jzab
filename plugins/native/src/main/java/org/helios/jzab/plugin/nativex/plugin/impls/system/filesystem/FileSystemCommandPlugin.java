@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import org.helios.jzab.agent.commands.impl.aggregate.AggregateFunction;
 import org.helios.jzab.plugin.nativex.plugin.CommandHandler;
 import org.helios.jzab.plugin.nativex.plugin.generic.AbstractMultiCommandProcessor;
+import org.helios.jzab.util.JMXHelper;
 import org.hyperic.sigar.FileSystem;
 import org.hyperic.sigar.FileSystemUsage;
 
@@ -63,8 +64,13 @@ public class FileSystemCommandPlugin extends AbstractMultiCommandProcessor imple
 		}
 		if(!inited.get()) {
 			scheduleRefresh();
+			try {
+				JMXHelper.registerMBean(JMXHelper.getHeliosMBeanServer(), JMXHelper.objectName(new StringBuilder(objectName.toString()).append(",helper=DiskStatSummary")), new DiskStatSummary());
+			} catch (Exception e) {
+				log.warn("Failed to register DiskStats MBean");
+			}
+			super.init();			
 		}
-		super.init();
 	}
 	
 	
